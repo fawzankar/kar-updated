@@ -32,17 +32,15 @@ export async function GET(request: Request) {
     const replies = await pool.query(`SELECT id, message_id, text, author, created_at AS time FROM responses ORDER BY created_at ASC`)
     const grouped = new Map<number, any>()
     for (const m of messages.rows) {
-      grouped.set(Number(m.id), { id: Number(m.id), text: m.text, senderName: m.senderName, unread: !m.is_read, kept: m.kept, time: m.time, replies: [] })
+      grouped.set(Number(m.id), { id: Number(m.id), text: m.text, senderName: m.senderName, unread: !m.is_read, kept: m.kept, time: m.time })
     }
     const publicMap = new Map<number, any>()
     for (const r of replies.rows) {
       const id = Number(r.message_id)
       const message = grouped.get(id)
       if (!message) continue
-      const reply = { id: Number(r.id), text: r.text, time: r.time, author: r.author }
-      message.replies.push(reply)
       if (!publicMap.has(id)) publicMap.set(id, { id, text: message.text, time: message.time, author: message.senderName || 'Anonymous', replies: [] })
-      publicMap.get(id).replies.push(reply)
+      publicMap.get(id).replies.push({ id: Number(r.id), text: r.text, time: r.time, author: r.author })
     }
     return NextResponse.json({
       messages: [...grouped.values()],
@@ -132,17 +130,29 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  await ensureSchema()
-  if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const url = new URL(request.url)
-  const replyId = Number(url.searchParams.get('replyId'))
-  if (Number.isInteger(replyId)) {
-    const result = await pool.query(`DELETE FROM responses WHERE id = $1 RETURNING id`, [replyId])
-    if (!result.rows[0]) return NextResponse.json({ error: 'Reply not found.' }, { status: 404 })
-    return NextResponse.json({ ok: true, deleted: 'reply' })
+  try {
+    await ensureSchema()
+    if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const url = new URL(request.url)
+    const threadId = Number(url.searchParams.get('id'))
+    const responseId = Number(url.searchParams.get('responseId'))
+
+    // Delete a single comment/reply.
+    if (Number.isInteger(responseId)) {
+      const result = await pool.query(`DELETE FROM responses WHERE id = $1 RETURNING id`, [responseId])
+      if (!result.rows[0]) return NextResponse.json({ error: 'Reply not found.' }, { status: 404 })
+      return NextResponse.json({ ok: true, deleted: 'reply' })
+    }
+
+    // Delete an entire thread. Hard-delete it so all child replies are removed
+    // by the existing ON DELETE CASCADE relationship.
+    if (!Number.isInteger(threadId)) return NextResponse.json({ error: 'Invalid message.' }, { status: 400 })
+    const result = await pool.query(`DELETE FROM messages WHERE id = $1 RETURNING id`, [threadId])
+    if (!result.rows[0]) return NextResponse.json({ error: 'Message not found.' }, { status: 404 })
+    return NextResponse.json({ ok: true, deleted: 'thread' })
+  } catch (error) {
+    console.error('DELETE /api/messages failed:', error)
+    return NextResponse.json({ error: 'Delete failed on the server.' }, { status: 500 })
   }
-  const id = Number(url.searchParams.get('id'))
-  if (!Number.isInteger(id)) return NextResponse.json({ error: 'Invalid message.' }, { status: 400 })
-  await pool.query(`UPDATE messages SET deleted_at = NOW() WHERE id = $1`, [id])
-  return NextResponse.json({ ok: true, deleted: 'thread' })
 }
