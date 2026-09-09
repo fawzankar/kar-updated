@@ -1,4 +1,21 @@
-# Fowzan Inbox — threaded inbox build
+# FOWZAN // PLAYER SIGNAL
+
+A black, neon-green, and red arcade-inspired social signal board. It retains the anonymous messaging, threaded replies, owner authentication, moderation, and database behavior from the original project.
+
+## Run locally
+
+1. Copy `.env.example` to `.env.local` and provide the listed environment variables.
+2. Run `npm install`.
+3. Run `npm run dev`.
+
+## Revamp highlights
+
+- Responsive arcade command-center layout with an animated scanline/grid background.
+- Bold gaming-focused hero, prompts, terminology, metadata, and success feedback.
+- Red/green glow states, tactile hover effects, elevated conversation cards, and accessible reduced-motion support.
+- Owner inbox reskinned as a private Signal Control console; all underlying owner workflows remain intact.
+
+## Original functional behavior
 
 This build keeps every incoming message as its own conversation thread.
 
