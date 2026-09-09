@@ -7,7 +7,7 @@ const spaceMono = Space_Mono({ subsets: ['latin'], variable: '--font-sans-custom
 const pressStart = Press_Start_2P({ subsets: ['latin'], variable: '--font-display', weight: '400' })
 
 export const metadata: Metadata = {
-  title: "Fowzan's Inbox — Anonymous messages",
+  title: "Fowzan's Inbox",
   description: 'Leave Fowzan an anonymous question, thought, or reply.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   openGraph: {
