@@ -32,12 +32,12 @@ type PublicResponse = {
 }
 
 const prompts = [
-  'What is something you have never asked me?',
-  'What has been on your mind lately?',
-  'What is one thing I should know?',
-  'What would you tell me with zero context?',
-  'What made your day interesting today?',
-  'Drop a thought you would usually keep quiet.'
+  'How are you doing today?',
+  'What are you into right now?',
+  'What is your favourite thing lately?',
+  'What is something you would recommend?',
+  'What are you looking forward to?',
+  'Ask me anything.'
 ]
 
 const emptyResponses: PublicResponse[] = []
@@ -72,7 +72,6 @@ export default function Page() {
   const [replyReveal, setReplyReveal] = useState(false)
   const [ownerReplies, setOwnerReplies] = useState<Record<number, string>>({})
   const [answeredThoughtIds, setAnsweredThoughtIds] = useState<number[]>([])
-  const [ambientScene, setAmbientScene] = useState<'stars' | 'snow' | 'orbits' | 'grid'>('stars')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
@@ -115,11 +114,6 @@ export default function Page() {
 
   useEffect(() => {
     loadPublic()
-    const scenes: Array<'stars' | 'snow' | 'orbits' | 'grid'> = ['stars', 'snow', 'orbits', 'grid']
-    const timer = window.setInterval(() => {
-      setAmbientScene((current) => scenes[(scenes.indexOf(current) + 1) % scenes.length])
-    }, 9000)
-    return () => window.clearInterval(timer)
   }, [])
 
   useEffect(() => {
@@ -260,7 +254,7 @@ export default function Page() {
     const url = window.location.href
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Fowzan's anonymous inbox", text: 'Leave Fowzan an anonymous message.', url })
+        await navigator.share({ title: "Fowzan's inbox", text: "Leave Fowzan a message.", url })
       } else {
         await navigator.clipboard.writeText(url)
         setCopied(true)
@@ -420,11 +414,11 @@ export default function Page() {
   )
 
   return (
-    <main className={`funky-page scene-${ambientScene} min-h-screen px-5 py-6 text-foreground sm:px-8`}>
-      <div className="ambient-backdrop" aria-hidden="true"><div className="ambient-grid" />{Array.from({ length: 20 }).map((_, index) => <span key={index} className="ambient-particle" style={{ '--particle': index } as React.CSSProperties} />)}</div>
+    <main className="funky-page min-h-screen px-5 py-6 text-foreground sm:px-8">
+      <div className="ambient-backdrop" aria-hidden="true"><div className="ambient-grid" />{Array.from({ length: 28 }).map((_, index) => <span key={index} className="ambient-particle" style={{ '--particle': index } as React.CSSProperties} />)}</div>
 
       <header className="relative z-10 mx-auto flex max-w-4xl items-center justify-between">
-        <div className="brand-mark"><span className="brand-glyph" aria-hidden="true"><i /><i /><i /></span><span className="brand-name">owzan's <b>inbox</b></span></div>
+        <div className="brand-mark"><span className="brand-glyph" aria-hidden="true"><i /><i /><i /></span><span className="brand-name">Fowzan's <b>inbox</b></span></div>
         <button className="owner-link" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button>
       </header>
 
@@ -432,44 +426,43 @@ export default function Page() {
         <div className="identity-row">
           <div className="avatar funky-avatar"><MessageCircle size={24} strokeWidth={1.8} /></div>
           <div>
-            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous channel</div>
-            <p className="mt-2 text-sm text-muted-foreground">A low-key space for questions, thoughts, and whatever you do not want to say out loud.</p>
+            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous messages</div>
+            <p className="mt-2 text-sm text-muted-foreground">Ask Fowzan anything. Leave a thought. Keep your name to yourself.</p>
           </div>
         </div>
 
         <div className="hero-copy">
           <div>
-            <h1 className="display-title">Drop it.<br /><span>Leave it here.</span></h1>
-            <p className="hero-line">Questions, thoughts, stories, confessions — send whatever is on your mind. Your name stays optional.</p>
+            <h1 className="display-title">Say it.<br /><span>Leave it here.</span></h1>
+            <p className="hero-line">A private little corner for questions, thoughts and things that are easier to write than say.</p>
           </div>
-          <div className="orbit-note"><span>NO ACCOUNT</span><span>NO PROFILE</span><span>JUST SAY IT</span></div>
         </div>
 
         <div className="question-box mt-10 w-full text-left">
-          <div className="question-label"><span className="signal-dot" /> transmit a message</div>
+          <div className="question-label"><span className="signal-dot" /> leave a message</div>
           <div className="message-shell funky-shell">
-            <textarea value={thought} onChange={(event) => setThought(event.target.value)} placeholder="type something worth sending..." rows={5} maxLength={500} aria-label="Your anonymous message" />
+            <textarea value={thought} onChange={(event) => setThought(event.target.value)} placeholder="write whatever you want..." rows={5} maxLength={500} aria-label="Your anonymous message" />
             <div className="flex items-center justify-between border-t border-border/70 pt-4">
               <span className={`text-xs ${thought.length > 450 ? 'text-punch' : 'text-muted-foreground'}`}>{thought.length}/500</span>
-              <span className="text-xs text-muted-foreground">anonymous unless you choose otherwise</span>
+              <span className="text-xs text-muted-foreground">anonymous by default</span>
             </div>
           </div>
 
           <div className="name-controls mt-3">
             <label className="name-toggle">
               <input type="checkbox" checked={revealName} onChange={(event) => setRevealName(event.target.checked)} />
-              <span className="toggle-track" /> attach my name
+              <span className="toggle-track" /> Attach my name
             </label>
-            {revealName && <input className="name-input" value={senderName} onChange={(event) => setSenderName(event.target.value)} placeholder="name shown to Fowzan" aria-label="Your display name" maxLength={80} />}
+            {revealName && <input className="name-input" value={senderName} onChange={(event) => setSenderName(event.target.value)} placeholder="Name shown to Fowzan" aria-label="Your display name" maxLength={80} />}
           </div>
 
           <button className="funky-button mt-3 w-full" onClick={submitThought} disabled={!thought.trim() || sending}>
-            {sending ? <><Loader2 size={16} className="animate-spin" /> sending...</> : <>transmit <ArrowLeft className="rotate-180" size={16} /></>}
+            {sending ? <><Loader2 size={16} className="animate-spin" /> sending...</> : <>send message <ArrowLeft className="rotate-180" size={16} /></>}
           </button>
         </div>
 
         <div className="prompt-deck mt-8">
-          <div className="section-kicker"><Sparkles size={13} /> need a signal?</div>
+          <div className="section-kicker"><Sparkles size={13} /> not sure what to write?</div>
           <div className="prompt-tiles mt-3">
             {prompts.map((prompt) => (
               <button key={prompt} className="prompt-tile" onClick={() => setThought(prompt)}>{prompt}</button>
@@ -480,23 +473,23 @@ export default function Page() {
         {error && <div className="error-banner mt-6" role="alert">{error}</div>}
 
         <div className="mt-8 flex flex-wrap justify-center gap-5">
-          <button className="share-link" onClick={sharePage}>{copied ? <Check size={14} /> : <Share2 size={14} />} {copied ? 'link copied' : 'share this space'}</button>
-          <span className="text-xs text-muted-foreground/70">no account. no profile.</span>
+          <button className="share-link" onClick={sharePage}>{copied ? <Check size={14} /> : <Share2 size={14} />} {copied ? 'link copied' : 'share this inbox'}</button>
+          <span className="text-xs text-muted-foreground/70">no account required</span>
         </div>
       </section>
 
       <section className="responses-section relative z-10 mx-auto max-w-4xl border-t border-border/70 pb-24 pt-16">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <div className="section-kicker"><MessageCircle size={14} /> public signal</div>
+            <div className="section-kicker"><MessageCircle size={14} /> public conversations</div>
             <h2 className="mt-3 font-serif text-4xl tracking-[-0.04em]">Open <span>threads.</span></h2>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">Messages Fowzan has opened to everyone. Read along, reply, or leave your own signal.</p>
+            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">Questions Fowzan has chosen to answer publicly. Join a thread without creating an account.</p>
           </div>
           <span className="soft-pill">{responses.length} threads</span>
         </div>
 
         {loading ? (
-          <div className="empty-note mt-8"><Loader2 className="mx-auto mb-3 animate-spin" size={20} />Loading the signal...</div>
+          <div className="empty-note mt-8"><Loader2 className="mx-auto mb-3 animate-spin" size={20} />Loading messages...</div>
         ) : (
           <div className="mt-8 space-y-4">
             {responses.map((response) => (
@@ -534,7 +527,7 @@ export default function Page() {
                 </div>
               </article>
             ))}
-            {!responses.length && <div className="empty-note">No open threads yet. Be the first signal.</div>}
+            {!responses.length && <div className="empty-note">No open threads yet. Be the first to start one.</div>}
           </div>
         )}
       </section>
@@ -543,9 +536,9 @@ export default function Page() {
         <div className="modal-backdrop" onClick={() => setSent(false)}>
           <article className="note-modal text-center" onClick={(event) => event.stopPropagation()}>
             <div className="success-mark"><Check size={20} /></div>
-            <h2 className="mt-6 font-serif text-4xl tracking-[-0.04em]">Transmission received.</h2>
-            <p className="mx-auto mt-4 max-w-xs text-sm leading-6 text-muted-foreground">Your message is in. Send another whenever you feel like it.</p>
-            <button className="funky-button mt-8 w-full" onClick={() => setSent(false)}>send another signal</button>
+            <h2 className="mt-6 font-serif text-4xl tracking-[-0.04em]">Message received.</h2>
+            <p className="mx-auto mt-4 max-w-xs text-sm leading-6 text-muted-foreground">Your message is in. Send another whenever you want.</p>
+            <button className="funky-button mt-8 w-full" onClick={() => setSent(false)}>send another message</button>
           </article>
         </div>
       )}
