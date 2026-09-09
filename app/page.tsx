@@ -139,6 +139,7 @@ export default function Page() {
 
   async function deleteThought(id: number) {
     if (deleteBusy) return
+    if (!window.confirm('Delete this entire thread? This will permanently remove the original message and every reply.')) return
     setDeleteBusy(`thread-${id}`); setError('')
     try {
       const response = await fetch(`/api/messages?id=${id}&type=thread`, { method: 'DELETE' })
@@ -152,7 +153,7 @@ export default function Page() {
     if (deleteBusy) return
     setDeleteBusy(`reply-${replyId}`); setError('')
     try {
-      const response = await fetch(`/api/messages?id=${replyId}&type=reply`, { method: 'DELETE' })
+      const response = await fetch(`/api/messages?id=${replyId}&messageId=${messageId}&type=reply`, { method: 'DELETE' })
       const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error ?? 'Could not delete the reply.')
       setThoughts((current) => current.map((item) => item.id === messageId ? { ...item, replies: item.replies.filter((reply) => reply.id !== replyId) } : item))
       setSelected((current) => current?.id === messageId ? { ...current, replies: current.replies.filter((reply) => reply.id !== replyId) } : current)
@@ -254,8 +255,8 @@ export default function Page() {
           {!selected ? <div className="conversation-empty"><div className="empty-icon"><MessageCircle size={23} /></div><h2>Choose a conversation</h2><p>Select a message from the left to open its thread.</p></div> : <div className="conversation-card">
             <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><Trash2 size={14} /> {deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</button></div></div>
             <div className="conversation-scroll">
-              <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div><p>{selected.text}</p><button className="bubble-delete" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><Trash2 size={11} /> delete</button></article>
-              {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author}</span><span>{formatTime(reply.time)}</span></div><p>{reply.text}</p><button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`}><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'delete'}</button></article>)}
+              <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div><p>{selected.text}</p></article>
+              {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author}</span><span>{formatTime(reply.time)}</span></div><p>{reply.text}</p><button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`} title="Remove only this reply" aria-label="Remove only this reply"><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'remove reply'}</button></article>)}
             </div>
             <div className="reply-dock"><div className="reply-composer"><input value={ownerReplies[selected.id] ?? ''} onChange={(e) => setOwnerReplies((c) => ({ ...c, [selected.id]: e.target.value }))} placeholder="Write a reply as Fowzan…" maxLength={1000} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitOwnerReply(selected.id) } }} /><button onClick={() => submitOwnerReply(selected.id)} disabled={!ownerReplies[selected.id]?.trim() || replySending === selected.id}>{replySending === selected.id ? <Loader2 size={17} className="spin" /> : <Send size={16} />}</button></div><div className="composer-foot"><span>Reply as many times as you want.</span><span>{(ownerReplies[selected.id] ?? '').length}/1000</span></div></div>
           </div>}

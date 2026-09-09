@@ -187,10 +187,14 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
 
   if (type === 'reply') {
-    const result = await pool.query(`DELETE FROM responses WHERE id = $1 RETURNING id`, [id])
+    const messageId = asId(params.get('messageId'))
+    if (!messageId) return NextResponse.json({ error: 'Invalid thread id.' }, { status: 400 })
+    const result = await pool.query(`DELETE FROM responses WHERE id = $1 AND message_id = $2 RETURNING id`, [id, messageId])
     if (!result.rows[0]) return NextResponse.json({ error: 'Reply not found.' }, { status: 404 })
     return NextResponse.json({ ok: true, deleted: 'reply' })
   }
+
+  if (type !== 'thread') return NextResponse.json({ error: 'Invalid delete type.' }, { status: 400 })
 
   const client = await pool.connect()
   try {

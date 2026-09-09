@@ -25,7 +25,8 @@ This build keeps every incoming message as its own conversation thread.
 - The selected thread has its own bounded internal scroll area, so long conversations do not break the page.
 - Fowzan can send unlimited replies in the same thread.
 - One click/request creates one reply; the reply button is locked while a reply is being sent.
-- The owner can delete an entire thread or any individual reply/comment.
+- The owner can remove any individual reply without affecting its parent thread.
+- Deleting an entire thread is a separate, confirmed action; it removes the original message and its replies.
 - Deleting a thread removes its replies first, then the thread itself.
 - New messages are refreshed automatically while the private inbox is open.
 - Reply Queue shows threads that have not received a reply yet.
