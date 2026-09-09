@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowLeft, Check, ChevronRight, Copy, Inbox, LockKeyhole, LogOut,
   Mail, MessageCircle, PenLine, RefreshCw, Send, Share2, Sparkles,
-  Star, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot
+  Star, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot, Radio, Cpu
 } from 'lucide-react'
 
 type ThreadReply = { id: number; text: string; time: string; author: string }
@@ -12,14 +12,14 @@ type Thought = { id: number; text: string; time: string; unread?: boolean; kept?
 type PublicResponse = { id: number; text: string; time: string; author: string; replies: ThreadReply[] }
 
 const prompts = [
-  'What is something you have always wanted to ask me?',
-  'Be brutally honest: what should I hear?',
-  'What is your first impression of me?',
-  'Tell me a secret you would never say out loud.',
-  'What should I do differently this year?',
-  'What is one thing you think I misunderstand?',
-  'Ask me the question you keep overthinking.',
-  'Leave me a thought with zero context.'
+  'What is something you have never asked me?',
+  'What is your honest first impression of me?',
+  'What should I hear, even if it is uncomfortable?',
+  'What is a question you keep overthinking?',
+  'What would you tell me with zero filter?',
+  'What is one thing I should try this year?',
+  'What is something you think I get wrong?',
+  'Drop a thought with absolutely no context.'
 ]
 
 function formatTime(value: string) {
@@ -110,9 +110,9 @@ export default function Page() {
     try {
       const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'message', text, senderName: revealName ? senderName.trim() : null }) })
       const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error ?? 'Could not send your message.')
+      if (!response.ok) throw new Error(data.error ?? 'Could not send message payload.')
       setThought(''); setSenderName(''); setRevealName(false); setSent(true)
-    } catch (err) { setError(err instanceof Error ? err.message : 'Could not send your message.') }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not send message payload.') }
     finally { setSending(false) }
   }
 
@@ -171,7 +171,7 @@ export default function Page() {
   async function sharePage() {
     const url = window.location.href
     try {
-      if (navigator.share) await navigator.share({ title: "Fowzan's anonymous inbox", text: 'Leave Fowzan an anonymous message.', url })
+      if (navigator.share) await navigator.share({ title: 'Fowzan Kar — Anonymous Inbox', text: 'Send Fowzan Kar an anonymous message.', url })
       else { await navigator.clipboard.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
     } catch { setCopied(false) }
   }
@@ -219,22 +219,22 @@ export default function Page() {
     <main className="app-page admin-page">
       <div className="ambient-orb orb-a" /><div className="ambient-orb orb-c" />
       <header className="topbar admin-topbar">
-        <button className="brand" onClick={() => setView('public')}><span className="brand-icon">F</span><span>Fowzan<span className="brand-muted"> / inbox</span></span></button>
+        <button className="brand" onClick={() => setView('public')}><span className="brand-icon"><Radio size={18} /></span><span>Fowzan Kar<span className="brand-muted"> / inbox</span></span></button>
         <div className="top-actions"><button className="ghost-button" onClick={() => setShowKeeps(!showKeeps)}><Star size={14} fill={showKeeps ? 'currentColor' : 'none'} /> {showKeeps ? 'all threads' : 'keepsakes'}</button><button className="ghost-button" onClick={logout}><LogOut size={14} /> sign out</button></div>
       </header>
 
       <section className="admin-hero page-width">
-        <div><div className="eyebrow"><Inbox size={14} /> private inbox</div><h1 className="admin-title">Your<br /><span>conversations.</span></h1><p className="admin-subtitle">A calm workspace for everything people leave you. Reply freely, keep what matters, and clean up any message.</p></div>
+        <div><div className="eyebrow"><Inbox size={14} /> private control</div><h1 className="admin-title">CONTROL<br /><span>CENTER.</span></h1><p className="admin-subtitle">Every message. Every thread. One place. Reply, keep, delete, and stay on top of the feed.</p></div>
         <div className="admin-hero-actions"><button className="refresh-button" onClick={() => loadOwner()} disabled={refreshing}><RefreshCw size={15} className={refreshing ? 'spin' : ''} /> {refreshing ? 'refreshing' : 'refresh inbox'}</button><button className="share-square" onClick={sharePage} aria-label="Share inbox">{copied ? <Check size={17} /> : <Share2 size={17} />}</button></div>
       </section>
 
       {error && <div className="error-banner page-width">{error}</div>}
 
       <section className="quick-stats page-width">
-        <div className="stat-card"><span>threads</span><strong>{thoughts.length}</strong><small>all conversations</small></div>
-        <div className="stat-card accent-stat"><span>waiting</span><strong>{waitingCount}</strong><small>need your first reply</small></div>
-        <div className="stat-card"><span>replies</span><strong>{replyCount}</strong><small>across your threads</small></div>
-        <div className="stat-card"><span>status</span><strong className="status-live"><CircleDot size={13} /> live</strong><small>{lastUpdated ? `updated ${formatTime(lastUpdated.toISOString())}` : 'syncing now'}</small></div>
+        <div className="stat-card"><span>threads</span><strong>{thoughts.length}</strong><small>total threads</small></div>
+        <div className="stat-card accent-stat"><span>waiting</span><strong>{waitingCount}</strong><small>waiting for a reply</small></div>
+        <div className="stat-card"><span>replies</span><strong>{replyCount}</strong><small>all Fowzan replies</small></div>
+        <div className="stat-card"><span>status</span><strong className="status-live"><CircleDot size={13} /> live</strong><small>{lastUpdated ? `updated ${formatTime(lastUpdated.toISOString())}` : 'syncing'}</small></div>
       </section>
 
       <section className="admin-workspace page-width">
@@ -250,51 +250,51 @@ export default function Page() {
         </aside>
 
         <section className="conversation-shell">
-          {!selected ? <div className="conversation-empty"><div className="empty-icon"><MessageCircle size={23} /></div><h2>Choose a conversation</h2><p>Select a message from the left to open its thread.</p></div> : <div className="conversation-card">
+          {!selected ? <div className="conversation-empty"><div className="empty-icon"><MessageCircle size={23} /></div><h2>SELECT A THREAD</h2><p>Pick a thread to open the full conversation.</p></div> : <div className="conversation-card">
             <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><Trash2 size={14} /> {deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</button></div></div>
             <div className="conversation-scroll">
               <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div><p>{selected.text}</p><button className="bubble-delete" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><Trash2 size={11} /> delete</button></article>
               {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author}</span><span>{formatTime(reply.time)}</span></div><p>{reply.text}</p><button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`}><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'delete'}</button></article>)}
             </div>
-            <div className="reply-dock"><div className="reply-composer"><input value={ownerReplies[selected.id] ?? ''} onChange={(e) => setOwnerReplies((c) => ({ ...c, [selected.id]: e.target.value }))} placeholder="Write a reply as Fowzan…" maxLength={1000} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitOwnerReply(selected.id) } }} /><button onClick={() => submitOwnerReply(selected.id)} disabled={!ownerReplies[selected.id]?.trim() || replySending === selected.id}>{replySending === selected.id ? <Loader2 size={17} className="spin" /> : <Send size={16} />}</button></div><div className="composer-foot"><span>Reply as many times as you want.</span><span>{(ownerReplies[selected.id] ?? '').length}/1000</span></div></div>
+            <div className="reply-dock"><div className="reply-composer"><input value={ownerReplies[selected.id] ?? ''} onChange={(e) => setOwnerReplies((c) => ({ ...c, [selected.id]: e.target.value }))} placeholder="Send as Fowzan…" maxLength={1000} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitOwnerReply(selected.id) } }} /><button onClick={() => submitOwnerReply(selected.id)} disabled={!ownerReplies[selected.id]?.trim() || replySending === selected.id}>{replySending === selected.id ? <Loader2 size={17} className="spin" /> : <Send size={16} />}</button></div><div className="composer-foot"><span>unlimited replies enabled</span><span>{(ownerReplies[selected.id] ?? '').length}/1000</span></div></div>
           </div>}
         </section>
       </section>
 
-      <section className="queue-section page-width"><div className="queue-head"><div><div className="eyebrow"><PenLine size={13} /> quick reply queue</div><h2>Threads waiting on you.</h2></div><span>{waitingCount} waiting</span></div><div className="queue-grid">{thoughts.filter((item) => item.replies.length === 0).map((item) => <button key={item.id} className="queue-item" onClick={() => openThought(item)}><span>{item.senderName || 'Anonymous'}</span><p>{item.text}</p><b>reply <ChevronRight size={13} /></b></button>)}{waitingCount === 0 && <div className="queue-clear"><Check size={17} /> You're all caught up.</div>}</div></section>
+      <section className="queue-section page-width"><div className="queue-head"><div><div className="eyebrow"><PenLine size={13} /> quick reply queue</div><h2>WAITING ON YOU.</h2></div><span>{waitingCount} waiting</span></div><div className="queue-grid">{thoughts.filter((item) => item.replies.length === 0).map((item) => <button key={item.id} className="queue-item" onClick={() => openThought(item)}><span>{item.senderName || 'Anonymous'}</span><p>{item.text}</p><b>reply <ChevronRight size={13} /></b></button>)}{waitingCount === 0 && <div className="queue-clear"><Check size={17} /> QUEUE CLEAR.</div>}</div></section>
     </main>
   )
 
   return (
     <main className="app-page public-page">
       <div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" /><div className="grain" />
-      <header className="topbar public-topbar"><button className="brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><span className="brand-icon">F</span><span>Fowzan's <span className="brand-muted">space</span></span></button><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></header>
+      <header className="topbar public-topbar"><button className="brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><span className="brand-icon"><Radio size={18} /></span><span>Fowzan Kar<span className="brand-muted"> / space</span></span></button><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private control</button></header>
 
       <section className="public-hero page-width">
-        <div className="hero-badge"><span /> anonymous · no account · no pressure</div>
-        <h1>Say the thing<br /><em>you'd rather type.</em></h1>
-        <p className="hero-lead">Questions, confessions, random thoughts — leave them here. Anonymous by default, honest by design.</p>
+        <div className="hero-badge"><span /> anonymous dropbox · open channel</div>
+        <h1>DROP THE THOUGHT.<br /><em>KEEP IT REAL.</em></h1>
+        <p className="hero-lead">Questions. Takes. Confessions. Random 2AM thoughts. Drop whatever is on your mind.</p>
         <div className="hero-actions"><a href="#leave-message" className="primary-button">Leave a message <ChevronRight size={17} /></a><button className="secondary-button" onClick={sharePage}>{copied ? <Check size={15} /> : <Share2 size={15} />} {copied ? 'link copied' : 'share this space'}</button></div>
-        <div className="hero-note"><Sparkles size={14} /><span>Say whatever comes to mind.</span><i>F</i></div>
+        <div className="hero-note"><Sparkles size={14} /><span>SEND IT. MOVE ON.</span><i>F</i></div>
       </section>
 
-      <section id="leave-message" className="composer-section page-width"><div className="section-intro"><div className="eyebrow"><PenLine size={13} /> leave something behind</div><h2>No perfect words<br /><span>needed.</span></h2></div>
-        <div className="message-composer"><div className="composer-label"><span className="pulse-dot" /> your message</div><textarea value={thought} onChange={(e) => setThought(e.target.value)} placeholder="Start typing…" rows={5} maxLength={500} /><div className="composer-meta"><span>{thought.length}/500</span><span>anonymous by default</span></div></div>
+      <section id="leave-message" className="composer-section page-width"><div className="section-intro"><div className="eyebrow"><PenLine size={13} /> send a message</div><h2>NO SCRIPT.<br /><span>JUST SEND IT.</span></h2></div>
+        <div className="message-composer"><div className="composer-label"><span className="pulse-dot" /> message payload</div><textarea value={thought} onChange={(e) => setThought(e.target.value)} placeholder="Start typing…" rows={5} maxLength={500} /><div className="composer-meta"><span>{thought.length}/500</span><span>identity hidden by default</span></div></div>
         <div className="identity-controls"><label><input type="checkbox" checked={revealName} onChange={(e) => setRevealName(e.target.checked)} /><span className="switch" /> include my name</label>{revealName && <input value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="display name" maxLength={80} />}</div>
         <button className="primary-button send-button" onClick={submitThought} disabled={!thought.trim() || sending}>{sending ? <><Loader2 size={16} className="spin" /> sending…</> : <>Send anonymously <Send size={16} /></>}</button>
       </section>
 
-      <section className="prompt-section page-width"><div className="section-intro compact"><div className="eyebrow"><Sparkles size={13} /> need a nudge?</div><h2>Pick a prompt.</h2></div><div className="prompt-grid">{prompts.map((prompt, index) => <button key={prompt} onClick={() => { setThought(prompt); document.getElementById('leave-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}><span>0{index + 1}</span>{prompt}<ChevronRight size={14} /></button>)}</div></section>
+      <section className="prompt-section page-width"><div className="section-intro compact"><div className="eyebrow"><Sparkles size={13} /> need a prompt?</div><h2>START WITH ONE.</h2></div><div className="prompt-grid">{prompts.map((prompt, index) => <button key={prompt} onClick={() => { setThought(prompt); document.getElementById('leave-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}><span>0{index + 1}</span>{prompt}<ChevronRight size={14} /></button>)}</div></section>
 
       {error && <div className="error-banner page-width">{error}</div>}
 
-      <section className="public-threads page-width"><div className="threads-heading"><div><div className="eyebrow"><MessageCircle size={13} /> public threads</div><h2>Open conversations.</h2><p>Some messages become conversations. Read them, or add your own reply.</p></div><span>{responses.length} live</span></div>
-        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading conversations…</div> : <div className="public-thread-list">{responses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><h3>{response.text}</h3>{response.replies.length > 0 && <div className="public-replies">{response.replies.map((reply) => <div key={reply.id}><div><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div><p>{reply.text}</p></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join thread</button></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!responses.length && <div className="empty-browser public-empty"><MessageCircle size={20} /><strong>No public threads yet.</strong><span>Be the first to start one.</span></div>}</div>}
+      <section className="public-threads page-width"><div className="threads-heading"><div><div className="eyebrow"><MessageCircle size={13} /> public threads</div><h2>LIVE THREADS.</h2><p>Questions that made it into the public feed. Read the thread or jump in.</p></div><span>{responses.length} live</span></div>
+        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> syncing live feed…</div> : <div className="public-thread-list">{responses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><h3>{response.text}</h3>{response.replies.length > 0 && <div className="public-replies">{response.replies.map((reply) => <div key={reply.id}><div><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div><p>{reply.text}</p></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join</button></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add your voice…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!responses.length && <div className="empty-browser public-empty"><MessageCircle size={20} /><strong>No live threads yet.</strong><span>Start the first conversation.</span></div>}</div>}
       </section>
 
-      <footer className="site-footer page-width"><div><span className="brand-icon">F</span><p>Built for honest questions,<br />quiet thoughts and good conversations.</p></div><div><button onClick={sharePage}><Copy size={14} /> share space</button><span>© {new Date().getFullYear()} Fowzan</span></div></footer>
+      <footer className="site-footer page-width"><div><span className="brand-icon"><Radio size={18} /></span><p>Built for honest questions,<br />quiet thoughts and good conversations.</p></div><div><button onClick={sharePage}><Copy size={14} /> share space</button><span>© {new Date().getFullYear()} Fowzan Kar</span></div></footer>
 
-      {sent && <div className="modal-backdrop" onClick={() => setSent(false)}><article className="success-modal" onClick={(e) => e.stopPropagation()}><div className="success-icon"><Check size={21} /></div><div className="eyebrow">message delivered</div><h2>That was sent.</h2><p>Your message is safely in Fowzan's inbox. Leave another whenever you feel like it.</p><button className="primary-button" onClick={() => setSent(false)}>Send another <ChevronRight size={17} /></button></article></div>}
+      {sent && <div className="modal-backdrop" onClick={() => setSent(false)}><article className="success-modal" onClick={(e) => e.stopPropagation()}><div className="success-icon"><Check size={21} /></div><div className="eyebrow">transmission complete</div><h2>MESSAGE SENT.</h2><p>Your message is in Fowzan Kar's inbox. Send another drop whenever you have something to say.</p><button className="primary-button" onClick={() => setSent(false)}>Send another drop <ChevronRight size={17} /></button></article></div>}
     </main>
   )
 }
