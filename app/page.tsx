@@ -327,17 +327,17 @@ export default function Page() {
       <header className="mx-auto flex max-w-7xl items-center justify-between gap-4">
         <button className="back-button" onClick={() => setView('public')}><ArrowLeft size={16} /> back to signal</button>
         <div className="flex items-center gap-2">
-          <button className="keep-filter" onClick={() => setShowKeeps(!showKeeps)}><Star size={15} fill={showKeeps ? 'currentColor' : 'none'} /> {showKeeps ? 'all threads' : 'saved signals'}</button>
-          <button className="keep-filter" onClick={logout}><LogOut size={15} /> exit inbox</button>
+          <button className="keep-filter" onClick={() => setShowKeeps(!showKeeps)}><Star size={15} fill={showKeeps ? 'currentColor' : 'none'} /> {showKeeps ? 'all threads' : 'saved messages'}</button>
+          <button className="keep-filter" onClick={logout}><LogOut size={15} /> leave inbox</button>
         </div>
       </header>
 
       <section className="mx-auto max-w-7xl pb-8 pt-8 sm:pt-10">
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
-            <div className="flex flex-wrap items-center gap-3"><div className="secret-sticker"><Mail size={14} /> private channel</div><span className="soft-pill">{unreadCount} unread</span></div>
+            <div className="flex flex-wrap items-center gap-3"><div className="secret-sticker"><Mail size={14} /> private inbox</div><span className="soft-pill">{unreadCount} unread</span></div>
             <h1 className="display-title mt-5 text-[3.2rem] sm:text-7xl">Your<br /><span>signals.</span></h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">Everything lands here. Open a signal, reply as yourself, and manage each conversation on your terms.</p>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">Everything lands here. Open a message, reply as yourself, and manage each conversation on your terms.</p>
           </div>
           <button className="share-icon" onClick={sharePage} aria-label="Share anonymous inbox"><Share2 size={17} /></button>
         </div>
@@ -347,8 +347,7 @@ export default function Page() {
         <div className="inbox-layout mt-8">
           <aside className="inbox-sidebar">
             <div className="flex items-center justify-between gap-3">
-              <div><div className="section-kicker"><MessageCircle size={14} /> signal list</div><p className="mt-1 text-xs text-muted-foreground">{visibleThoughts.length} conversations</p></div>
-              <span className="soft-pill">online</span>
+              <div><div className="section-kicker"><MessageCircle size={14} /> message list</div><p className="mt-1 text-xs text-muted-foreground">{visibleThoughts.length} conversations</p></div>
             </div>
             <div className="thread-list mt-4">
               {visibleThoughts.map((item) => (
@@ -364,19 +363,19 @@ export default function Page() {
 
           <section className="thread-workspace">
             {!selected ? (
-              <div className="thread-placeholder"><MessageCircle size={22} /><h2>Pick a signal</h2><p>Choose a message on the left to open the conversation.</p></div>
+              <div className="thread-placeholder"><MessageCircle size={22} /><h2>Select a thread</h2><p>Choose a message from the list to open the conversation.</p></div>
             ) : (
               <div className="thread-panel">
                 <div className="thread-panel-header">
-                  <div className="min-w-0"><div className="section-kicker"><span className="h-2 w-2 rounded-full bg-punch" /> signal</div><h2 className="mt-2 truncate font-serif text-2xl sm:text-3xl">{selected.senderName || 'Anonymous'}</h2><p className="mt-1 text-xs text-muted-foreground">{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {formatTime(selected.time)}</p></div>
-                  <button className="small-action" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><X size={14} /> {deleteBusy === `thread-${selected.id}` ? 'deleting…' : 'remove signal'}</button>
+                  <div className="min-w-0"><div className="section-kicker"><span className="h-2 w-2 rounded-full bg-punch" /> message</div><h2 className="mt-2 truncate font-serif text-2xl sm:text-3xl">{selected.senderName || 'Anonymous'}</h2><p className="mt-1 text-xs text-muted-foreground">{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {formatTime(selected.time)}</p></div>
+                  <button className="small-action" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><X size={14} /> {deleteBusy === `thread-${selected.id}` ? 'deleting…' : 'remove message'}</button>
                 </div>
 
                 <div className="thread-scroll">
                   <article className="thread-message original-message">
                     <div className="thread-message-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div>
                     <p>{selected.text}</p>
-                    <button className="thread-delete" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><X size={12} /> remove signal</button>
+                    <button className="thread-delete" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><X size={12} /> remove message</button>
                   </article>
 
                   {selected.replies.map((reply) => (
@@ -424,10 +423,10 @@ export default function Page() {
 
       <section className="relative z-10 mx-auto max-w-4xl pb-16 pt-14 sm:pt-24">
         <div className="identity-row">
-          <div className="avatar funky-avatar"><MessageCircle size={24} strokeWidth={1.8} /></div>
+          <div className="avatar funky-avatar"><Mail size={25} strokeWidth={1.7} /></div>
           <div>
-            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous mode</div>
-            <p className="mt-2 text-sm text-muted-foreground">Send a message without showing your name.</p>
+            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous messages</div>
+            <p className="mt-2 text-sm text-muted-foreground">Send a message without revealing who you are.</p>
           </div>
         </div>
 
@@ -462,7 +461,7 @@ export default function Page() {
         </div>
 
         <div className="prompt-deck mt-8">
-          <div className="section-kicker"><Sparkles size={13} /> need a starting point?</div>
+          <div className="section-kicker"><Sparkles size={13} /> pick a prompt</div>
           <div className="prompt-tiles mt-3">
             {prompts.map((prompt) => (
               <button key={prompt} className="prompt-tile" onClick={() => setThought(prompt)}>{prompt}</button>
@@ -480,9 +479,9 @@ export default function Page() {
       <section className="responses-section relative z-10 mx-auto max-w-4xl border-t border-border/70 pb-24 pt-16">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <div className="section-kicker"><MessageCircle size={14} /> public conversations</div>
+            <div className="section-kicker"><Mail size={14} /> open threads</div>
             <h2 className="mt-3 font-serif text-4xl tracking-[-0.04em]">Open <span>threads.</span></h2>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">Questions Fowzan has chosen to answer publicly. Join a thread without creating an account.</p>
+            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">Messages Fowzan has chosen to open up. Join the conversation without an account.</p>
           </div>
           <span className="soft-pill">{responses.length} threads</span>
         </div>
