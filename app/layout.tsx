@@ -1,10 +1,10 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { DM_Sans, Instrument_Serif } from 'next/font/google'
+import { Press_Start_2P, Space_Mono } from 'next/font/google'
 import './globals.css'
 
-const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-sans-custom' })
-const instrumentSerif = Instrument_Serif({ subsets: ['latin'], variable: '--font-serif-custom', weight: '400' })
+const spaceMono = Space_Mono({ subsets: ['latin'], variable: '--font-sans-custom', weight: ['400', '700'] })
+const pressStart = Press_Start_2P({ subsets: ['latin'], variable: '--font-display', weight: '400' })
 
 export const metadata: Metadata = {
   title: "Fowzan's Inbox — Anonymous messages",
@@ -31,7 +31,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="bg-background">
-      <body className={`${dmSans.variable} ${instrumentSerif.variable} antialiased`}>
+      <body className={`${spaceMono.variable} ${pressStart.variable} antialiased`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

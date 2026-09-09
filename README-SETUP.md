@@ -1,6 +1,6 @@
 # Fowzan's Inbox
 
-An elegant anonymous-message website with a deep red/black palette, a quiet animated particle background, and subtle arcade-inspired interaction details. It retains the anonymous messaging, threaded replies, owner authentication, moderation, and database behavior from the original project.
+A teen-cyberpunk anonymous-message website: almost-black panels, hot red and acid-green accents, pixel-display typography, and a visible animated grid/particle background. It retains the anonymous messaging, threaded replies, owner authentication, moderation, and database behavior from the original project.
 
 ## Run locally
 
@@ -10,9 +10,9 @@ An elegant anonymous-message website with a deep red/black palette, a quiet anim
 
 ## Design highlights
 
-- Responsive deep-red editorial layout with a soft animated particle field and ambient background glow.
-- Clear, human copy focused on anonymous questions, thoughts, and replies.
-- Tactile hover states, elevated conversation cards, and accessible reduced-motion support.
+- Responsive black, red, and green cyberpunk layout with an animated perspective grid and minimal drifting particles.
+- Pixel-style display font for major headings and a compact technical mono font for interface content.
+- Tactile hover states, sharp arcade-inspired cards, and accessible reduced-motion support.
 - A private inbox for reading, replying to, saving, and managing threads.
 
 ## Original functional behavior
