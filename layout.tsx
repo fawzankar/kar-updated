@@ -7,7 +7,7 @@ const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-sans-custom' })
 const instrumentSerif = Instrument_Serif({ subsets: ['latin'], variable: '--font-serif-custom', weight: '400' })
 
 export const metadata: Metadata = {
-  title: "Fowzan's Inbox — Anonymous messages",
+  title: "Fowzan's Inbox",
   description: 'Leave Fowzan an anonymous question, thought, or reply.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   openGraph: {

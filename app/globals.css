@@ -404,3 +404,46 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
 @keyframes not-found-pulse{0%,100%{box-shadow:0 0 7px #b7ff36}50%{box-shadow:0 0 20px #b7ff36}}
 @keyframes not-found-scan{0%,35%{transform:translateX(-100%)}65%,100%{transform:translateX(100%)}}
 @media(max-width:600px){.not-found-card{border-radius:22px;padding:32px 24px}.not-found-card h1{font-size:28px}.not-found-card p{font-size:13px}.not-found-mark{margin-top:38px}}
+
+/* Final mobile polish: keep the inbox brand anchored to the left and make the icon/wordmark read as one unit. */
+@media (max-width: 640px) {
+  .public-topbar {
+    justify-content: flex-start;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .public-topbar .brand.wordmark {
+    justify-content: flex-start;
+    flex: 0 0 auto;
+    gap: 7px;
+    min-width: max-content;
+    font-size: 10px;
+    letter-spacing: .035em;
+    line-height: 1;
+  }
+
+  .public-topbar .brand.wordmark svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+  }
+
+  .public-topbar .topbar-controls {
+    margin-left: auto;
+    min-width: 0;
+  }
+
+  .public-topbar .private-button {
+    white-space: nowrap;
+  }
+
+  .thread-contribute-hint {
+    max-width: 31rem;
+    line-height: 1.55;
+  }
+
+  .composer-label {
+    letter-spacing: .12em;
+  }
+}
