@@ -10,9 +10,10 @@ A teen-cyberpunk anonymous-message website: almost-black panels, hot red and aci
 
 ## Design highlights
 
-- Responsive black, red, and green cyberpunk layout with an animated perspective grid and minimal drifting particles.
+- Responsive black-and-green cyberpunk layout with an animated perspective grid, visible Matrix rain, and minimal drifting particles.
 - Pixel-style display font for major headings and a compact technical mono font for interface content.
 - Tactile hover states, sharp arcade-inspired cards, and accessible reduced-motion support.
+- A built-in Green / Red / Blue / Yellow theme selector on the public page.
 - A private inbox for reading, replying to, saving, and managing threads.
 
 ## Original functional behavior
