@@ -4,15 +4,9 @@ declare global {
   var __fowzanPool: Pool | undefined
 }
 
-const connectionString = process.env.STORAGE_DATABASE_URL || process.env.DATABASE_URL
-
-if (!connectionString) {
-  throw new Error('No database connection string configured.')
-}
-
 export const pool = globalThis.__fowzanPool ?? new Pool({
-  connectionString,
-  ssl: { rejectUnauthorized: false },
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
   max: 5,
 })
 
@@ -36,11 +30,6 @@ export async function ensureSchema() {
       author TEXT NOT NULL DEFAULT 'Fowzan',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    ALTER TABLE messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
-    ALTER TABLE messages ADD COLUMN IF NOT EXISTS sender_name TEXT;
-    ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN NOT NULL DEFAULT FALSE;
-    ALTER TABLE messages ADD COLUMN IF NOT EXISTS kept BOOLEAN NOT NULL DEFAULT FALSE;
-    ALTER TABLE responses ADD COLUMN IF NOT EXISTS author TEXT NOT NULL DEFAULT 'Fowzan';
     CREATE INDEX IF NOT EXISTS messages_created_idx ON messages(created_at DESC);
     CREATE INDEX IF NOT EXISTS responses_message_idx ON responses(message_id);
   `)

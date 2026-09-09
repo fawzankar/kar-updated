@@ -24,12 +24,12 @@ type PublicResponse = {
 }
 
 const prompts = [
-  'Ask me something you have always wondered.',
-  'Tell me something you would never say in person.',
-  'What should I know right now?',
-  'Leave a question for a future version of me.',
-  'Tell me a tiny story from your day.',
-  'Say something completely unfiltered.'
+  'What have you always wanted to ask me?',
+  'What would you say if you could stay anonymous?',
+  'What is something you think I should know?',
+  'Leave a question for future Fowzan.',
+  'What happened today that is worth sharing?',
+  'Drop a completely unfiltered thought.'
 ]
 
 const emptyResponses: PublicResponse[] = []
@@ -185,28 +185,11 @@ export default function Page() {
   async function deleteThought(id: number) {
     try {
       const response = await fetch(`/api/messages?id=${id}`, { method: 'DELETE' })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error ?? 'Could not delete the message.')
+      if (!response.ok) throw new Error('Could not delete the message.')
       setThoughts((current) => current.filter((item) => item.id !== id))
-      setResponses((current) => current.filter((item) => item.id !== id))
       setSelected(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not delete the message.')
-    }
-  }
-
-  async function deleteReply(responseId: number, threadId: number) {
-    try {
-      const response = await fetch(`/api/messages?responseId=${responseId}`, { method: 'DELETE' })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error ?? 'Could not delete the reply.')
-      setResponses((current) => current.map((thread) => thread.id === threadId
-        ? { ...thread, replies: thread.replies.filter((reply) => reply.id !== responseId) }
-        : thread
-      ))
-      await loadOwner()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not delete the reply.')
     }
   }
 
@@ -286,9 +269,9 @@ export default function Page() {
       </button>
       <section className="mx-auto flex min-h-[82vh] max-w-md flex-col justify-center">
         <div className="secret-sticker"><ShieldCheck size={14} /> private inbox</div>
-        <h1 className="display-title mt-6">Your<br /><span>inbox.</span></h1>
+        <h1 className="display-title mt-6">PRIVATE<br /><span>CHANNEL.</span></h1>
         <p className="mt-6 max-w-xs text-sm leading-6 text-muted-foreground">
-          A private space for messages people leave you. Authentication is handled on the server.
+          Your private control room for incoming messages and conversations.
         </p>
         <form onSubmit={unlock} className="mt-9 space-y-3">
           <label className="sr-only" htmlFor="owner-password">Owner password</label>
@@ -331,9 +314,9 @@ export default function Page() {
         </div>
         <div className="mt-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <h1 className="display-title">{showKeeps ? <>Worth<br /><span>keeping.</span></> : <>What people<br /><span>left you.</span></>}</h1>
+            <h1 className="display-title">{showKeeps ? <>SAVED<br /><span>MESSAGES.</span></> : <>YOUR<br /><span>INBOX.</span></>}</h1>
             <p className="mt-5 max-w-md text-sm leading-6 text-muted-foreground">
-              {showKeeps ? 'Messages you chose to keep close.' : 'Read, reply, save or remove messages from your private inbox.'}
+              {showKeeps ? 'Your saved messages.' : 'Manage incoming messages, open conversations, reply, keep or delete.'}
             </p>
           </div>
           <button className="share-icon" onClick={sharePage} aria-label="Share anonymous inbox">
@@ -374,17 +357,19 @@ export default function Page() {
                   </div>
                   <span className="queue-status">{answeredThoughtIds.includes(item.id) ? 'answered' : 'waiting'}</span>
                 </div>
-                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                {!answeredThoughtIds.includes(item.id) && (
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                     <input
                       value={ownerReplies[item.id] ?? ''}
                       onChange={(event) => setOwnerReplies((current) => ({ ...current, [item.id]: event.target.value }))}
-                      placeholder="reply publicly as Fowzan..."
+                      placeholder="reply as Fowzan..."
                       aria-label={`Reply to ${item.text}`}
                       className="name-input flex-1"
                       maxLength={1000}
                     />
                     <button className="reply-trigger" onClick={() => submitOwnerReply(item.id, item.text)}>post reply</button>
                   </div>
+                )}
               </div>
             ))}
           </div>
@@ -397,19 +382,6 @@ export default function Page() {
             <button className="absolute right-5 top-5 text-muted-foreground" onClick={() => setSelected(null)} aria-label="Close message"><X size={18} /></button>
             <div className="secret-sticker"><span className="h-2 w-2 rounded-full bg-punch" /> {selected.senderName || 'Anonymous'}</div>
             <p className="mt-10 font-serif text-3xl leading-tight tracking-[-0.03em]">{selected.text}</p>
-            {responses.find((thread) => thread.id === selected.id)?.replies?.length ? (
-              <div className="mt-8 space-y-2">
-                {responses.find((thread) => thread.id === selected.id)!.replies.map((reply) => (
-                  <div key={reply.id} className="reply-card">
-                    <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                      <span className={reply.author === 'Fowzan' ? 'fowzan-author' : ''}>{reply.author}</span>
-                      <button className="small-action" onClick={() => deleteReply(reply.id, selected.id)}><X size={12} /> Delete</button>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-foreground/85">{reply.text}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
             <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-xs text-muted-foreground">
               <span>{formatTime(selected.time)}</span>
               <div className="flex flex-wrap gap-2">
@@ -424,7 +396,7 @@ export default function Page() {
       {shareCard && (
         <div className="modal-backdrop" onClick={() => setShareCard(null)}>
           <article className="share-card" onClick={(event) => event.stopPropagation()}>
-            <div className="secret-sticker sticker-dark">a message for Fowzan</div>
+            <div className="secret-sticker sticker-dark">A MESSAGE FOR FOWZAN</div>
             <p className="mt-12 font-serif text-3xl leading-tight">{shareCard.text}</p>
             <div className="mt-16 text-xs uppercase tracking-[0.2em] text-primary-foreground/60">anonymous · {formatTime(shareCard.time)}</div>
             <button className="funky-button funky-button-light mt-8 w-full" onClick={() => setShareCard(null)}>Done</button>
@@ -439,31 +411,31 @@ export default function Page() {
       <div className="ambient-backdrop" aria-hidden="true"><div className="ambient-grid" />{Array.from({ length: 20 }).map((_, index) => <span key={index} className="ambient-particle" style={{ '--particle': index } as React.CSSProperties} />)}</div>
 
       <header className="relative z-10 mx-auto flex max-w-4xl items-center justify-between">
-        <div className="brand-mark"><span>FK</span>owzan's inbox</div>
+        <div className="brand-mark"><span className="brand-status" /> <strong>Fowzan Kar</strong><em> / inbox</em></div>
         <button className="owner-link" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button>
       </header>
 
       <section className="relative z-10 mx-auto max-w-4xl pb-16 pt-14 sm:pt-24">
         <div className="identity-row">
-          <div className="avatar funky-avatar">F</div>
+          <div className="nameplate"><span>FOWZAN</span><b>KAR</b></div>
           <div>
-            <div className="eyebrow"><Sparkles size={13} /> anonymous messages</div>
-            <p className="mt-2 text-sm text-muted-foreground">Ask Fowzan anything. Leave a thought. Keep your name to yourself.</p>
+            <div className="eyebrow"><Sparkles size={13} /> anonymous dropbox</div>
+            <p className="mt-2 text-sm text-muted-foreground">Questions, thoughts, hot takes — send them straight to Fowzan.</p>
           </div>
         </div>
 
         <div className="hero-copy">
           <div>
-            <h1 className="display-title">Say it.<br /><span>Leave it here.</span></h1>
-            <p className="hero-line">A private little corner for questions, thoughts and things that are easier to write than say.</p>
+            <h1 className="display-title">DROP IT.<br /><span>KEEP IT ANONYMOUS.</span></h1>
+            <p className="hero-line">A private channel for questions, stories, opinions and random thoughts.</p>
           </div>
-          <div className="orbit-note">no account<br />no pressure<br />your choice</div>
+          <div className="orbit-note">ANONYMOUS<br />FAST<br />NO ACCOUNT</div>
         </div>
 
         <div className="question-box mt-10 w-full text-left">
-          <div className="question-label"><span className="signal-dot" /> leave a message</div>
+          <div className="question-label"><span className="signal-dot" /> NEW MESSAGE</div>
           <div className="message-shell funky-shell">
-            <textarea value={thought} onChange={(event) => setThought(event.target.value)} placeholder="write whatever you want..." rows={5} maxLength={500} aria-label="Your anonymous message" />
+            <textarea value={thought} onChange={(event) => setThought(event.target.value)} placeholder="type your message..." rows={5} maxLength={500} aria-label="Your anonymous message" />
             <div className="flex items-center justify-between border-t border-border/70 pt-4">
               <span className={`text-xs ${thought.length > 450 ? 'text-punch' : 'text-muted-foreground'}`}>{thought.length}/500</span>
               <span className="text-xs text-muted-foreground">anonymous by default</span>
@@ -484,7 +456,7 @@ export default function Page() {
         </div>
 
         <div className="prompt-deck mt-8">
-          <div className="section-kicker"><Sparkles size={13} /> not sure what to write?</div>
+          <div className="section-kicker"><Sparkles size={13} /> NEED A STARTER?</div>
           <div className="prompt-tiles mt-3">
             {prompts.map((prompt) => (
               <button key={prompt} className="prompt-tile" onClick={() => setThought(prompt)}>{prompt}</button>
@@ -503,9 +475,9 @@ export default function Page() {
       <section className="responses-section relative z-10 mx-auto max-w-4xl border-t border-border/70 pb-24 pt-16">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <div className="section-kicker"><MessageCircle size={14} /> public conversations</div>
-            <h2 className="mt-3 font-serif text-4xl tracking-[-0.04em]">Open <span>threads.</span></h2>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">Questions Fowzan has chosen to answer publicly. Join a thread without creating an account.</p>
+            <div className="section-kicker"><MessageCircle size={14} /> LIVE THREADS</div>
+            <h2 className="mt-3 font-serif text-4xl tracking-[-0.04em]">Open <span>conversations.</span></h2>
+            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">Questions Fowzan has answered publicly. Jump into a conversation without creating an account.</p>
           </div>
           <span className="soft-pill">{responses.length} threads</span>
         </div>
@@ -558,8 +530,8 @@ export default function Page() {
         <div className="modal-backdrop" onClick={() => setSent(false)}>
           <article className="note-modal text-center" onClick={(event) => event.stopPropagation()}>
             <div className="success-mark"><Check size={20} /></div>
-            <h2 className="mt-6 font-serif text-4xl tracking-[-0.04em]">Message sent.</h2>
-            <p className="mx-auto mt-4 max-w-xs text-sm leading-6 text-muted-foreground">It is safely on its way. You can leave another whenever you want.</p>
+            <h2 className="mt-6 font-serif text-4xl tracking-[-0.04em]">MESSAGE SENT.</h2>
+            <p className="mx-auto mt-4 max-w-xs text-sm leading-6 text-muted-foreground">Your message is in the inbox. Drop another whenever you have something to say.</p>
             <button className="funky-button mt-8 w-full" onClick={() => setSent(false)}>send another</button>
           </article>
         </div>
