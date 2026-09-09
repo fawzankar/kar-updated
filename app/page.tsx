@@ -425,8 +425,8 @@ export default function Page() {
         <div className="identity-row">
           <div className="avatar funky-avatar"><Mail size={25} strokeWidth={1.7} /></div>
           <div>
-            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous messages</div>
-            <p className="mt-2 text-sm text-muted-foreground">Send a message without revealing who you are.</p>
+            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous channel</div>
+            <p className="mt-2 text-sm text-muted-foreground">Leave a message without revealing who you are.</p>
           </div>
         </div>
 
@@ -461,7 +461,7 @@ export default function Page() {
         </div>
 
         <div className="prompt-deck mt-8">
-          <div className="section-kicker"><Sparkles size={13} /> pick a prompt</div>
+          <div className="section-kicker"><Sparkles size={13} /> need a prompt?</div>
           <div className="prompt-tiles mt-3">
             {prompts.map((prompt) => (
               <button key={prompt} className="prompt-tile" onClick={() => setThought(prompt)}>{prompt}</button>
@@ -479,9 +479,9 @@ export default function Page() {
       <section className="responses-section relative z-10 mx-auto max-w-4xl border-t border-border/70 pb-24 pt-16">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <div className="section-kicker"><Mail size={14} /> open threads</div>
+            <div className="section-kicker"><Mail size={14} /> open conversations</div>
             <h2 className="mt-3 font-serif text-4xl tracking-[-0.04em]">Open <span>threads.</span></h2>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">Messages Fowzan has chosen to open up. Join the conversation without an account.</p>
+            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">Conversations Fowzan has chosen to share. Read along or join in.</p>
           </div>
           <span className="soft-pill">{responses.length} threads</span>
         </div>
@@ -525,7 +525,7 @@ export default function Page() {
                 </div>
               </article>
             ))}
-            {!responses.length && <div className="empty-note">No open threads yet. Be the first to start one.</div>}
+            {!responses.length && <div className="empty-note">No open conversations yet. Be the first to start one.</div>}
           </div>
         )}
       </section>
