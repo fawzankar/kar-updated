@@ -230,7 +230,7 @@ export default function Page() {
     const url = window.location.href
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Fowzan's inbox", text: 'Leave a message in Fowzan's inbox.', url })
+        await navigator.share({ title: "Fowzan's inbox", text: "Leave a message in Fowzan's inbox.", url })
       } else {
         await navigator.clipboard.writeText(url)
         setCopied(true)
