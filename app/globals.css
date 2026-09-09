@@ -165,9 +165,19 @@
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
-.thread-modal { max-height: 88vh; overflow-y: auto; }
-.thread-conversation { max-height: 34vh; overflow-y: auto; padding-right: 4px; }
-.thread-reply { border-left: 2px solid var(--border); padding: 12px 14px; margin: 8px 0; border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--muted) 35%, transparent); }
-.thread-reply-owner { border-left-color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); }
-.reply-delete { opacity: .55; border-radius: 999px; padding: 3px; }
-.reply-delete:hover { opacity: 1; background: color-mix(in srgb, var(--destructive) 10%, transparent); }
+@layer components {
+  .reply-queue { @apply overflow-hidden rounded-[2rem] border border-border bg-card/75 p-4 shadow-[6px_7px_0_color-mix(in_oklch,var(--primary)_10%,transparent)] backdrop-blur-sm sm:p-5; }
+  .reply-queue-head { @apply flex items-start justify-between gap-4 border-b border-border/70 pb-4; }
+  .queue-count { @apply shrink-0 rounded-full bg-primary px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-primary-foreground; }
+  .reply-queue-list { @apply mt-4 grid gap-3 sm:grid-cols-2; }
+  .reply-queue-card { @apply relative overflow-hidden rounded-[1.35rem] border border-border/80 bg-background/80 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[4px_5px_0_color-mix(in_oklch,var(--accent)_22%,transparent)]; }
+  .reply-queue-card::after { content: ''; @apply pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-primary/5 transition-transform duration-500; }
+  .reply-queue-card:hover::after { @apply scale-150; }
+  .reply-queue-meta { @apply relative z-10 flex items-center justify-between gap-3 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground; }
+  .reply-queue-meta > span:first-child { @apply flex min-w-0 items-center gap-2 truncate; }
+  .queue-dot { @apply h-2 w-2 shrink-0 rounded-full bg-punch shadow-[0_0_0_4px_color-mix(in_oklch,var(--punch)_10%,transparent)]; }
+  .reply-queue-card p { @apply relative z-10 mt-4 line-clamp-2 font-serif text-lg leading-tight tracking-[-0.02em] text-foreground; }
+  .queue-action { @apply relative z-10 mt-4 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-primary transition; }
+  .reply-queue-card:hover .queue-action { @apply translate-x-0.5; }
+  .reply-queue-empty { @apply mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-border px-4 py-5 text-xs font-medium text-muted-foreground; }
+}

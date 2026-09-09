@@ -13,7 +13,6 @@ type Thought = {
   unread?: boolean
   kept?: boolean
   senderName?: string | null
-  replies?: { id: number; text: string; time: string; author: string }[]
 }
 
 type PublicResponse = {
@@ -64,11 +63,10 @@ export default function Page() {
   const [replyName, setReplyName] = useState('')
   const [replyReveal, setReplyReveal] = useState(false)
   const [ownerReplies, setOwnerReplies] = useState<Record<number, string>>({})
-  const [sendingOwnerReplies, setSendingOwnerReplies] = useState<Record<number, boolean>>({})
-  const [answeredThoughtIds, setAnsweredThoughtIds] = useState<number[]>([])
   const [ambientScene, setAmbientScene] = useState<'stars' | 'snow' | 'orbits' | 'grid'>('stars')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [sendingOwnerReplies, setSendingOwnerReplies] = useState<Record<number, boolean>>({})
   const [error, setError] = useState('')
 
   const visibleThoughts = useMemo(
@@ -76,6 +74,10 @@ export default function Page() {
     [showKeeps, thoughts]
   )
   const unreadCount = thoughts.filter((item) => item.unread).length
+  const replyQueue = useMemo(() => visibleThoughts.filter((item) => {
+    const thread = responses.find((entry) => entry.id === item.id)
+    return !thread?.replies?.some((reply) => reply.author === 'Fowzan')
+  }), [visibleThoughts, responses])
 
   async function loadPublic() {
     try {
@@ -98,14 +100,8 @@ export default function Page() {
     }
     if (!response.ok) throw new Error('Could not load your inbox.')
     const data = await response.json()
-    const loadedMessages = (data.messages ?? []).map((message: Thought) => ({ ...message, replies: message.replies ?? [] }))
-    setThoughts(loadedMessages)
-    setSelected((current) => {
-      if (!current) return current
-      return loadedMessages.find((item: Thought) => item.id === current.id) ?? current
-    })
+    setThoughts(data.messages ?? [])
     setResponses(data.responses ?? [])
-    setAnsweredThoughtIds(data.answeredThoughtIds ?? [])
   }
 
   useEffect(() => {
@@ -116,22 +112,6 @@ export default function Page() {
     }, 9000)
     return () => window.clearInterval(timer)
   }, [])
-
-  // Always refresh the private inbox when it becomes visible. This prevents
-  // the thread list from staying on the old snapshot after a new message
-  // arrives while the owner session is already unlocked.
-  useEffect(() => {
-    if (view !== 'private' || !ownerUnlocked) return
-    loadOwner().catch((err) => {
-      setError(err instanceof Error ? err.message : 'Could not load your inbox.')
-    })
-
-    const refresh = window.setInterval(() => {
-      loadOwner().catch(() => {})
-    }, 15000)
-
-    return () => window.clearInterval(refresh)
-  }, [view, ownerUnlocked])
 
   async function submitThought() {
     const text = thought.trim()
@@ -211,23 +191,12 @@ export default function Page() {
   async function deleteThought(id: number) {
     try {
       const response = await fetch(`/api/messages?id=${id}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Could not delete the message.')
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error ?? 'Could not delete the message.')
       setThoughts((current) => current.filter((item) => item.id !== id))
       setSelected(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not delete the message.')
-    }
-  }
-
-  async function deleteReply(replyId: number) {
-    try {
-      const response = await fetch(`/api/messages?replyId=${replyId}`, { method: 'DELETE' })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error ?? 'Could not delete the reply.')
-      await loadOwner()
-      setSelected((current) => current ? { ...current, replies: (current.replies ?? []).filter((reply) => reply.id !== replyId) } : current)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not delete the reply.')
     }
   }
 
@@ -271,7 +240,10 @@ export default function Page() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })
       })
-      const data = await response.json()
+      const contentType = response.headers.get('content-type') ?? ''
+      const data = contentType.includes('application/json')
+        ? await response.json()
+        : { error: await response.text() }
       if (!response.ok) throw new Error(data.error ?? 'Invalid password.')
       setOwnerUnlocked(true)
       setPassword('')
@@ -287,6 +259,14 @@ export default function Page() {
     setView('public')
     setThoughts([])
   }
+
+  useEffect(() => {
+    if (view !== 'private' || !ownerUnlocked) return
+    const timer = window.setInterval(() => {
+      loadOwner().catch(() => {})
+    }, 15000)
+    return () => window.clearInterval(timer)
+  }, [view, ownerUnlocked])
 
   function openThought(item: Thought) {
     setSelected(item)
@@ -364,7 +344,33 @@ export default function Page() {
 
         {error && <div className="error-banner mt-8" role="alert">{error}</div>}
 
-        <div className="thought-grid mt-12">
+        <section className="reply-queue mt-10" aria-label="Reply queue">
+          <div className="reply-queue-head">
+            <div>
+              <div className="section-kicker"><PenLine size={13} /> reply queue</div>
+              <p className="mt-2 text-sm text-muted-foreground">Messages waiting for your first reply.</p>
+            </div>
+            <span className="queue-count">{replyQueue.length} waiting</span>
+          </div>
+          {replyQueue.length ? (
+            <div className="reply-queue-list">
+              {replyQueue.slice(0, 4).map((item) => (
+                <button key={item.id} onClick={() => openThought(item)} className="reply-queue-card">
+                  <div className="reply-queue-meta">
+                    <span><span className="queue-dot" />{item.senderName || 'Anonymous'}</span>
+                    <span>{formatTime(item.time)}</span>
+                  </div>
+                  <p>{item.text}</p>
+                  <span className="queue-action"><MessageCircle size={13} /> reply</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="reply-queue-empty"><Check size={15} /> You’re all caught up.</div>
+          )}
+        </section>
+
+        <div className="thought-grid mt-8">
           {visibleThoughts.map((item) => (
             <button key={item.id} onClick={() => openThought(item)} className={`funky-card group ${item.unread ? 'funky-card-new' : ''}`}>
               <div className="flex items-center justify-between">
@@ -382,81 +388,64 @@ export default function Page() {
         </div>
         {!visibleThoughts.length && <div className="empty-note">{showKeeps ? 'Nothing kept here yet.' : 'Your inbox is empty.'}</div>}
 
-        <div className="owner-threads mt-16">
-          <div className="section-kicker"><MessageCircle size={14} /> reply queue</div>
-          <p className="mt-2 text-sm text-muted-foreground">Answer questions publicly when you want to open a conversation.</p>
-          <div className="mt-5 space-y-3">
-            {thoughts.filter((item) => !answeredThoughtIds.includes(item.id)).map((item) => (
-              <div key={item.id} className="owner-thread">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <span className="thread-author">{item.senderName || 'Anonymous'}</span>
-                    <p className="mt-2 text-sm">{item.text}</p>
-                  </div>
-                  <span className="queue-status">{answeredThoughtIds.includes(item.id) ? 'answered' : 'waiting'}</span>
-                </div>
-                {!answeredThoughtIds.includes(item.id) && (
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                    <input
-                      value={ownerReplies[item.id] ?? ''}
-                      onChange={(event) => setOwnerReplies((current) => ({ ...current, [item.id]: event.target.value }))}
-                      placeholder="reply publicly as Fowzan..."
-                      aria-label={`Reply to ${item.text}`}
-                      className="name-input flex-1"
-                      maxLength={1000}
-                    />
-                    <button className="reply-trigger" onClick={() => { openThought(item); setTimeout(() => document.getElementById(`owner-reply-${item.id}`)?.focus(), 0) }}>reply</button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+
       </section>
 
       {selected && (
         <div className="modal-backdrop" onClick={() => setSelected(null)}>
-          <article className="note-modal thread-modal" onClick={(event) => event.stopPropagation()}>
-            <button className="absolute right-5 top-5 text-muted-foreground" onClick={() => setSelected(null)} aria-label="Close conversation"><X size={18} /></button>
+          <article className="note-modal" onClick={(event) => event.stopPropagation()}>
+            <button className="absolute right-5 top-5 text-muted-foreground" onClick={() => setSelected(null)} aria-label="Close message"><X size={18} /></button>
             <div className="secret-sticker"><span className="h-2 w-2 rounded-full bg-punch" /> {selected.senderName || 'Anonymous'}</div>
-            <p className="mt-8 font-serif text-3xl leading-tight tracking-[-0.03em]">{selected.text}</p>
-            <div className="mt-3 text-xs text-muted-foreground">{formatTime(selected.time)} · {selected.replies?.length ?? 0} {(selected.replies?.length ?? 0) === 1 ? 'reply' : 'replies'}</div>
+            <p className="mt-10 font-serif text-3xl leading-tight tracking-[-0.03em]">{selected.text}</p>
 
-            <div className="thread-conversation mt-8">
-              {(selected.replies ?? []).map((reply) => (
-                <div key={reply.id} className={`thread-reply ${reply.author === 'Fowzan' ? 'thread-reply-owner' : ''}`}>
-                  <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                    <span className={reply.author === 'Fowzan' ? 'fowzan-author' : ''}>{reply.author}</span>
-                    <div className="flex items-center gap-2"><span>{formatTime(reply.time)}</span><button className="reply-delete" onClick={() => deleteReply(reply.id)} aria-label="Delete reply"><X size={12} /></button></div>
+            {(() => {
+              const thread = responses.find((entry) => entry.id === selected.id)
+              return (
+                <div className="mt-8 border-t border-border pt-6">
+                  {thread?.replies?.length ? (
+                    <div className="space-y-3">
+                      <div className="section-kicker"><MessageCircle size={13} /> conversation</div>
+                      {thread.replies.map((reply) => (
+                        <div key={reply.id} className="reply-card">
+                          <div className="flex justify-between text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                            <span className={reply.author === 'Fowzan' ? 'fowzan-author' : ''}>{reply.author}</span>
+                            <span>{formatTime(reply.time)}</span>
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-foreground/85">{reply.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="section-kicker"><MessageCircle size={13} /> no replies yet</div>
+                  )}
+
+                  <div className="mt-5 space-y-2">
+                    <div className="reply-form">
+                      <input
+                        value={ownerReplies[selected.id] ?? ''}
+                        onChange={(event) => setOwnerReplies((current) => ({ ...current, [selected.id]: event.target.value }))}
+                        placeholder="reply as Fowzan..."
+                        aria-label="Reply as Fowzan"
+                        maxLength={1000}
+                      />
+                      <button
+                        onClick={() => submitOwnerReply(selected.id)}
+                        disabled={!ownerReplies[selected.id]?.trim() || !!sendingOwnerReplies[selected.id]}
+                        aria-label="Send reply as Fowzan"
+                      >
+                        <ArrowLeft className="rotate-180" size={16} />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">You can reply to this message as many times as you want.</p>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-foreground/90">{reply.text}</p>
                 </div>
-              ))}
-              {!(selected.replies?.length) && <p className="text-sm text-muted-foreground">No replies yet. Start the conversation.</p>}
-            </div>
-
-            <div className="mt-6 border-t border-border pt-5">
-              <div className="reply-form">
-                <input
-                  id={`owner-reply-${selected.id}`}
-                  value={ownerReplies[selected.id] ?? ''}
-                  onChange={(event) => setOwnerReplies((current) => ({ ...current, [selected.id]: event.target.value }))}
-                  onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submitOwnerReply(selected.id) } }}
-                  placeholder="reply as Fowzan..."
-                  aria-label="Reply as Fowzan"
-                  className="flex-1"
-                  maxLength={1000}
-                />
-                <button onClick={() => submitOwnerReply(selected.id)} disabled={!ownerReplies[selected.id]?.trim() || !!sendingOwnerReplies[selected.id]} aria-label="Send reply"><ArrowLeft className="rotate-180" size={16} /></button>
-              </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">You can reply as many times as you want. Each reply can be deleted individually.</p>
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-xs text-muted-foreground">
-              <span>Thread controls</span>
+              )
+            })()}
+            <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-xs text-muted-foreground">
+              <span>{formatTime(selected.time)}</span>
               <div className="flex flex-wrap gap-2">
                 <button className="small-action" onClick={() => toggleKeep(selected.id)}><Star size={14} fill={selected.kept ? 'currentColor' : 'none'} /> {selected.kept ? 'Kept' : 'Keep'}</button>
-                <button className="small-action" onClick={() => deleteThought(selected.id)}><X size={14} /> Delete thread</button>
+                <button className="small-action" onClick={() => deleteThought(selected.id)}><X size={14} /> Delete</button>
                 <button className="small-action" onClick={() => setShareCard(selected)}><Share2 size={14} /> Share</button>
               </div>
             </div>
