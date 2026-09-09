@@ -12,14 +12,14 @@ type Thought = { id: number; text: string; time: string; unread?: boolean; kept?
 type PublicResponse = { id: number; text: string; time: string; author: string; replies: ThreadReply[] }
 
 const prompts = [
-  'How are you doing lately?',
-  'What have you been up to?',
-  'What is on your mind right now?',
-  'How has your day been?',
-  'What are you looking forward to?',
-  'What is something you really enjoy?',
-  'What should I know about you?',
-  'What would you like to ask Fowzan?'
+  'What are you really into these days?',
+  'What are your biggest interests?',
+  'What kind of music are you listening to lately?',
+  'What is your favorite game right now?',
+  'What is a hobby you could talk about for hours?',
+  'What is something you want to learn?',
+  'What is your current favorite movie or show?',
+  'What is a random fact about you?'
 ]
 
 function formatTime(value: string) {
@@ -35,7 +35,7 @@ function formatTime(value: string) {
 
 export default function Page() {
   const [view, setView] = useState<'public' | 'private'>('public')
-  const [theme, setTheme] = useState<'green' | 'red' | 'blue' | 'yellow'>('green')
+  const [theme, setTheme] = useState<'green' | 'red' | 'blue' | 'purple'>('green')
   const [thought, setThought] = useState('')
   const [sent, setSent] = useState(false)
   const [senderName, setSenderName] = useState('')
@@ -271,7 +271,7 @@ export default function Page() {
     <main className="app-page public-page" data-theme={theme}>
       <div className="cyber-bg" aria-hidden="true"><i /><i /><i />{Array.from({ length: 18 }, (_, index) => <b key={index}>ف<br />و<br />ز<br />ا<br />ن<br />ک<br />ا<br />ر</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" /><div className="grain" />
       <div className="particle-field" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</div>
-      <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><label className="theme-picker"><span>THEME</span><select aria-label="Choose color theme" value={theme} onChange={(event) => setTheme(event.target.value as typeof theme)}><option value="green">GREEN</option><option value="red">RED</option><option value="blue">BLUE</option><option value="yellow">YELLOW</option></select></label><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></div></header>
+      <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><label className="theme-picker"><span>THEME</span><select aria-label="Choose color theme" value={theme} onChange={(event) => setTheme(event.target.value as typeof theme)}><option value="green">GREEN</option><option value="red">RED</option><option value="blue">BLUE</option><option value="purple">PURPLE</option></select></label><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></div></header>
 
       <section className="public-hero page-width">
         <div className="hero-badge"><span /> ANONYMOUS MESSAGES TO FOWZAN</div>

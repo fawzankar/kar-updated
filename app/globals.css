@@ -322,9 +322,11 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
 
 /* Color themes and animated Matrix rain. Green/black is the default. */
 .app-page { --signal: #baff45; --signal-rgb: 186,255,69; --flare: #64e83c; --flare-rgb: 100,232,60; --signal-text: #e8ffd2; --primary: var(--signal); --punch: var(--flare); --accent: var(--flare); --ring: var(--signal); }
-.app-page[data-theme='red'] { --signal: #ff5364; --signal-rgb: 255,83,100; --flare: #d92742; --flare-rgb: 217,39,66; --signal-text: #ffe4e7; }
+.app-page[data-theme='red'] { --signal: #ff3b5c; --signal-rgb: 255,59,92; --flare: #a90f2f; --flare-rgb: 169,15,47; --signal-text: #ffe7eb; }
 .app-page[data-theme='blue'] { --signal: #53d6ff; --signal-rgb: 83,214,255; --flare: #4675ff; --flare-rgb: 70,117,255; --signal-text: #e0f8ff; }
-.app-page[data-theme='yellow'] { --signal: #ffe45b; --signal-rgb: 255,228,91; --flare: #ffab35; --flare-rgb: 255,171,53; --signal-text: #fff9d6; }
+.app-page[data-theme='purple'] { --signal: #c77dff; --signal-rgb: 199,125,255; --flare: #7b2cbf; --flare-rgb: 123,44,191; --signal-text: #f4e6ff; }
+.app-page[data-theme='red'] .hero-badge, .app-page[data-theme='purple'] .hero-badge { box-shadow: 0 0 24px rgba(var(--signal-rgb),.08); }
+.app-page[data-theme='red'] .primary-button, .app-page[data-theme='purple'] .primary-button { box-shadow: 0 10px 30px rgba(var(--flare-rgb),.12); }
 .app-page { background: radial-gradient(ellipse 55% 42% at 50% -4%, rgba(var(--flare-rgb),.25), transparent 72%), radial-gradient(ellipse 38% 30% at 96% 42%, rgba(var(--signal-rgb),.11), transparent 75%), #030403; }
 .cyber-bg::before { background-image: linear-gradient(rgba(var(--signal-rgb),.27) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--signal-rgb),.21) 1px, transparent 1px); }
 .cyber-bg i, .cyber-bg i:nth-child(2) { background: linear-gradient(90deg, transparent, var(--signal), transparent) !important; filter: drop-shadow(0 0 5px var(--signal)) !important; }
@@ -343,7 +345,7 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
 
 /* Darker palette, compact scale, and softer motion. */
 .app-page { background: radial-gradient(ellipse 55% 38% at 50% -7%, rgba(var(--flare-rgb),.13), transparent 72%), radial-gradient(ellipse 32% 26% at 96% 42%, rgba(var(--signal-rgb),.055), transparent 75%), #020302; }
-.app-page[data-theme='red'], .app-page[data-theme='yellow'] { background: radial-gradient(ellipse 50% 32% at 50% -8%, rgba(var(--flare-rgb),.095), transparent 72%), radial-gradient(ellipse 28% 22% at 96% 42%, rgba(var(--signal-rgb),.04), transparent 75%), #020302; }
+.app-page[data-theme='red'], .app-page[data-theme='purple'] { background: radial-gradient(ellipse 50% 32% at 50% -8%, rgba(var(--flare-rgb),.095), transparent 72%), radial-gradient(ellipse 28% 22% at 96% 42%, rgba(var(--signal-rgb),.04), transparent 75%), #020302; }
 .cyber-bg { opacity: .55; background: linear-gradient(115deg, transparent 25%, rgba(var(--flare-rgb),.035) 48%, transparent 70%); }.cyber-bg::after { opacity: .14; }.cyber-bg b { color: var(--signal) !important; font-family: Tahoma, "Segoe UI", sans-serif; font-size: 12px; font-weight: 700; opacity: .63; text-shadow: 0 0 9px rgba(var(--signal-rgb),.95); animation-duration: 12s; }.ambient-orb { opacity: .29; }
 .public-hero { padding: 82px 0 78px; }.public-hero h1 { max-width: 760px; font-size: clamp(1.55rem, 4.8vw, 3.75rem); line-height: 1.32; letter-spacing: .02em; text-shadow: 2px 2px 0 rgba(var(--flare-rgb),.7) !important; }.public-hero h1 em { text-shadow: 2px 2px 0 var(--flare) !important; }.hero-lead { max-width: 555px; font-size: 12px; line-height: 1.8; }.hero-actions { margin-top: 24px; }.hero-badge { font-size: 8px; padding: 8px 10px; }.primary-button, .secondary-button { min-height: 42px; font-size: 10px; }.primary-button { padding: 0 15px; }
 .section-intro { margin-bottom: 22px; }.section-intro h2, .threads-heading h2, .queue-head h2 { font-size: clamp(1.25rem, 3.1vw, 2.45rem); line-height: 1.32; }.composer-section { padding: 64px 0 70px; }.message-composer { padding: 17px; border-left-width: 2px; border-radius: 10px; }.message-composer textarea { min-height: 125px; margin-top: 16px; font-size: clamp(.95rem, 2.3vw, 1.35rem); line-height: 1.55; }.composer-meta { padding-top: 10px; }.identity-controls { margin-top: 10px; }.send-button { margin-top: 12px; }
