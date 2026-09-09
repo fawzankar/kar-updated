@@ -370,3 +370,10 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
 @keyframes star-twinkle { 0%, 100% { transform: scale(.7); opacity: .16; } 50% { transform: scale(1.45); opacity: .5; } }
 @keyframes asteroid-drift { 0% { transform: translate3d(-12vw, 3vh, 0) rotate(-25deg); opacity: 0; } 10% { opacity: .3; } 55% { opacity: .38; } 100% { transform: translate3d(120vw, -15vh, 0) rotate(335deg); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .space-stars span, .asteroid-field i { animation: none !important; } }
+
+/* Expanded space field: many more stars and drifting asteroids. */
+.space-stars span:nth-child(5n) { width: 1px; height: 1px; opacity: .2; }
+.space-stars span:nth-child(11n) { width: 3px; height: 3px; opacity: .42; box-shadow: 0 0 10px rgba(255,255,255,.7); }
+.asteroid-field i { will-change: transform, opacity; }
+.asteroid-field i:nth-child(3n) { width: 11px; height: 6px; opacity: .3; }
+.asteroid-field i:nth-child(5n) { width: 15px; height: 8px; opacity: .24; }
