@@ -33,10 +33,10 @@ type PublicResponse = {
 
 const prompts = [
   'How are you doing today?',
+  'What do you do?',
   'What are you into right now?',
-  'What is your favourite thing lately?',
-  'What is something you would recommend?',
   'What are you looking forward to?',
+  'What is your favourite thing lately?',
   'Ask me anything.'
 ]
 
@@ -415,7 +415,7 @@ export default function Page() {
 
   return (
     <main className="funky-page min-h-screen px-5 py-6 text-foreground sm:px-8">
-      <div className="ambient-backdrop" aria-hidden="true"><div className="ambient-grid" />{Array.from({ length: 28 }).map((_, index) => <span key={index} className="ambient-particle" style={{ '--particle': index } as React.CSSProperties} />)}</div>
+      <div className="ambient-backdrop" aria-hidden="true"><div className="pixel-sky" /><div className="arcade-sun" /><div className="arcade-horizon" /><div className="arcade-grid" /><div className="arcade-scanline" /><div className="pixel-rain"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div><div className="pixel-snow"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div><div className="arcade-corners" /></div>
 
       <header className="relative z-10 mx-auto flex max-w-4xl items-center justify-between">
         <div className="brand-mark"><span className="brand-glyph" aria-hidden="true"><i /><i /><i /></span><span className="brand-name">Fowzan's <b>inbox</b></span></div>
@@ -426,15 +426,15 @@ export default function Page() {
         <div className="identity-row">
           <div className="avatar funky-avatar"><MessageCircle size={24} strokeWidth={1.8} /></div>
           <div>
-            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous messages</div>
-            <p className="mt-2 text-sm text-muted-foreground">Ask Fowzan anything. Leave a thought. Keep your name to yourself.</p>
+            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous mode</div>
+            <p className="mt-2 text-sm text-muted-foreground">Send a message without showing your name.</p>
           </div>
         </div>
 
         <div className="hero-copy">
           <div>
             <h1 className="display-title">Say it.<br /><span>Leave it here.</span></h1>
-            <p className="hero-line">A private little corner for questions, thoughts and things that are easier to write than say.</p>
+            <p className="hero-line">Drop a message, ask a question, or leave a thought. No introduction required.</p>
           </div>
         </div>
 
@@ -462,7 +462,7 @@ export default function Page() {
         </div>
 
         <div className="prompt-deck mt-8">
-          <div className="section-kicker"><Sparkles size={13} /> not sure what to write?</div>
+          <div className="section-kicker"><Sparkles size={13} /> need a starting point?</div>
           <div className="prompt-tiles mt-3">
             {prompts.map((prompt) => (
               <button key={prompt} className="prompt-tile" onClick={() => setThought(prompt)}>{prompt}</button>
@@ -474,7 +474,6 @@ export default function Page() {
 
         <div className="mt-8 flex flex-wrap justify-center gap-5">
           <button className="share-link" onClick={sharePage}>{copied ? <Check size={14} /> : <Share2 size={14} />} {copied ? 'link copied' : 'share this inbox'}</button>
-          <span className="text-xs text-muted-foreground/70">no account required</span>
         </div>
       </section>
 
