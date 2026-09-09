@@ -184,7 +184,7 @@ export default function Page() {
       const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) })
       const type = response.headers.get('content-type') ?? ''; const data = type.includes('application/json') ? await response.json() : { error: await response.text() }
       if (!response.ok) throw new Error(data.error ?? 'Invalid password.')
-      setOwnerUnlocked(true); setPassword(''); await loadOwner()
+      setOwnerUnlocked(true); setPassword(''); void loadOwner()
     } catch (err) { setLoginError(err instanceof Error ? err.message : 'Unable to sign in.') }
   }
 
@@ -269,7 +269,7 @@ export default function Page() {
 
   return (
     <main className="app-page public-page" data-theme={theme}>
-      <div className="cyber-bg" aria-hidden="true"><i /><i /><i />{Array.from({ length: 18 }, (_, index) => <b key={index}>01<br />10<br />01<br />11<br />00<br />10<br />01<br />10</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" /><div className="grain" />
+      <div className="cyber-bg" aria-hidden="true"><i /><i /><i />{Array.from({ length: 18 }, (_, index) => <b key={index}>ف<br />و<br />ز<br />ا<br />ن<br />ک<br />ا<br />ر</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" /><div className="grain" />
       <div className="particle-field" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</div>
       <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><label className="theme-picker"><span>THEME</span><select aria-label="Choose color theme" value={theme} onChange={(event) => setTheme(event.target.value as typeof theme)}><option value="green">GREEN</option><option value="red">RED</option><option value="blue">BLUE</option><option value="yellow">YELLOW</option></select></label><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></div></header>
 

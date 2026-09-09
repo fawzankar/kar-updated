@@ -2,6 +2,7 @@ import { Pool } from 'pg'
 
 declare global {
   var __fowzanPool: Pool | undefined
+  var __fowzanSchemaPromise: Promise<void> | undefined
 }
 
 const connectionString = process.env.STORAGE_DATABASE_URL || process.env.DATABASE_URL
@@ -18,8 +19,10 @@ export const pool = globalThis.__fowzanPool ?? new Pool({
 
 if (process.env.NODE_ENV !== 'production') globalThis.__fowzanPool = pool
 
-export async function ensureSchema() {
-  await pool.query(`
+export function ensureSchema() {
+  if (globalThis.__fowzanSchemaPromise) return globalThis.__fowzanSchemaPromise
+
+  const setup = pool.query(`
     CREATE TABLE IF NOT EXISTS messages (
       id BIGSERIAL PRIMARY KEY,
       text TEXT NOT NULL,
@@ -43,5 +46,11 @@ export async function ensureSchema() {
     ALTER TABLE responses ADD COLUMN IF NOT EXISTS author TEXT NOT NULL DEFAULT 'Fowzan';
     CREATE INDEX IF NOT EXISTS messages_created_idx ON messages(created_at DESC);
     CREATE INDEX IF NOT EXISTS responses_message_idx ON responses(message_id);
-  `)
+  `).then(() => undefined)
+
+  globalThis.__fowzanSchemaPromise = setup.catch((error) => {
+    globalThis.__fowzanSchemaPromise = undefined
+    throw error
+  })
+  return globalThis.__fowzanSchemaPromise
 }
