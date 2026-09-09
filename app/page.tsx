@@ -63,6 +63,7 @@ export default function Page() {
   const [replyName, setReplyName] = useState('')
   const [replyReveal, setReplyReveal] = useState(false)
   const [ownerReplies, setOwnerReplies] = useState<Record<number, string>>({})
+  const [answeredThoughtIds, setAnsweredThoughtIds] = useState<number[]>([])
   const [ambientScene, setAmbientScene] = useState<'stars' | 'snow' | 'orbits' | 'grid'>('stars')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
@@ -73,10 +74,6 @@ export default function Page() {
     [showKeeps, thoughts]
   )
   const unreadCount = thoughts.filter((item) => item.unread).length
-  const replyQueue = useMemo(() => visibleThoughts.filter((item) => {
-    const thread = responses.find((entry) => entry.id === item.id)
-    return !thread?.replies?.some((reply) => reply.author === 'Fowzan')
-  }), [visibleThoughts, responses])
 
   async function loadPublic() {
     try {
@@ -101,6 +98,7 @@ export default function Page() {
     const data = await response.json()
     setThoughts(data.messages ?? [])
     setResponses(data.responses ?? [])
+    setAnsweredThoughtIds(data.answeredThoughtIds ?? [])
   }
 
   useEffect(() => {
@@ -166,14 +164,14 @@ export default function Page() {
     }
   }
 
-  async function submitOwnerReply(id: number) {
+  async function submitOwnerReply(id: number, questionText?: string) {
     const text = ownerReplies[id]?.trim()
     if (!text) return
     try {
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'owner-reply', messageId: id, text })
+        body: JSON.stringify({ action: 'owner-reply', messageId: id, text, questionText })
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error ?? 'Could not post the reply.')
@@ -235,10 +233,7 @@ export default function Page() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })
       })
-      const contentType = response.headers.get('content-type') ?? ''
-      const data = contentType.includes('application/json')
-        ? await response.json()
-        : { error: await response.text() }
+      const data = await response.json()
       if (!response.ok) throw new Error(data.error ?? 'Invalid password.')
       setOwnerUnlocked(true)
       setPassword('')
@@ -331,51 +326,79 @@ export default function Page() {
 
         {error && <div className="error-banner mt-8" role="alert">{error}</div>}
 
-        <section className="reply-queue mt-10" aria-label="Reply queue">
-          <div className="reply-queue-head">
-            <div>
-              <div className="section-kicker"><PenLine size={13} /> reply queue</div>
-              <p className="mt-2 text-sm text-muted-foreground">Messages waiting for your first reply.</p>
+        <div className="inbox-layout mt-10">
+          <section className="inbox-panel">
+            <div className="inbox-panel-head">
+              <div>
+                <div className="section-kicker"><MessageCircle size={14} /> messages</div>
+                <p className="mt-1 text-xs text-muted-foreground">Your anonymous comment feed</p>
+              </div>
+              <span className="soft-pill">{visibleThoughts.length}</span>
             </div>
-            <span className="queue-count">{replyQueue.length} waiting</span>
-          </div>
-          {replyQueue.length ? (
-            <div className="reply-queue-list">
-              {replyQueue.slice(0, 4).map((item) => (
-                <button key={item.id} onClick={() => openThought(item)} className="reply-queue-card">
-                  <div className="reply-queue-meta">
-                    <span><span className="queue-dot" />{item.senderName || 'Anonymous'}</span>
-                    <span>{formatTime(item.time)}</span>
+
+            <div className="inbox-feed" aria-label="Message cards">
+              {visibleThoughts.map((item) => (
+                <button key={item.id} onClick={() => openThought(item)} className={`funky-card group ${item.unread ? 'funky-card-new' : ''}`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-punch" />
+                      <span className="truncate">{item.senderName || 'Anonymous'}</span>
+                    </span>
+                    {item.unread && <span className="new-label shrink-0">new</span>}
                   </div>
-                  <p>{item.text}</p>
-                  <span className="queue-action"><MessageCircle size={13} /> reply</span>
+                  <span className="mt-4 line-clamp-3 block text-left font-serif text-xl leading-tight tracking-[-0.02em]">{item.text}</span>
+                  <span className="mt-5 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{formatTime(item.time)}</span>
+                    <span className="opacity-0 transition group-hover:opacity-70">open →</span>
+                  </span>
                 </button>
               ))}
+              {!visibleThoughts.length && <div className="empty-note">{showKeeps ? 'Nothing kept here yet.' : 'Your inbox is empty.'}</div>}
             </div>
-          ) : (
-            <div className="reply-queue-empty"><Check size={15} /> You’re all caught up.</div>
-          )}
-        </section>
+          </section>
 
-        <div className="thought-grid mt-8">
-          {visibleThoughts.map((item) => (
-            <button key={item.id} onClick={() => openThought(item)} className={`funky-card group ${item.unread ? 'funky-card-new' : ''}`}>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  <span className="h-2 w-2 rounded-full bg-punch" />
-                  {item.senderName || 'Anonymous'}
-                </span>
-                {item.unread && <span className="new-label">new</span>}
+          <section className="reply-queue-panel">
+            <div className="inbox-panel-head">
+              <div>
+                <div className="section-kicker"><MessageCircle size={14} /> reply queue</div>
+                <p className="mt-1 text-xs text-muted-foreground">Comments waiting for your first reply</p>
               </div>
-              <span className="mt-6 block max-w-xl text-left font-serif text-2xl leading-tight tracking-[-0.02em]">{item.text}</span>
-              <span className="mt-8 block text-xs text-muted-foreground">{formatTime(item.time)}</span>
-              <Eye className="absolute right-6 top-6 opacity-0 transition group-hover:opacity-60" size={16} />
-            </button>
-          ))}
+              <span className="queue-count">{thoughts.filter((item) => !answeredThoughtIds.includes(item.id)).length}</span>
+            </div>
+
+            <div className="reply-queue-feed">
+              {thoughts.filter((item) => !answeredThoughtIds.includes(item.id)).map((item) => (
+                <div key={item.id} className="owner-thread">
+                  <button className="queue-message" onClick={() => openThought(item)}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="thread-author">{item.senderName || 'Anonymous'}</span>
+                      <span className="queue-status">waiting</span>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-sm leading-5 text-foreground/85">{item.text}</p>
+                    <span className="mt-2 block text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{formatTime(item.time)}</span>
+                  </button>
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      value={ownerReplies[item.id] ?? ''}
+                      onChange={(event) => setOwnerReplies((current) => ({ ...current, [item.id]: event.target.value }))}
+                      placeholder="reply as Fowzan..."
+                      aria-label={`Reply to ${item.text}`}
+                      className="name-input min-w-0 flex-1"
+                      maxLength={1000}
+                    />
+                    <button className="funky-button queue-post" onClick={() => submitOwnerReply(item.id, item.text)} disabled={!ownerReplies[item.id]?.trim()}>post</button>
+                  </div>
+                </div>
+              ))}
+              {!thoughts.some((item) => !answeredThoughtIds.includes(item.id)) && (
+                <div className="queue-empty">
+                  <Check size={18} />
+                  <span>You're all caught up.</span>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
-        {!visibleThoughts.length && <div className="empty-note">{showKeeps ? 'Nothing kept here yet.' : 'Your inbox is empty.'}</div>}
-
-
       </section>
 
       {selected && (
@@ -384,50 +407,6 @@ export default function Page() {
             <button className="absolute right-5 top-5 text-muted-foreground" onClick={() => setSelected(null)} aria-label="Close message"><X size={18} /></button>
             <div className="secret-sticker"><span className="h-2 w-2 rounded-full bg-punch" /> {selected.senderName || 'Anonymous'}</div>
             <p className="mt-10 font-serif text-3xl leading-tight tracking-[-0.03em]">{selected.text}</p>
-
-            {(() => {
-              const thread = responses.find((entry) => entry.id === selected.id)
-              return (
-                <div className="mt-8 border-t border-border pt-6">
-                  {thread?.replies?.length ? (
-                    <div className="space-y-3">
-                      <div className="section-kicker"><MessageCircle size={13} /> conversation</div>
-                      {thread.replies.map((reply) => (
-                        <div key={reply.id} className="reply-card">
-                          <div className="flex justify-between text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                            <span className={reply.author === 'Fowzan' ? 'fowzan-author' : ''}>{reply.author}</span>
-                            <span>{formatTime(reply.time)}</span>
-                          </div>
-                          <p className="mt-2 text-sm leading-6 text-foreground/85">{reply.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="section-kicker"><MessageCircle size={13} /> no replies yet</div>
-                  )}
-
-                  <div className="mt-5 space-y-2">
-                    <div className="reply-form">
-                      <input
-                        value={ownerReplies[selected.id] ?? ''}
-                        onChange={(event) => setOwnerReplies((current) => ({ ...current, [selected.id]: event.target.value }))}
-                        placeholder="reply as Fowzan..."
-                        aria-label="Reply as Fowzan"
-                        maxLength={1000}
-                      />
-                      <button
-                        onClick={() => submitOwnerReply(selected.id)}
-                        disabled={!ownerReplies[selected.id]?.trim()}
-                        aria-label="Send reply as Fowzan"
-                      >
-                        <ArrowLeft className="rotate-180" size={16} />
-                      </button>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">You can reply to this message as many times as you want.</p>
-                  </div>
-                </div>
-              )
-            })()}
             <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-xs text-muted-foreground">
               <span>{formatTime(selected.time)}</span>
               <div className="flex flex-wrap gap-2">
