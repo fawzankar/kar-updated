@@ -325,7 +325,7 @@ export default function Page() {
   if (view === 'private') return (
     <main className="funky-page min-h-screen px-4 py-5 text-foreground sm:px-6">
       <header className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-        <button className="back-button" onClick={() => setView('public')}><ArrowLeft size={16} /> back to signal</button>
+        <button className="back-button" onClick={() => setView('public')}><ArrowLeft size={16} /> back to inbox</button>
         <div className="flex items-center gap-2">
           <button className="keep-filter" onClick={() => setShowKeeps(!showKeeps)}><Star size={15} fill={showKeeps ? 'currentColor' : 'none'} /> {showKeeps ? 'all threads' : 'saved messages'}</button>
           <button className="keep-filter" onClick={logout}><LogOut size={15} /> leave inbox</button>
@@ -336,8 +336,8 @@ export default function Page() {
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
             <div className="flex flex-wrap items-center gap-3"><div className="secret-sticker"><Mail size={14} /> private inbox</div><span className="soft-pill">{unreadCount} unread</span></div>
-            <h1 className="display-title mt-5 text-[3.2rem] sm:text-7xl">Your<br /><span>signals.</span></h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">Everything lands here. Open a message, reply as yourself, and manage each conversation on your terms.</p>
+            <h1 className="display-title mt-5 text-[3.2rem] sm:text-7xl">Your<br /><span>inbox.</span></h1>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">Every message lands here. Open a thread, reply as yourself, and keep the conversation moving.</p>
           </div>
           <button className="share-icon" onClick={sharePage} aria-label="Share anonymous inbox"><Share2 size={17} /></button>
         </div>
@@ -400,7 +400,7 @@ export default function Page() {
         </div>
 
         <section className="reply-queue-panel mt-6">
-          <div className="flex flex-wrap items-end justify-between gap-3"><div><div className="section-kicker"><PenLine size={14} /> reply queue</div><p className="mt-2 text-sm text-muted-foreground">Signals waiting for a response.</p></div><span className="soft-pill">{thoughts.filter((item) => item.replies.length === 0).length} waiting</span></div>
+          <div className="flex flex-wrap items-end justify-between gap-3"><div><div className="section-kicker"><PenLine size={14} /> reply queue</div><p className="mt-2 text-sm text-muted-foreground">Messages waiting for a reply.</p></div><span className="soft-pill">{thoughts.filter((item) => item.replies.length === 0).length} waiting</span></div>
           <div className="queue-strip mt-4">
             {thoughts.filter((item) => item.replies.length === 0).map((item) => (
               <button key={item.id} className="queue-card" onClick={() => openThought(item)}><div className="flex items-center justify-between gap-2"><span className="thread-author">{item.senderName || 'Anonymous'}</span><span className="new-label">reply</span></div><p className="mt-2 line-clamp-2 text-sm">{item.text}</p></button>
@@ -425,7 +425,7 @@ export default function Page() {
         <div className="identity-row">
           <div className="avatar funky-avatar"><Mail size={25} strokeWidth={1.7} /></div>
           <div>
-            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous messages</div>
+            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous transmissions</div>
             <p className="mt-2 text-sm text-muted-foreground">Send a message without revealing who you are.</p>
           </div>
         </div>
