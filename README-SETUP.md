@@ -1,6 +1,6 @@
-# FOWZAN // PLAYER SIGNAL
+# Fowzan's Inbox
 
-A black, neon-green, and red arcade-inspired social signal board. It retains the anonymous messaging, threaded replies, owner authentication, moderation, and database behavior from the original project.
+An elegant anonymous-message website with a deep red/black palette, a quiet animated particle background, and subtle arcade-inspired interaction details. It retains the anonymous messaging, threaded replies, owner authentication, moderation, and database behavior from the original project.
 
 ## Run locally
 
@@ -8,12 +8,12 @@ A black, neon-green, and red arcade-inspired social signal board. It retains the
 2. Run `npm install`.
 3. Run `npm run dev`.
 
-## Revamp highlights
+## Design highlights
 
-- Responsive arcade command-center layout with an animated scanline/grid background.
-- Bold gaming-focused hero, prompts, terminology, metadata, and success feedback.
-- Red/green glow states, tactile hover effects, elevated conversation cards, and accessible reduced-motion support.
-- Owner inbox reskinned as a private Signal Control console; all underlying owner workflows remain intact.
+- Responsive deep-red editorial layout with a soft animated particle field and ambient background glow.
+- Clear, human copy focused on anonymous questions, thoughts, and replies.
+- Tactile hover states, elevated conversation cards, and accessible reduced-motion support.
+- A private inbox for reading, replying to, saving, and managing threads.
 
 ## Original functional behavior
 

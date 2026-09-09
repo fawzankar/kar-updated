@@ -7,18 +7,18 @@ const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-sans-custom' })
 const instrumentSerif = Instrument_Serif({ subsets: ['latin'], variable: '--font-serif-custom', weight: '400' })
 
 export const metadata: Metadata = {
-  title: 'FOWZAN // PLAYER SIGNAL',
-  description: 'Drop a signal, start a thread, and join the arcade.',
+  title: "Fowzan's Inbox — Anonymous messages",
+  description: 'Leave Fowzan an anonymous question, thought, or reply.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   openGraph: {
-    title: 'FOWZAN // PLAYER SIGNAL',
-    description: 'Drop a signal and join the arcade.',
+    title: "Fowzan's Inbox",
+    description: 'Leave an anonymous message for Fowzan.',
     type: 'website',
   },
   twitter: {
     card: 'summary',
-    title: 'FOWZAN // PLAYER SIGNAL',
-    description: 'Drop a signal and join the arcade.',
+    title: "Fowzan's Inbox",
+    description: 'Leave an anonymous message for Fowzan.',
   },
 }
 
