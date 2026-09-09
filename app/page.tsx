@@ -278,7 +278,7 @@ export default function Page() {
 
   return (
     <main className="app-page public-page" data-theme={theme}>
-      <div className="cyber-bg" aria-hidden="true"><i /><i /><i />{matrixStreams.map((stream, index) => <b key={index}>{Array.from({ length: 8 }, (_, charIndex) => stream[charIndex % stream.length]).map((char, charIndex) => <span key={charIndex}>{char}</span>)}</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" /><div className="grain" />
+      <div className="cyber-bg" aria-hidden="true"><i /><i /><i />{matrixStreams.map((stream, index) => <b key={index}>{Array.from(stream).map((char, charIndex) => <span key={charIndex}>{char}</span>)}</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" /><div className="grain" />
       <div className="particle-field" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</div>
       <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><label className="theme-picker"><span>THEME</span><select aria-label="Choose color theme" value={theme} onChange={(event) => setTheme(event.target.value as typeof theme)}><option value="green">GREEN</option><option value="red">RED</option><option value="blue">BLUE</option><option value="purple">PURPLE</option></select></label><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></div></header>
 
