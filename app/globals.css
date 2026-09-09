@@ -447,3 +447,674 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
     letter-spacing: .12em;
   }
 }
+
+
+
+/* ================================================================
+   FINAL MOBILE OPTIMIZATION
+   Designed for 320px–640px phones, while preserving desktop layout.
+   ================================================================ */
+
+@media (max-width: 640px) {
+  html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .app-page {
+    min-height: 100svh;
+    overflow-x: clip;
+  }
+
+  .page-width,
+  .topbar {
+    width: calc(100% - 28px);
+    max-width: none;
+  }
+
+  /* ---------- Header ---------- */
+  .public-topbar {
+    min-height: 58px;
+    padding: 12px 0;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .public-topbar .brand.wordmark {
+    font-size: clamp(7px, 2.15vw, 10px);
+    gap: 6px;
+    letter-spacing: .025em;
+    white-space: nowrap;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .public-topbar .brand.wordmark svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+  }
+
+  .public-topbar .topbar-controls {
+    flex: 0 0 auto;
+    gap: 5px;
+  }
+
+  .theme-picker select {
+    width: 70px;
+    max-width: 70px;
+    min-height: 34px;
+    padding: 7px 17px 7px 6px;
+    font-size: 7px;
+  }
+
+  .private-button {
+    min-height: 34px;
+    padding: 8px 9px;
+    font-size: 7px;
+    letter-spacing: .06em;
+    gap: 5px;
+  }
+
+  /* ---------- Public hero ---------- */
+  .public-hero {
+    padding: 56px 0 58px;
+  }
+
+  .hero-badge {
+    max-width: 100%;
+    font-size: 7px;
+    letter-spacing: .11em;
+    line-height: 1.4;
+  }
+
+  .public-hero h1 {
+    margin-top: 18px;
+    font-size: clamp(1.8rem, 11vw, 3rem);
+    line-height: .92;
+    letter-spacing: -.045em;
+    word-break: normal;
+  }
+
+  .hero-lead {
+    max-width: 100%;
+    margin-top: 18px;
+    font-size: 10.5px;
+    line-height: 1.7;
+  }
+
+  .hero-actions {
+    width: 100%;
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .hero-actions .primary-button,
+  .hero-actions .secondary-button {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  /* ---------- Message composer ---------- */
+  .composer-section {
+    padding: 48px 0 54px;
+  }
+
+  .section-intro {
+    margin-bottom: 18px;
+  }
+
+  .section-intro h2 {
+    margin-top: 9px;
+    font-size: clamp(1.35rem, 7.5vw, 2.15rem);
+    line-height: 1;
+  }
+
+  .message-composer {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .composer-label {
+    font-size: 8px;
+    letter-spacing: .1em;
+  }
+
+  .message-composer textarea {
+    display: block;
+    width: 100%;
+    min-height: 125px;
+    height: 125px;
+    margin-top: 14px;
+    padding: 0;
+    resize: vertical;
+    font-size: 16px;
+    line-height: 1.55;
+    letter-spacing: -.025em;
+  }
+
+  .composer-meta {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    font-size: 8px;
+  }
+
+  .identity-controls {
+    width: 100%;
+    margin-top: 12px;
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+
+  .identity-controls label {
+    font-size: 9px;
+  }
+
+  .identity-controls > input:not([type="checkbox"]) {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .send-button {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  /* ---------- Prompt cards ---------- */
+  .prompt-section {
+    padding-bottom: 54px;
+  }
+
+  .prompt-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .prompt-grid button {
+    min-height: 76px;
+    padding: 12px 13px;
+    border-radius: 9px;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  /* ---------- Reply Board ---------- */
+  .public-threads {
+    padding: 48px 0 60px;
+  }
+
+  .threads-heading {
+    width: 100%;
+    gap: 14px;
+  }
+
+  .threads-heading > div {
+    width: 100%;
+  }
+
+  .threads-heading h2 {
+    margin-top: 9px;
+    font-size: clamp(1.25rem, 7vw, 1.8rem);
+  }
+
+  .threads-heading p {
+    max-width: none;
+    margin-top: 13px;
+    font-size: 10px;
+    line-height: 1.65;
+  }
+
+  .thread-contribute-hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 9px;
+    line-height: 1.55;
+  }
+
+  .threads-heading > span {
+    align-self: flex-start;
+    padding: 6px 9px;
+    font-size: 7px;
+  }
+
+  .public-thread-list {
+    margin-top: 20px;
+    gap: 9px;
+  }
+
+  .public-thread {
+    padding: 14px;
+    border-radius: 9px;
+  }
+
+  .thread-meta {
+    font-size: 8px;
+    gap: 7px;
+  }
+
+  .public-thread h3 {
+    margin-top: 12px;
+    font-size: clamp(.95rem, 4.5vw, 1.25rem);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .public-replies {
+    margin-top: 14px;
+  }
+
+  .public-replies p {
+    overflow-wrap: anywhere;
+  }
+
+  .public-thread-foot {
+    margin-top: 12px;
+    padding-top: 10px;
+    flex-wrap: wrap;
+    font-size: 8px;
+  }
+
+  .public-thread-foot button {
+    min-height: 34px;
+    padding: 7px 9px;
+  }
+
+  .public-reply-form {
+    margin-top: 10px;
+  }
+
+  .public-reply-form .reply-composer {
+    width: 100%;
+  }
+
+  .public-reply-form .reply-composer input {
+    min-width: 0;
+    width: 100%;
+    font-size: 16px;
+  }
+
+  /* ---------- General controls ---------- */
+  .primary-button,
+  .secondary-button,
+  .private-button,
+  .ghost-button,
+  .refresh-button {
+    min-height: 38px;
+  }
+
+  /* ---------- Owner login ---------- */
+  .login-shell {
+    width: calc(100% - 28px);
+    padding: 18px 0;
+  }
+
+  .login-card {
+    width: 100%;
+    margin-top: 12px;
+    padding: 24px 18px;
+    border-radius: 14px;
+  }
+
+  .login-title {
+    font-size: clamp(1.8rem, 10vw, 2.7rem);
+  }
+
+  .login-card > p {
+    font-size: 10px;
+    line-height: 1.7;
+  }
+
+  .login-form input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .login-form .primary-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* ---------- Private inbox header ---------- */
+  .admin-topbar {
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px 0;
+    gap: 10px;
+  }
+
+  .admin-topbar .brand.wordmark {
+    font-size: clamp(7px, 2.15vw, 10px);
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .admin-topbar .top-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .admin-topbar .top-actions .ghost-button {
+    width: 100%;
+    justify-content: center;
+    min-height: 36px;
+    font-size: 7px;
+  }
+
+  /* ---------- Private hero ---------- */
+  .admin-hero {
+    padding-top: 38px;
+    padding-bottom: 34px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .admin-title {
+    font-size: clamp(1.8rem, 10vw, 2.8rem);
+  }
+
+  .admin-subtitle {
+    max-width: none;
+    font-size: 10px;
+    line-height: 1.7;
+  }
+
+  .admin-hero-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 44px;
+    gap: 7px;
+  }
+
+  .admin-hero-actions .refresh-button {
+    justify-content: center;
+  }
+
+  /* ---------- Stats ---------- */
+  .quick-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin-bottom: 30px;
+  }
+
+  .stat-card {
+    min-width: 0;
+    padding: 13px 11px;
+    border-radius: 9px;
+  }
+
+  .stat-card strong {
+    font-size: 1.25rem;
+  }
+
+  .stat-card small {
+    font-size: 7px;
+    line-height: 1.35;
+  }
+
+  .stat-card span {
+    font-size: 7px;
+  }
+
+  /* ---------- Thread browser + conversation ---------- */
+  .admin-workspace {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .thread-browser {
+    min-width: 0;
+    border-radius: 10px;
+  }
+
+  .browser-head {
+    padding: 13px;
+  }
+
+  .thread-list {
+    height: auto;
+    max-height: 330px;
+    overflow-y: auto;
+  }
+
+  .thread-item {
+    padding: 12px;
+  }
+
+  .thread-item p {
+    font-size: 10px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .conversation-shell {
+    min-width: 0;
+  }
+
+  .conversation-card,
+  .conversation-empty {
+    border-radius: 10px;
+    min-width: 0;
+  }
+
+  .conversation-head {
+    padding: 13px;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .conversation-head h2 {
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+  }
+
+  .conversation-actions {
+    flex-shrink: 0;
+    gap: 5px;
+  }
+
+  .delete-thread-button {
+    font-size: 7px;
+    padding: 7px;
+  }
+
+  .conversation-scroll {
+    max-height: 52svh;
+    min-height: 170px;
+    padding: 12px;
+  }
+
+  .chat-bubble {
+    max-width: 92%;
+    padding: 11px;
+  }
+
+  .chat-bubble p {
+    font-size: 10px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+
+  .bubble-meta {
+    font-size: 7px;
+  }
+
+  .bubble-delete {
+    font-size: 7px;
+  }
+
+  .reply-dock {
+    padding: 10px;
+  }
+
+  .reply-composer {
+    min-width: 0;
+  }
+
+  .reply-composer input {
+    min-width: 0;
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .reply-composer button {
+    flex: 0 0 40px;
+  }
+
+  .composer-foot {
+    font-size: 7px;
+    flex-wrap: wrap;
+  }
+
+  /* ---------- Quick reply queue ---------- */
+  .queue-section {
+    padding-top: 44px;
+    padding-bottom: 55px;
+  }
+
+  .queue-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .queue-head h2 {
+    font-size: clamp(1.35rem, 7vw, 2rem);
+  }
+
+  .queue-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .queue-item {
+    min-width: 0;
+    padding: 13px;
+  }
+
+  .queue-item p {
+    font-size: 10px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---------- Error / empty / modal ---------- */
+  .error-banner {
+    margin-top: 10px;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  .empty-browser,
+  .loading-card {
+    padding: 28px 16px;
+    text-align: center;
+  }
+
+  .modal-backdrop {
+    padding: 16px;
+  }
+
+  .success-modal {
+    width: min(100%, 390px);
+    padding: 25px 18px;
+    border-radius: 14px;
+  }
+
+  .success-modal p {
+    font-size: 10px;
+    line-height: 1.65;
+  }
+
+  .success-modal .primary-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Extra-small phones: prevent header/control crowding and keep everything tappable. */
+@media (max-width: 380px) {
+  .page-width,
+  .topbar {
+    width: calc(100% - 20px);
+  }
+
+  .public-topbar .brand.wordmark {
+    font-size: 7px;
+    gap: 5px;
+  }
+
+  .public-topbar .brand.wordmark svg {
+    width: 14px;
+    height: 14px;
+    flex-basis: 14px;
+  }
+
+  .theme-picker select {
+    width: 62px;
+    max-width: 62px;
+    font-size: 6.5px;
+  }
+
+  .public-topbar .private-button {
+    width: 38px;
+    padding-inline: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .public-topbar .private-button svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .prompt-grid button {
+    min-height: 70px;
+  }
+
+  .quick-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .conversation-actions .icon-action {
+    width: 32px;
+    height: 32px;
+  }
+
+  .delete-thread-button {
+    font-size: 0;
+  }
+
+  .delete-thread-button svg {
+    margin: 0;
+  }
+}
+
+/* Respect phone safe areas without creating horizontal overflow. */
+@supports (padding: max(0px)) {
+  @media (max-width: 640px) {
+    .topbar {
+      padding-left: max(0px, env(safe-area-inset-left));
+      padding-right: max(0px, env(safe-area-inset-right));
+    }
+
+    .modal-backdrop {
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+  }
+}
