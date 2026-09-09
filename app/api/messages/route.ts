@@ -145,12 +145,29 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ ok: true, deleted: 'reply' })
     }
 
-    // Delete an entire thread. Hard-delete it so all child replies are removed
-    // by the existing ON DELETE CASCADE relationship.
+    // Delete an entire thread. Remove child replies explicitly first so this
+    // works even if an older database was created without ON DELETE CASCADE.
     if (!Number.isInteger(threadId)) return NextResponse.json({ error: 'Invalid message.' }, { status: 400 })
-    const result = await pool.query(`DELETE FROM messages WHERE id = $1 RETURNING id`, [threadId])
-    if (!result.rows[0]) return NextResponse.json({ error: 'Message not found.' }, { status: 404 })
-    return NextResponse.json({ ok: true, deleted: 'thread' })
+
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      const exists = await client.query(`SELECT id FROM messages WHERE id = $1`, [threadId])
+      if (!exists.rows[0]) {
+        await client.query('ROLLBACK')
+        return NextResponse.json({ error: 'Message not found.' }, { status: 404 })
+      }
+
+      await client.query(`DELETE FROM responses WHERE message_id = $1`, [threadId])
+      await client.query(`DELETE FROM messages WHERE id = $1`, [threadId])
+      await client.query('COMMIT')
+      return NextResponse.json({ ok: true, deleted: 'thread' })
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {})
+      throw error
+    } finally {
+      client.release()
+    }
   } catch (error) {
     console.error('DELETE /api/messages failed:', error)
     return NextResponse.json({ error: 'Delete failed on the server.' }, { status: 500 })
