@@ -389,3 +389,125 @@
 @media (prefers-reduced-motion:reduce) {
   *,*::before,*::after { animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important; }
 }
+
+/* V8 background + icon polish ------------------------------------------------
+   A quieter arcade display: light curtains, scan-grid, phosphor grain and
+   sparse falling lines. No floating objects or animated blobs. */
+.funky-page {
+  background:
+    radial-gradient(900px 560px at 50% 8%, rgba(122, 73, 255, .16), transparent 66%),
+    radial-gradient(720px 520px at 12% 72%, rgba(39, 92, 255, .07), transparent 70%),
+    linear-gradient(180deg, #07060b 0%, #050509 48%, #030306 100%);
+}
+.funky-page::before {
+  opacity: .42;
+  background:
+    repeating-linear-gradient(90deg, rgba(130, 105, 255, .045) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 7px),
+    linear-gradient(90deg, transparent 0 14%, rgba(255,255,255,.028) 14.04%, transparent 14.1% 86%, rgba(255,255,255,.02) 86.04%, transparent 86.1%);
+}
+.funky-page::after {
+  opacity: .16;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,.028) 0 1px, transparent 1px 6px);
+  animation: crt-scroll 16s linear infinite;
+}
+.ambient-backdrop { z-index:-20; }
+.pixel-sky {
+  inset:-20%;
+  opacity:.9;
+  background:
+    linear-gradient(104deg, transparent 0 22%, rgba(126,91,255,.08) 30%, transparent 40%),
+    linear-gradient(76deg, transparent 0 58%, rgba(62,103,255,.055) 67%, transparent 76%),
+    repeating-linear-gradient(90deg, transparent 0 118px, rgba(157,125,255,.045) 119px, transparent 120px 238px);
+  animation: field-drift 28s ease-in-out infinite alternate;
+}
+.pixel-sky::before {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 31px, rgba(170,150,255,.055) 31px 32px, transparent 32px 64px),
+    repeating-linear-gradient(180deg, transparent 0 89px, rgba(255,255,255,.02) 90px, transparent 91px 180px);
+  opacity:.52;
+  animation: grid-breathe 18s ease-in-out infinite alternate;
+}
+.pixel-sky::after {
+  top:22%;
+  height:1px;
+  background:linear-gradient(90deg, transparent, rgba(151,118,255,.42), rgba(255,255,255,.12), rgba(74,108,255,.32), transparent);
+  box-shadow:none;
+  animation: horizon-glide 14s ease-in-out infinite;
+}
+.pixel-rain { opacity:.34; }
+.pixel-rain i {
+  width:1px;
+  height:var(--rain-height, 22vh);
+  background:linear-gradient(to bottom, transparent, rgba(145,117,255,.12) 28%, rgba(145,117,255,.32) 78%, transparent);
+  box-shadow:none;
+  animation-duration:var(--rain-speed, 12s);
+}
+.pixel-rain i::after { display:none; }
+.pixel-snow { opacity:.24; }
+.pixel-snow i {
+  width:1px;
+  height:1px;
+  border-radius:50%;
+  box-shadow:0 0 3px rgba(225,220,255,.3);
+  background:rgba(225,220,255,.7);
+  animation-duration:var(--snow-speed, 16s);
+}
+.arcade-scanline { opacity:.18; height:14%; background:linear-gradient(180deg,transparent,rgba(150,120,255,.045),transparent); animation-duration:19s; }
+.arcade-corners::before,.arcade-corners::after { opacity:.16; width:120px; height:120px; }
+.arcade-corners::before { border-color:rgba(141,115,255,.75); }
+.arcade-corners::after { border-color:rgba(255,190,74,.7); }
+
+/* Remove the old hard-offset / “AI card” look. */
+.message-shell,.funky-shell,.note-modal,.share-card {
+  border-radius:18px;
+  box-shadow:0 16px 50px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.035);
+}
+.message-shell { background:rgba(9,8,15,.78); }
+.message-shell::before { right:34px; width:46px; opacity:.7; box-shadow:none; }
+.message-shell:focus-within { transform:none; box-shadow:0 18px 56px rgba(0,0,0,.32), 0 0 0 1px rgba(216,255,47,.1), inset 0 1px rgba(255,255,255,.05); }
+.funky-button { border-radius:999px; box-shadow:0 8px 24px rgba(141,84,255,.18); }
+.funky-button:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 12px 30px rgba(141,84,255,.24); }
+.funky-button:active:not(:disabled) { transform:translateY(0); box-shadow:0 6px 18px rgba(141,84,255,.18); }
+.prompt-deck { border-radius:18px; background:rgba(8,7,13,.56); }
+.prompt-tile { border-radius:12px; }
+.response-card:hover { padding-left:.45rem; }
+.reply-card { border-radius:12px; }
+.reply-form { border-radius:999px; }
+.thread-message { border-radius:14px; border-left-width:2px; }
+.thread-placeholder { border-radius:18px; }
+
+/* Cleaner custom inbox marks: simple envelope, no suitcase geometry. */
+.brand-glyph {
+  width:30px; height:22px; border:1.5px solid var(--acid); border-radius:5px;
+  background:transparent; box-shadow:none; overflow:visible;
+}
+.brand-glyph::before,.brand-glyph::after {
+  top:7px; width:17px; height:1.5px; background:var(--acid); opacity:.95;
+}
+.brand-glyph::before { left:2px; transform:rotate(29deg); }
+.brand-glyph::after { right:2px; transform:rotate(-29deg); }
+.brand-glyph i { display:none; }
+.funky-avatar {
+  border-radius:50%; background:rgba(141,84,255,.06); box-shadow:0 0 0 1px rgba(141,84,255,.28), 0 10px 34px rgba(0,0,0,.28);
+}
+.funky-avatar svg { display:none; }
+.funky-avatar::before {
+  content:''; width:22px; height:16px; border:1.5px solid var(--violet-soft); border-radius:4px; position:absolute;
+}
+.funky-avatar::after {
+  content:''; position:absolute; width:14px; height:1.5px; background:var(--violet-soft); transform:rotate(28deg); box-shadow:0 0 8px rgba(176,140,255,.25);
+}
+.section-kicker svg,.question-label svg,.eyebrow svg { display:none; }
+.section-kicker::before,.question-label::before,.eyebrow::before {
+  content:''; width:18px; height:1px; background:currentColor; opacity:.72;
+}
+
+@keyframes field-drift { 0%{transform:translate3d(-1.5%,-.5%,0)} 100%{transform:translate3d(1.5%,.8%,0)} }
+@keyframes grid-breathe { 0%,100%{opacity:.34;transform:translateY(0)} 50%{opacity:.6;transform:translateY(12px)} }
+@keyframes horizon-glide { 0%,100%{transform:translateX(-8%);opacity:.18} 50%{transform:translateX(8%);opacity:.5} }
+@keyframes crt-scroll { from{background-position:0 0} to{background-position:0 72px} }
+
+@media (prefers-reduced-motion:reduce) {
+  .pixel-sky,.pixel-sky::before,.pixel-sky::after,.funky-page::after,.pixel-rain i,.pixel-snow i,.arcade-scanline { animation:none!important; }
+}
