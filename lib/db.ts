@@ -4,8 +4,10 @@ declare global {
   var __fowzanPool: Pool | undefined
 }
 
+const connectionString = process.env.STORAGE_DATABASE_URL || process.env.DATABASE_URL
+
 export const pool = globalThis.__fowzanPool ?? new Pool({
-  connectionString: process.env.STORAGE_DATABASE_URL || process.env.DATABASE_URL,
+  connectionString,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
   max: 5,
 })
