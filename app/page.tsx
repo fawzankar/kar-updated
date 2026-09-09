@@ -337,7 +337,7 @@ export default function Page() {
           <div>
             <div className="flex flex-wrap items-center gap-3"><div className="secret-sticker"><Mail size={14} /> private inbox</div><span className="soft-pill">{unreadCount} unread</span></div>
             <h1 className="display-title mt-5 text-[3.2rem] sm:text-7xl">Your<br /><span>inbox.</span></h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">Every message lands here. Open a thread, reply as yourself, and keep the conversation moving.</p>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">Everything lands here. Open a message, reply as yourself, and manage each conversation on your terms.</p>
           </div>
           <button className="share-icon" onClick={sharePage} aria-label="Share anonymous inbox"><Share2 size={17} /></button>
         </div>
@@ -425,7 +425,7 @@ export default function Page() {
         <div className="identity-row">
           <div className="avatar funky-avatar"><Mail size={25} strokeWidth={1.7} /></div>
           <div>
-            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous transmissions</div>
+            <div className="eyebrow"><span className="eyebrow-pulse" /> anonymous messages</div>
             <p className="mt-2 text-sm text-muted-foreground">Send a message without revealing who you are.</p>
           </div>
         </div>
