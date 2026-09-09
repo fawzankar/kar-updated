@@ -4,9 +4,15 @@ declare global {
   var __fowzanPool: Pool | undefined
 }
 
+const connectionString = process.env.STORAGE_DATABASE_URL || process.env.DATABASE_URL
+
+if (!connectionString) {
+  throw new Error('No database connection is configured. Add STORAGE_DATABASE_URL or DATABASE_URL in Vercel.')
+}
+
 export const pool = globalThis.__fowzanPool ?? new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  connectionString,
+  ssl: { rejectUnauthorized: false },
   max: 5,
 })
 
