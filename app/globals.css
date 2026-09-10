@@ -4965,3 +4965,98 @@ html, body { max-width:100%; overflow-x:hidden; }
     word-spacing: normal !important;
   }
 }
+
+/* FINAL MOBILE REPAIR: breathable hero + restrained Matrix/particle atmosphere */
+.app-page[data-mode='gamer'] .public-hero {
+  position: relative;
+  z-index: 2;
+}
+
+.app-page[data-mode='gamer'] .public-hero h1 {
+  margin-top: 42px !important;
+  font-size: clamp(2.8rem, 10.8vw, 4.6rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -.035em !important;
+  max-width: 100% !important;
+}
+
+.app-page[data-mode='gamer'] .public-hero h1 .hero-message-line {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  letter-spacing: -.035em !important;
+  word-spacing: normal !important;
+  white-space: nowrap !important;
+}
+
+/* Keep the Matrix dense, but make it background atmosphere rather than text competing with the hero. */
+.app-page[data-mode='gamer'] .cyber-bg {
+  opacity: .38 !important;
+  z-index: 0 !important;
+}
+.app-page[data-mode='gamer'] .cyber-bg b {
+  opacity: .24 !important;
+  font-size: 10px !important;
+  line-height: 1.5 !important;
+  text-shadow: 0 0 7px rgba(var(--signal-rgb), .55) !important;
+}
+.app-page[data-mode='gamer'] .cyber-bg b span:first-child {
+  text-shadow: 0 0 7px rgba(var(--signal-rgb), .55) !important;
+}
+
+.app-page[data-mode='gamer'] .particle-field {
+  z-index: 1 !important;
+  opacity: .8 !important;
+}
+.app-page[data-mode='gamer'] .particle-field i {
+  opacity: .28 !important;
+  width: 2px !important;
+  height: 2px !important;
+}
+
+@media (max-width: 640px) {
+  .app-page[data-mode='gamer'] .public-hero {
+    padding-top: 76px !important;
+    padding-bottom: 72px !important;
+  }
+
+  .app-page[data-mode='gamer'] .hero-badge {
+    margin-bottom: 0 !important;
+  }
+
+  .app-page[data-mode='gamer'] .public-hero h1 {
+    margin-top: 38px !important;
+    font-size: clamp(2.8rem, 10.8vw, 4.6rem) !important;
+    line-height: 1.02 !important;
+    letter-spacing: -.035em !important;
+  }
+
+  .app-page[data-mode='gamer'] .public-hero h1 .hero-message-line {
+    letter-spacing: -.035em !important;
+  }
+
+  .app-page[data-mode='gamer'] .cyber-bg {
+    opacity: .34 !important;
+  }
+
+  .app-page[data-mode='gamer'] .cyber-bg b {
+    display: block !important;
+    font-size: 8px !important;
+    line-height: 1.55 !important;
+    letter-spacing: .05em !important;
+    opacity: .20 !important;
+  }
+
+  .app-page[data-mode='gamer'] .particle-field i {
+    display: block !important;
+    opacity: .24 !important;
+    width: 2px !important;
+    height: 2px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .app-page[data-mode='gamer'] .public-hero h1 {
+    font-size: 2.75rem !important;
+  }
+}
