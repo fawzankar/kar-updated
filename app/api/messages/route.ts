@@ -41,6 +41,14 @@ function cleanImageData(value: unknown) {
   return match ? candidate : null
 }
 
+async function deletePoll(pollId: number) {
+  const result = await pool.query(
+    `UPDATE polls SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
+    [pollId]
+  )
+  return Boolean(result.rows[0])
+}
+
 function cleanMediaUrl(value: unknown) {
   const candidate = clean(value, 2000)
   if (!candidate) return null
