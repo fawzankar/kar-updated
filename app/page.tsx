@@ -461,7 +461,50 @@ export default function Page() {
       {error && <div className="error-banner page-width">{error}</div>}
 
       <section className="public-threads page-width"><div className="threads-heading"><div><div className="eyebrow"><MessageCircle size={13} /> FOWZAN&apos;S REPLIES</div><h2>REPLY BOARD.</h2><p>Messages Fowzan chooses to answer appear here — and you can keep the conversation going.</p><small className="thread-contribute-hint">Have something to add? Join the thread and contribute your own reply.</small></div><span>{responses.length} live</span></div>
-        {polls.length > 0 && <div className="public-poll-list">{polls.map((poll) => <article className="public-poll" key={poll.id}><div className="poll-meta"><span><BarChart3 size={13} /> ANONYMOUS POLL</span><button onClick={() => sharePoll(poll)} aria-label="Share this poll"><Share2 size={14} /></button></div><h3>{poll.question}</h3><div className="poll-options">{poll.options.map((option, index) => { const total = poll.totalVotes || 0; const pct = total ? Math.round((poll.counts[index] / total) * 100) : 0; const voted = votedPolls[poll.id] !== undefined; return <button key={option + index} className={`poll-option ${voted ? 'show-result' : ''} ${votedPolls[poll.id] === index ? 'selected' : ''}`} onClick={() => votePoll(poll, index)} disabled={voted}><span className="poll-option-label">{option}</span>{voted && <><i style={{ width: `${pct}%` }} /><b>{pct}%</b></>}</button> })}</div><div className="poll-foot"><span>{poll.totalVotes} anonymous {poll.totalVotes === 1 ? 'vote' : 'votes'}</span><span>{formatTime(poll.time)}</span></div></article>})}</div>}
+        {polls.length > 0 && (
+          <div className="public-poll-list">
+            {polls.map((poll) => (
+              <article className="public-poll" key={poll.id}>
+                <div className="poll-meta">
+                  <span><BarChart3 size={13} /> ANONYMOUS POLL</span>
+                  <button onClick={() => sharePoll(poll)} aria-label="Share this poll">
+                    <Share2 size={14} />
+                  </button>
+                </div>
+                <h3>{poll.question}</h3>
+                <div className="poll-options">
+                  {poll.options.map((option, index) => {
+                    const total = poll.totalVotes || 0
+                    const pct = total ? Math.round(((poll.counts[index] ?? 0) / total) * 100) : 0
+                    const voted = votedPolls[poll.id] !== undefined
+                    const selected = votedPolls[poll.id] === index
+
+                    return (
+                      <button
+                        key={`${poll.id}-${index}`}
+                        className={`poll-option ${voted ? 'show-result' : ''} ${selected ? 'selected' : ''}`}
+                        onClick={() => votePoll(poll, index)}
+                        disabled={voted}
+                      >
+                        <span className="poll-option-label">{option}</span>
+                        {voted && (
+                          <>
+                            <i style={{ width: `${pct}%` }} />
+                            <b>{pct}%</b>
+                          </>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="poll-foot">
+                  <span>{poll.totalVotes} anonymous {poll.totalVotes === 1 ? 'vote' : 'votes'}</span>
+                  <span>{formatTime(poll.time)}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
         {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{responses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><h3>{response.text}</h3>{response.replies.length > 0 && <div className="public-replies">{response.replies.map((reply) => <div key={reply.id}><div><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}</div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareThread(response)}><Share2 size={14} /> share</button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join thread</button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!responses.length && <div className="empty-browser public-empty"><MessageCircle size={20} /><strong>Fowzan has not replied yet.</strong><span>Come back soon to see messages Fowzan chooses to answer.</span></div>}</div>}
       </section>
 
