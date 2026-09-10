@@ -4854,3 +4854,12 @@ html, body { max-width:100%; overflow-x:hidden; }
 .public-page .public-hero h1 em {
   margin-top: .12em;
 }
+
+
+/* Hero heading spacing refinement */
+.public-page .public-hero h1 em {
+  display: inline-block;
+  margin-top: .10em;
+  letter-spacing: inherit;
+  word-spacing: normal;
+}
