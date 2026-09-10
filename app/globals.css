@@ -4844,3 +4844,13 @@ html, body { max-width:100%; overflow-x:hidden; }
   pointer-events: none !important;
   display: block !important;
 }
+
+
+/* Final hero typography: give the second line a little breathing room. */
+.public-page .public-hero h1 .hero-message-line {
+  margin-top: .12em !important;
+}
+/* Subtle breathing room in the public hero heading */
+.public-page .public-hero h1 em {
+  margin-top: .12em;
+}
