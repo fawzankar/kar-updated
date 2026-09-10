@@ -1118,3 +1118,44 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
     }
   }
 }
+
+/* Inbox refinement pass: richer thread controls, tactile motion, and denser Matrix atmosphere. */
+.browser-head { flex-wrap: wrap; }
+.thread-search { order: 3; width: 100%; height: 34px; padding: 0 10px; color: var(--foreground); background: rgba(0,0,0,.22); border: 1px solid rgba(var(--signal-rgb),.22); border-radius: 6px; outline: none; font: 700 10px var(--font-sans-custom), monospace; letter-spacing: .04em; }
+.thread-search::placeholder { color: var(--muted-foreground); text-transform: uppercase; }
+.thread-search:focus { border-color: var(--signal); box-shadow: 0 0 0 3px rgba(var(--signal-rgb),.1); }
+.public-thread-foot > div { display: inline-flex; align-items: center; gap: 12px; }
+.icon-action, .share-square { transition: transform .18s cubic-bezier(.2,.9,.3,1.35), box-shadow .18s ease, border-color .18s ease; }
+.icon-action:hover, .share-square:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 8px 20px rgba(var(--signal-rgb),.16); }
+.primary-button:not(:disabled):hover, .secondary-button:not(:disabled):hover, .refresh-button:not(:disabled):hover, .send-button:not(:disabled):hover { transform: translateY(-2px); filter: brightness(1.08); }
+.primary-button:not(:disabled):active, .secondary-button:not(:disabled):active, .refresh-button:not(:disabled):active, .icon-action:active, .share-square:active { transform: translateY(0) scale(.97); }
+.thread-item { position: relative; overflow: hidden; }
+.thread-item::after { content: ''; position: absolute; inset: 0 auto 0 -2px; width: 2px; background: var(--signal); box-shadow: 0 0 12px var(--signal); transform: scaleY(0); transition: transform .18s ease; }
+.thread-item:hover::after, .thread-item.active::after { transform: scaleY(.72); }
+.conversation-card { box-shadow: 0 24px 60px rgba(0,0,0,.26), inset 0 1px rgba(255,255,255,.045); }
+.conversation-scroll { scroll-behavior: smooth; background: linear-gradient(180deg, rgba(var(--signal-rgb),.025), transparent 28%); }
+.reply-dock { background: linear-gradient(180deg, rgba(0,0,0,.2), rgba(0,0,0,.46)); }
+.reply-dock::before { content: 'DRAFTS SAVE ON THIS DEVICE'; display: block; margin: 0 0 8px 2px; color: rgba(var(--signal-rgb),.66); font: 700 7px var(--font-sans-custom), monospace; letter-spacing: .13em; }
+.cyber-bg::after { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .27; background: repeating-linear-gradient(90deg, transparent 0 74px, rgba(var(--signal-rgb),.055) 75px 76px), repeating-linear-gradient(0deg, transparent 0 66px, rgba(var(--signal-rgb),.045) 67px 68px); mask-image: linear-gradient(to bottom, transparent, #000 15%, #000 83%, transparent); }
+.cyber-bg b { filter: saturate(1.15); text-shadow: 0 0 5px rgba(var(--signal-rgb),.9), 0 0 19px rgba(var(--signal-rgb),.36); }
+.cyber-bg b span:first-child { color: #ecfff0; text-shadow: 0 0 9px #ecfff0, 0 0 22px var(--signal); }
+.cyber-bg b:nth-of-type(3n) { animation-duration: 13s; opacity: .36; }
+.cyber-bg b:nth-of-type(4n) { animation-duration: 8s; opacity: .19; filter: blur(.15px); }
+
+.shared-thread-page { min-height: 100svh; color: #eaf7ec; background: #040705; font-family: var(--font-sans-custom), monospace; overflow: hidden; position: relative; }
+.shared-thread-grid { position: absolute; inset: 0; opacity: .5; background: radial-gradient(circle at 50% 0, rgba(183,255,54,.12), transparent 36rem), linear-gradient(rgba(183,255,54,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(183,255,54,.045) 1px, transparent 1px); background-size: auto, 42px 42px, 42px 42px; mask-image: linear-gradient(#000, transparent); }
+.shared-thread-shell { position: relative; width: min(760px, calc(100% - 32px)); margin: 0 auto; padding: clamp(30px, 8vw, 84px) 0; }
+.shared-thread-back { display: inline-flex; align-items: center; gap: 8px; color: #b7ff36; text-decoration: none; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.shared-thread-card, .shared-thread-loading { margin-top: 30px; padding: clamp(22px, 5vw, 44px); border: 1px solid rgba(183,255,54,.3); border-radius: 12px; background: linear-gradient(145deg, rgba(16,27,17,.93), rgba(4,8,5,.94)); box-shadow: 0 28px 80px rgba(0,0,0,.42), inset 0 1px rgba(255,255,255,.045); }
+.shared-thread-loading { display: flex; align-items: center; justify-content: center; gap: 10px; color: #b7ff36; font-size: 11px; }
+.shared-thread-kicker { display: flex; align-items: center; gap: 9px; color: #b7ff36; font-size: 9px; font-weight: 700; letter-spacing: .14em; }
+.shared-thread-kicker > span { width: 7px; height: 7px; border-radius: 50%; background: #b7ff36; box-shadow: 0 0 16px #b7ff36; }
+.shared-thread-kicker button { margin-left: auto; display: grid; place-items: center; width: 34px; height: 34px; color: #b7ff36; background: rgba(183,255,54,.06); border: 1px solid rgba(183,255,54,.22); border-radius: 7px; cursor: pointer; }
+.shared-thread-card h1 { margin: 26px 0 6px; font: 400 clamp(28px, 7vw, 56px) var(--font-display), monospace; line-height: 1.1; overflow-wrap: anywhere; }
+.shared-thread-card > p, .shared-thread-date { color: #8aa18e; font-size: 11px; line-height: 1.7; }
+.shared-thread-messages { display: grid; gap: 10px; margin-top: 28px; }
+.shared-message { padding: 14px; border: 1px solid rgba(183,255,54,.15); border-radius: 8px; background: rgba(255,255,255,.025); }
+.shared-message.from-owner { border-color: rgba(183,255,54,.36); background: rgba(183,255,54,.06); }
+.shared-message b { color: #b7ff36; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }.shared-message p { margin: 9px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.65; }
+@media (prefers-reduced-motion: reduce) { .thread-item, .icon-action, .share-square, .primary-button, .secondary-button, .refresh-button { transition: none !important; } .cyber-bg::after { display: none; } }
+@media (max-width: 640px) { .admin-hero-actions { grid-template-columns: 1fr repeat(3, 42px); }.thread-search { font-size: 9px; }.public-thread-foot > div { gap: 8px; }.shared-thread-card { border-radius: 9px; }.shared-thread-card h1 { font-size: 28px; } }

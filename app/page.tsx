@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, Check, ChevronRight, Inbox, LockKeyhole, LogOut,
-  Mail, MessageCircle, PenLine, RefreshCw, Send, Share2, Sparkles,
+  Bell, BellRing, Download, Mail, MessageCircle, PenLine, RefreshCw, Send, Share2, Sparkles,
   Star, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot
 } from 'lucide-react'
 
@@ -69,8 +69,17 @@ export default function Page() {
   const [deleteBusy, setDeleteBusy] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [threadQuery, setThreadQuery] = useState('')
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
+  const replyInputRef = useRef<HTMLInputElement>(null)
+  const knownThreadIds = useRef(new Set<number>())
+  const inboxInitialized = useRef(false)
 
-  const visibleThoughts = useMemo(() => showKeeps ? thoughts.filter((item) => item.kept) : thoughts, [showKeeps, thoughts])
+  const visibleThoughts = useMemo(() => thoughts.filter((item) => {
+    if (showKeeps && !item.kept) return false
+    const query = threadQuery.trim().toLowerCase()
+    return !query || item.text.toLowerCase().includes(query) || item.senderName?.toLowerCase().includes(query)
+  }), [showKeeps, thoughts, threadQuery])
   const unreadCount = thoughts.filter((item) => item.unread).length
   const waitingCount = thoughts.filter((item) => item.replies.length === 0).length
   const replyCount = thoughts.reduce((sum, item) => sum + item.replies.length, 0)
@@ -93,6 +102,12 @@ export default function Page() {
       if (!response.ok) throw new Error('Could not load your inbox.')
       const data = await response.json()
       const nextMessages: Thought[] = data.messages ?? []
+      const incoming = nextMessages.filter((item) => !knownThreadIds.current.has(item.id))
+      if (inboxInitialized.current && incoming.length && notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification("Fowzan's Inbox", { body: `${incoming.length} new ${incoming.length === 1 ? 'message' : 'messages'} waiting for you.` })
+      }
+      knownThreadIds.current = new Set(nextMessages.map((item) => item.id))
+      inboxInitialized.current = true
       setThoughts(nextMessages)
       setResponses(data.responses ?? [])
       setSelected((current) => current ? nextMessages.find((item) => item.id === current.id) ?? null : null)
@@ -113,6 +128,26 @@ export default function Page() {
     const timer = window.setInterval(() => { loadOwner(true) }, 10000)
     return () => window.clearInterval(timer)
   }, [view, ownerUnlocked])
+
+  useEffect(() => {
+    if (view !== 'private' || !ownerUnlocked) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement
+      if (target.matches('input, textarea, select')) return
+      if (event.key === 'Escape') setSelected(null)
+      if (event.key.toLowerCase() === 'r' && selected) { event.preventDefault(); replyInputRef.current?.focus() }
+      if (event.key.toLowerCase() === 's' && selected) { event.preventDefault(); void toggleKeep(selected.id) }
+      if ((event.key.toLowerCase() === 'j' || event.key.toLowerCase() === 'k') && visibleThoughts.length) {
+        event.preventDefault()
+        const currentIndex = selected ? visibleThoughts.findIndex((item) => item.id === selected.id) : -1
+        const direction = event.key.toLowerCase() === 'j' ? 1 : -1
+        const nextIndex = Math.max(0, Math.min(visibleThoughts.length - 1, currentIndex + direction))
+        openThought(visibleThoughts[nextIndex])
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [view, ownerUnlocked, selected, visibleThoughts])
 
   async function submitThought() {
     const text = thought.trim(); if (!text || sending) return
@@ -141,6 +176,7 @@ export default function Page() {
     try {
       const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'owner-reply', messageId: id, text }) })
       const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error ?? 'Could not post the reply.')
+      localStorage.removeItem(`fowzan-draft-${id}`)
       setOwnerReplies((current) => ({ ...current, [id]: '' })); await loadOwner(true)
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not post the reply.') }
     finally { setReplySending(null) }
@@ -187,6 +223,31 @@ export default function Page() {
     } catch { setCopied(false) }
   }
 
+  async function shareThread(item: Thought | PublicResponse) {
+    const url = `${window.location.origin}/thread/${item.id}`
+    try {
+      if (navigator.share) await navigator.share({ title: "A thread from Fowzan's Inbox", text: item.text.slice(0, 120), url })
+      else { await navigator.clipboard.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
+    } catch { setCopied(false) }
+  }
+
+  function downloadInbox() {
+    const exportData = thoughts.map(({ id, text, senderName, time, kept, replies }) => ({ id, message: text, senderName: senderName || 'Anonymous', receivedAt: time, saved: Boolean(kept), replies }))
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url; link.download = `fowzans-inbox-${new Date().toISOString().slice(0, 10)}.json`; link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function toggleNotifications() {
+    if (!('Notification' in window)) { setError('This browser does not support notifications.'); return }
+    if (Notification.permission === 'denied') { setError('Notifications are blocked in your browser settings.'); return }
+    const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission()
+    setNotificationsEnabled(permission === 'granted')
+    if (permission !== 'granted') setError('Notification permission was not granted.')
+  }
+
   async function unlock(event: React.FormEvent) {
     event.preventDefault(); setLoginError('')
     try {
@@ -201,6 +262,7 @@ export default function Page() {
 
   function openThought(item: Thought) {
     setSelected(item)
+    setOwnerReplies((current) => current[item.id] !== undefined ? current : { ...current, [item.id]: localStorage.getItem(`fowzan-draft-${item.id}`) ?? '' })
     if (item.unread) {
       setThoughts((current) => current.map((entry) => entry.id === item.id ? { ...entry, unread: false } : entry))
       fetch('/api/messages', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id, action: 'read' }) }).catch(() => {})
@@ -236,7 +298,7 @@ export default function Page() {
 
       <section className="admin-hero page-width">
         <div><div className="eyebrow"><Inbox size={14} /> private inbox</div><h1 className="admin-title">Your<br /><span>conversations.</span></h1><p className="admin-subtitle">A calm workspace for everything people leave you. Reply freely, keep what matters, and clean up any message.</p></div>
-        <div className="admin-hero-actions"><button className="refresh-button" onClick={() => loadOwner()} disabled={refreshing}><RefreshCw size={15} className={refreshing ? 'spin' : ''} /> {refreshing ? 'refreshing' : 'refresh inbox'}</button><button className="share-square" onClick={sharePage} aria-label="Share inbox">{copied ? <Check size={17} /> : <Share2 size={17} />}</button></div>
+        <div className="admin-hero-actions"><button className="refresh-button" onClick={() => loadOwner()} disabled={refreshing}><RefreshCw size={15} className={refreshing ? 'spin' : ''} /> {refreshing ? 'refreshing' : 'refresh inbox'}</button><button className="share-square" onClick={toggleNotifications} aria-label="Toggle inbox notifications" title={notificationsEnabled ? 'Inbox notifications are on' : 'Turn on inbox notifications'}>{notificationsEnabled ? <BellRing size={17} /> : <Bell size={17} />}</button><button className="share-square" onClick={downloadInbox} aria-label="Download inbox" title="Download inbox"><Download size={17} /></button><button className="share-square" onClick={sharePage} aria-label="Share inbox">{copied ? <Check size={17} /> : <Share2 size={17} />}</button></div>
       </section>
 
       {error && <div className="error-banner page-width">{error}</div>}
@@ -250,7 +312,7 @@ export default function Page() {
 
       <section className="admin-workspace page-width">
         <aside className="thread-browser">
-          <div className="browser-head"><div><div className="eyebrow"><MessageCircle size={13} /> all threads</div><p>{visibleThoughts.length} {visibleThoughts.length === 1 ? 'conversation' : 'conversations'}</p></div><span className="live-dot"><i /> live</span></div>
+          <div className="browser-head"><div><div className="eyebrow"><MessageCircle size={13} /> all threads</div><p>{visibleThoughts.length} {visibleThoughts.length === 1 ? 'conversation' : 'conversations'}</p></div><span className="live-dot"><i /> live</span><input className="thread-search" value={threadQuery} onChange={(event) => setThreadQuery(event.target.value)} placeholder="search threads" aria-label="Search threads" /></div>
           <div className="thread-list">
             {visibleThoughts.map((item) => <button key={item.id} onClick={() => openThought(item)} className={`thread-item ${selected?.id === item.id ? 'active' : ''}`}>
               <div className="thread-item-top"><span>{item.senderName || 'Anonymous'}</span>{item.unread && <b>new</b>}</div>
@@ -262,12 +324,12 @@ export default function Page() {
 
         <section className="conversation-shell">
           {!selected ? <div className="conversation-empty"><div className="empty-icon"><MessageCircle size={23} /></div><h2>Choose a conversation</h2><p>Select a message from the left to open its thread.</p></div> : <div className="conversation-card">
-            <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><Trash2 size={14} /> {deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</button></div></div>
+            <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => shareThread(selected)} title="Share this thread" aria-label="Share this thread">{copied ? <Check size={15} /> : <Share2 size={15} />}</button><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><Trash2 size={14} /> {deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</button></div></div>
             <div className="conversation-scroll">
               <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div><p>{selected.text}</p></article>
               {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author === 'Fowzan' ? 'Fowzan' : reply.author}</span><span>{formatTime(reply.time)}</span></div><p>{reply.text}</p><button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`} title="Remove only this reply" aria-label="Remove only this reply"><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'remove reply'}</button></article>)}
             </div>
-            <div className="reply-dock"><div className="reply-composer"><input value={ownerReplies[selected.id] ?? ''} onChange={(e) => setOwnerReplies((c) => ({ ...c, [selected.id]: e.target.value }))} placeholder="Write a reply as Fowzan…" maxLength={1000} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitOwnerReply(selected.id) } }} /><button onClick={() => submitOwnerReply(selected.id)} disabled={!ownerReplies[selected.id]?.trim() || replySending === selected.id}>{replySending === selected.id ? <Loader2 size={17} className="spin" /> : <Send size={16} />}</button></div><div className="composer-foot"><span>Reply as many times as you want.</span><span>{(ownerReplies[selected.id] ?? '').length}/1000</span></div></div>
+            <div className="reply-dock"><div className="reply-composer"><input ref={replyInputRef} value={ownerReplies[selected.id] ?? ''} onChange={(e) => { const value = e.target.value; setOwnerReplies((c) => ({ ...c, [selected.id]: value })); localStorage.setItem(`fowzan-draft-${selected.id}`, value) }} placeholder="Write a reply as Fowzan…" maxLength={1000} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitOwnerReply(selected.id) } }} /><button onClick={() => submitOwnerReply(selected.id)} disabled={!ownerReplies[selected.id]?.trim() || replySending === selected.id}>{replySending === selected.id ? <Loader2 size={17} className="spin" /> : <Send size={16} />}</button></div><div className="composer-foot"><span>{ownerReplies[selected.id] ? 'Draft saved on this device · Enter to send' : 'R reply · S save · J/K browse · Esc close'}</span><span>{(ownerReplies[selected.id] ?? '').length}/1000</span></div></div>
           </div>}
         </section>
       </section>
@@ -300,7 +362,7 @@ export default function Page() {
       {error && <div className="error-banner page-width">{error}</div>}
 
       <section className="public-threads page-width"><div className="threads-heading"><div><div className="eyebrow"><MessageCircle size={13} /> FOWZAN&apos;S REPLIES</div><h2>REPLY BOARD.</h2><p>Messages Fowzan chooses to answer appear here — and you can keep the conversation going.</p><small className="thread-contribute-hint">Have something to add? Join the thread and contribute your own reply.</small></div><span>{responses.length} live</span></div>
-        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{responses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><h3>{response.text}</h3>{response.replies.length > 0 && <div className="public-replies">{response.replies.map((reply) => <div key={reply.id}><div><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div><p>{reply.text}</p></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join thread</button></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!responses.length && <div className="empty-browser public-empty"><MessageCircle size={20} /><strong>Fowzan has not replied yet.</strong><span>Come back soon to see messages Fowzan chooses to answer.</span></div>}</div>}
+        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{responses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><h3>{response.text}</h3>{response.replies.length > 0 && <div className="public-replies">{response.replies.map((reply) => <div key={reply.id}><div><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div><p>{reply.text}</p></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span><div><button onClick={() => shareThread(response)}><Share2 size={14} /> share</button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join thread</button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!responses.length && <div className="empty-browser public-empty"><MessageCircle size={20} /><strong>Fowzan has not replied yet.</strong><span>Come back soon to see messages Fowzan chooses to answer.</span></div>}</div>}
       </section>
 
       {sent && <div className="modal-backdrop" onClick={() => setSent(false)}><article className="success-modal" onClick={(e) => e.stopPropagation()}><div className="success-icon"><Check size={21} /></div><div className="eyebrow">message delivered</div><h2>That was sent.</h2><p>Your message is safely in Fowzan's inbox. Leave another whenever you feel like it.</p><button className="primary-button" onClick={() => setSent(false)}>Send another <ChevronRight size={17} /></button></article></div>}

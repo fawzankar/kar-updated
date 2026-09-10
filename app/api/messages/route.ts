@@ -4,18 +4,19 @@ import { isOwner } from '@/lib/auth'
 
 const MAX_MESSAGE = 500
 const MAX_REPLY = 1000
-const rateMap = new Map<string, { count: number; reset: number }>()
 
-function rateLimit(request: Request, key: string) {
+async function rateLimit(request: Request, key: 'message' | 'reply') {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-  const now = Date.now()
-  const bucket = rateMap.get(`${ip}:${key}`)
-  if (!bucket || bucket.reset < now) {
-    rateMap.set(`${ip}:${key}`, { count: 1, reset: now + 60_000 })
-    return true
-  }
-  bucket.count += 1
-  return bucket.count <= (key === 'message' ? 5 : 10)
+  const bucket = `${ip}:${key}`
+  const result = await pool.query(`
+    INSERT INTO rate_limits (bucket, count, reset_at)
+    VALUES ($1, 1, NOW() + INTERVAL '1 minute')
+    ON CONFLICT (bucket) DO UPDATE SET
+      count = CASE WHEN rate_limits.reset_at < NOW() THEN 1 ELSE rate_limits.count + 1 END,
+      reset_at = CASE WHEN rate_limits.reset_at < NOW() THEN NOW() + INTERVAL '1 minute' ELSE rate_limits.reset_at END
+    RETURNING count
+  `, [bucket])
+  return Number(result.rows[0].count) <= (key === 'message' ? 5 : 10)
 }
 
 function clean(value: unknown, max: number) {
@@ -29,7 +30,26 @@ function asId(value: unknown) {
 
 export async function GET(request: Request) {
   await ensureSchema()
-  const ownerView = new URL(request.url).searchParams.get('view') === 'owner'
+  const params = new URL(request.url).searchParams
+  const ownerView = params.get('view') === 'owner'
+
+  if (params.get('view') === 'thread') {
+    const id = asId(params.get('id'))
+    if (!id) return NextResponse.json({ error: 'Invalid thread.' }, { status: 400 })
+    const result = await pool.query(`
+      SELECT m.id, m.text, m.sender_name AS "senderName", m.created_at AS time,
+        COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author) ORDER BY r.created_at ASC, r.id ASC)
+        FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
+      FROM messages m
+      LEFT JOIN responses r ON r.message_id = m.id
+      WHERE m.id = $1 AND m.deleted_at IS NULL
+        AND EXISTS (SELECT 1 FROM responses published WHERE published.message_id = m.id AND published.author = 'Fowzan')
+      GROUP BY m.id
+    `, [id])
+    if (!result.rows[0]) return NextResponse.json({ error: 'This thread is not available to share.' }, { status: 404 })
+    const thread = result.rows[0]
+    return NextResponse.json({ thread: { ...thread, id: Number(thread.id), replies: thread.replies.map((reply: any) => ({ ...reply, id: Number(reply.id) })) } }, { headers: { 'Cache-Control': 'no-store' } })
+  }
 
   if (ownerView) {
     if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -114,7 +134,7 @@ export async function POST(request: Request) {
   const action = clean(body.action, 40)
 
   if (action === 'message' || action === 'public-reply') {
-    if (!rateLimit(request, action === 'message' ? 'message' : 'reply')) {
+    if (!(await rateLimit(request, action === 'message' ? 'message' : 'reply'))) {
       return NextResponse.json({ error: 'Too many submissions. Please wait a minute and try again.' }, { status: 429 })
     }
   }

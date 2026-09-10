@@ -39,6 +39,11 @@ export function ensureSchema() {
       author TEXT NOT NULL DEFAULT 'Fowzan',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS rate_limits (
+      bucket TEXT PRIMARY KEY,
+      count INTEGER NOT NULL DEFAULT 0,
+      reset_at TIMESTAMPTZ NOT NULL
+    );
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS sender_name TEXT;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN NOT NULL DEFAULT FALSE;
@@ -46,6 +51,7 @@ export function ensureSchema() {
     ALTER TABLE responses ADD COLUMN IF NOT EXISTS author TEXT NOT NULL DEFAULT 'Fowzan';
     CREATE INDEX IF NOT EXISTS messages_created_idx ON messages(created_at DESC);
     CREATE INDEX IF NOT EXISTS responses_message_idx ON responses(message_id);
+    CREATE INDEX IF NOT EXISTS rate_limits_reset_idx ON rate_limits(reset_at);
   `).then(() => undefined)
 
   globalThis.__fowzanSchemaPromise = setup.catch((error) => {
