@@ -83,7 +83,7 @@ export async function GET(request: Request) {
     `, [id])
     if (!result.rows[0]) return NextResponse.json({ error: 'This thread is not available to share.' }, { status: 404 })
     const thread = result.rows[0]
-    return NextResponse.json({ thread: { ...thread, id: Number(thread.id), mediaData: thread.mediaData ?? null, mediaType: thread.mediaType ?? null, replies: thread.replies.map((reply: any) => ({ ...reply, id: Number(reply.id) })) } }, { headers: { 'Cache-Control': 'no-store' } })
+    return NextResponse.json({ thread: { ...thread, id: Number(thread.id), mediaData: thread.mediaData ?? null, mediaType: thread.mediaType ?? null, mediaTranscript: thread.mediaTranscript ?? null, replies: thread.replies.map((reply: any) => ({ ...reply, id: Number(reply.id) })) } }, { headers: { 'Cache-Control': 'no-store' } })
   }
 
   if (params.get('view') === 'poll') {
@@ -262,18 +262,18 @@ export async function POST(request: Request) {
   if (action === 'message') {
     const text = clean(body.text, MAX_MESSAGE)
     const senderName = clean(body.senderName, 80) || null
-    const mediaCandidate = clean(body.mediaData, 2200000)
+    const mediaCandidate = clean(body.mediaData, 1250000)
     const mediaType = body.mediaType === 'image' ? 'image' : body.mediaType === 'audio' ? 'audio' : null
-    const mediaTranscript = clean(body.mediaTranscript, 1200) || null
+    const mediaTranscript = mediaType === 'audio' ? clean(body.mediaTranscript, 1200) || null : null
     if (!text && !mediaCandidate) return NextResponse.json({ error: 'Message cannot be empty.' }, { status: 400 })
     if (mediaCandidate) {
       const prefix = mediaType === 'image' ? /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/ : /^data:audio\/(webm|ogg|mp4|mpeg|wav);base64,[A-Za-z0-9+/=]+$/
       if (!mediaType || !prefix.test(mediaCandidate)) return NextResponse.json({ error: 'Invalid attachment.' }, { status: 400 })
-      if (mediaCandidate.length > 2100000) return NextResponse.json({ error: 'Attachment is too large.' }, { status: 400 })
+      if (mediaCandidate.length > 1200000) return NextResponse.json({ error: 'Attachment is too large.' }, { status: 400 })
     }
     const result = await pool.query(
       `INSERT INTO messages (text, sender_name, media_data, media_type, media_transcript) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [text, senderName, mediaCandidate || null, mediaCandidate ? mediaType : null, mediaType === 'audio' ? mediaTranscript : null]
+      [text, senderName, mediaCandidate || null, mediaCandidate ? mediaType : null, mediaTranscript]
     )
     return NextResponse.json({ ok: true, id: Number(result.rows[0].id) })
   }
