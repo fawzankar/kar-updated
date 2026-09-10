@@ -4865,23 +4865,29 @@ html, body { max-width:100%; overflow-x:hidden; }
 }
 
 
-/* Final hero heading tight spacing */
+/* FINAL HERO SPACING */
 .public-page .public-hero h1 {
-  line-height: .82 !important;
+  line-height: 0.68 !important;
+  letter-spacing: -0.07em !important;
 }
+
 .public-page .public-hero h1 em {
-  display: inline-block !important;
-  margin-top: .025em !important;
-  letter-spacing: -0.055em !important;
-  word-spacing: -0.08em !important;
+  display: inline !important;
+  margin-top: 0 !important;
+  letter-spacing: -0.07em !important;
+  word-spacing: -0.12em !important;
 }
+
 @media (max-width: 640px) {
   .public-page .public-hero h1 {
-    line-height: .84 !important;
+    line-height: 0.70 !important;
+    letter-spacing: -0.055em !important;
   }
+
   .public-page .public-hero h1 em {
-    margin-top: .02em !important;
-    letter-spacing: -0.05em !important;
-    word-spacing: -0.07em !important;
+    display: inline !important;
+    margin-top: 0 !important;
+    letter-spacing: -0.055em !important;
+    word-spacing: -0.10em !important;
   }
 }
