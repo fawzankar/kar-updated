@@ -29,7 +29,6 @@ export function ensureSchema() {
       sender_name TEXT,
       media_data TEXT,
       media_type TEXT,
-      media_transcript TEXT,
       is_read BOOLEAN NOT NULL DEFAULT FALSE,
       kept BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -80,7 +79,6 @@ export function ensureSchema() {
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS sender_name TEXT;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS media_data TEXT;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS media_type TEXT;
-    ALTER TABLE messages ADD COLUMN IF NOT EXISTS media_transcript TEXT;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS kept BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE responses ADD COLUMN IF NOT EXISTS author TEXT NOT NULL DEFAULT 'Fowzan';

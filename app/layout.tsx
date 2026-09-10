@@ -30,10 +30,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="bg-background" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var e=localStorage.getItem('fowzan-experience'),t=localStorage.getItem('fowzan-theme');if(e==='gamer'||e==='professional')document.documentElement.dataset.fowzanMode=e;if(t)document.documentElement.dataset.fowzanTheme=t}catch(_){}})()` }} />
-      </head>
+    <html lang="en" className="bg-background">
       <body className={`${spaceMono.variable} ${pressStart.variable} antialiased`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
