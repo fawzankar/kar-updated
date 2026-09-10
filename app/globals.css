@@ -1511,3 +1511,166 @@ body { text-rendering: optimizeSpeed; }
   .app-page[data-mode='gamer'] .cyber-bg b:nth-of-type(n+13) { display:none; }
   .app-page[data-mode='gamer'] .cyber-bg b { opacity:.34; font-size:9px; }
 }
+
+/* ===== Final experience split: professional is intentionally unrelated to the gamer skin ===== */
+.app-page[data-mode='professional'] {
+  --professional-ink: #e9edf4;
+  --professional-muted: #9da8b8;
+  --professional-panel: rgba(17, 22, 31, .96);
+  --professional-border: rgba(177, 190, 209, .18);
+  background:
+    radial-gradient(900px 480px at 8% -10%, rgba(var(--signal-rgb), .10), transparent 65%),
+    radial-gradient(720px 420px at 92% 18%, rgba(255,255,255,.045), transparent 70%),
+    linear-gradient(145deg, #080b11 0%, #0d121a 48%, #070a0f 100%) !important;
+  color: var(--professional-ink);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.app-page[data-mode='professional']::before { opacity: .06 !important; background-size: 96px 96px !important; }
+.app-page[data-mode='professional'] .public-hero h1,
+.app-page[data-mode='professional'] .section-intro h2,
+.app-page[data-mode='professional'] .threads-heading h2,
+.app-page[data-mode='professional'] .queue-head h2,
+.app-page[data-mode='professional'] .admin-title,
+.app-page[data-mode='professional'] .login-title,
+.app-page[data-mode='professional'] .success-modal h2,
+.app-page[data-mode='professional'] .appearance-modal h2 {
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-weight: 500 !important;
+  letter-spacing: -.045em !important;
+  line-height: 1.02 !important;
+  text-shadow: none !important;
+}
+.app-page[data-mode='professional'] .brand,
+.app-page[data-mode='professional'] .eyebrow,
+.app-page[data-mode='professional'] button,
+.app-page[data-mode='professional'] input,
+.app-page[data-mode='professional'] textarea,
+.app-page[data-mode='professional'] .composer-meta,
+.app-page[data-mode='professional'] .composer-foot {
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+.app-page[data-mode='professional'] .message-composer,
+.app-page[data-mode='professional'] .public-thread,
+.app-page[data-mode='professional'] .thread-browser,
+.app-page[data-mode='professional'] .conversation-card,
+.app-page[data-mode='professional'] .conversation-empty,
+.app-page[data-mode='professional'] .stat-card,
+.app-page[data-mode='professional'] .queue-item,
+.app-page[data-mode='professional'] .prompt-grid button,
+.app-page[data-mode='professional'] .chat-bubble,
+.app-page[data-mode='professional'] .public-poll {
+  background: var(--professional-panel) !important;
+  border-color: var(--professional-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 18px 42px rgba(0,0,0,.18) !important;
+}
+.app-page[data-mode='professional'] .message-composer textarea { font-family: Inter, ui-sans-serif, sans-serif !important; font-weight: 450; letter-spacing: -.02em; }
+.app-page[data-mode='professional'] .primary-button { border-radius: 12px !important; clip-path: none !important; box-shadow: 0 8px 22px rgba(var(--signal-rgb), .13) !important; }
+.app-page[data-mode='professional'] .private-button,
+.app-page[data-mode='professional'] .ghost-button,
+.app-page[data-mode='professional'] .refresh-button,
+.app-page[data-mode='professional'] .secondary-button,
+.app-page[data-mode='professional'] .appearance-button { border-radius: 10px !important; background: rgba(255,255,255,.035) !important; }
+.app-page[data-mode='professional'] .prompt-grid button { min-height: 92px; text-align: left; }
+.app-page[data-mode='professional'] .public-thread { border-left: 0 !important; }
+.app-page[data-mode='professional'] .public-thread:hover { transform: translateY(-1px) !important; box-shadow: 0 22px 48px rgba(0,0,0,.24) !important; }
+.app-page[data-mode='professional'] .public-replies { border-radius: 12px !important; background: rgba(255,255,255,.018) !important; }
+.app-page[data-mode='professional'] .reply-composer { border-radius: 12px !important; }
+.app-page[data-mode='professional'] .cyber-bg,
+.app-page[data-mode='professional'] .particle-field,
+.app-page[data-mode='professional'] .asteroid-field,
+.app-page[data-mode='professional'] .space-stars { display: none !important; }
+
+/* Professional palette: graphite / cobalt / teal / coral. No lime-green inheritance. */
+.app-page[data-mode='professional'][data-theme='navy'] { --signal:#8aa7ff; --signal-rgb:138,167,255; --flare:#4056a8; --flare-rgb:64,86,168; --signal-text:#e6ecff; }
+.app-page[data-mode='professional'][data-theme='cobalt'] { --signal:#58a6ff; --signal-rgb:88,166,255; --flare:#1d5fa8; --flare-rgb:29,95,168; --signal-text:#e4f1ff; }
+.app-page[data-mode='professional'][data-theme='teal'] { --signal:#55d6c0; --signal-rgb:85,214,192; --flare:#227f78; --flare-rgb:34,127,120; --signal-text:#e2fffa; }
+.app-page[data-mode='professional'][data-theme='coral'] { --signal:#ff9a8b; --signal-rgb:255,154,139; --flare:#a84b46; --flare-rgb:168,75,70; --signal-text:#fff0ed; }
+.app-page[data-mode='professional'] .primary-button { color:#081019 !important; background:var(--signal) !important; }
+.app-page[data-mode='professional'] .hero-badge,
+.app-page[data-mode='professional'] .accent-stat { box-shadow:none !important; }
+
+/* Gamer: Matrix stays dominant and spans the entire viewport. */
+.app-page[data-mode='gamer'] .cyber-bg { position:fixed !important; inset:0 !important; z-index:0 !important; display:block !important; opacity:.9 !important; }
+.app-page[data-mode='gamer'] .cyber-bg b { opacity:.62 !important; font-size:12px !important; animation-duration:9s !important; }
+.app-page[data-mode='gamer'] .cyber-bg::after { opacity:.20 !important; }
+.app-page[data-mode='gamer'] .cyber-bg::before { opacity:.38 !important; }
+
+/* Reliable attachment composer: large preview, explicit delete + send workflow. */
+.attachment-preview { width:min(100%, 560px) !important; padding:12px 12px 46px !important; border-radius:14px !important; background:rgba(255,255,255,.035) !important; }
+.attachment-preview img { width:100%; max-width:100% !important; max-height:340px !important; object-fit:contain !important; background:#05070a; }
+.attachment-actions { position:absolute; right:12px; bottom:10px; display:flex; gap:7px; align-items:center; }
+.attachment-remove { position:static !important; width:auto !important; height:30px !important; padding:0 10px !important; border-radius:8px !important; display:inline-flex !important; align-items:center; justify-content:center; gap:6px; }
+.attachment-send { position:static; width:auto; height:30px; padding:0 11px; border:1px solid rgba(var(--signal-rgb),.35); border-radius:8px; background:var(--signal); color:#071009; display:inline-flex; align-items:center; justify-content:center; gap:6px; font:800 9px var(--font-sans-custom), sans-serif; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; }
+.attachment-send:disabled { opacity:.55; cursor:not-allowed; }
+.audio-attachment-preview { padding-bottom:12px !important; }
+.voice-preview { width:100%; }
+.voice-preview-top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.voice-preview-top strong, .voice-preview-top span { display:block; }
+.voice-preview-top strong { font-size:12px; }
+.voice-preview-top span { margin-top:2px; color:var(--muted-foreground); font-size:9px; }
+.voice-icon { width:38px; height:38px; border-radius:10px; display:grid; place-items:center; background:rgba(var(--signal-rgb),.12); color:var(--signal); }
+.voice-preview audio { width:100% !important; height:42px; }
+.voice-transcript, .audio-transcript { margin-top:9px; padding:10px 12px; border:1px solid rgba(var(--signal-rgb),.14); border-radius:10px; background:rgba(0,0,0,.16); color:var(--muted-foreground); font-size:10px; line-height:1.55; }
+.message-audio-card { width:min(100%, 520px); padding:12px; border:1px solid rgba(var(--signal-rgb),.16); border-radius:13px; background:rgba(var(--signal-rgb),.035); }
+.message-audio-card .message-media-audio { margin:0; width:100%; }
+.thread-audio-thumb { margin:8px 0; }
+.composer-media-tools { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.media-tool { border:1px solid rgba(var(--signal-rgb),.2); border-radius:10px; padding:8px 11px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font:700 9px var(--font-sans-custom), sans-serif; text-transform:uppercase; letter-spacing:.08em; }
+.media-tool.recording { color:#ff697b; border-color:rgba(255,105,123,.5); }
+
+@media (max-width:640px) {
+  .app-page[data-mode='gamer'] .cyber-bg b { opacity:.52 !important; font-size:9px !important; }
+  .attachment-preview { width:100% !important; }
+  .attachment-preview img { max-height:280px !important; }
+  .voice-preview audio { height:40px; }
+  .voice-transcript, .audio-transcript { font-size:9px; }
+  .app-page[data-mode='professional'] .public-thread,
+  .app-page[data-mode='professional'] .message-composer,
+  .app-page[data-mode='professional'] .thread-browser,
+  .app-page[data-mode='professional'] .conversation-card { border-radius:14px !important; }
+}
+
+/* Neutralize the old green-black surfaces for non-green Gamer accents. */
+.app-page[data-mode='gamer'][data-theme='purple'],
+.app-page[data-mode='gamer'][data-theme='blue'],
+.app-page[data-mode='gamer'][data-theme='red'] {
+  background: radial-gradient(ellipse 55% 38% at 50% -7%, rgba(var(--flare-rgb),.13), transparent 72%), #030508 !important;
+}
+.app-page[data-mode='gamer'][data-theme='purple'] .message-composer,
+.app-page[data-mode='gamer'][data-theme='purple'] .public-thread,
+.app-page[data-mode='gamer'][data-theme='purple'] .thread-browser,
+.app-page[data-mode='gamer'][data-theme='purple'] .conversation-card,
+.app-page[data-mode='gamer'][data-theme='purple'] .conversation-empty,
+.app-page[data-mode='gamer'][data-theme='blue'] .message-composer,
+.app-page[data-mode='gamer'][data-theme='blue'] .public-thread,
+.app-page[data-mode='gamer'][data-theme='blue'] .thread-browser,
+.app-page[data-mode='gamer'][data-theme='blue'] .conversation-card,
+.app-page[data-mode='gamer'][data-theme='blue'] .conversation-empty,
+.app-page[data-mode='gamer'][data-theme='red'] .message-composer,
+.app-page[data-mode='gamer'][data-theme='red'] .public-thread,
+.app-page[data-mode='gamer'][data-theme='red'] .thread-browser,
+.app-page[data-mode='gamer'][data-theme='red'] .conversation-card,
+.app-page[data-mode='gamer'][data-theme='red'] .conversation-empty { background:rgba(6,8,12,.96) !important; }
+
+/* New professional accent swatches. */
+.accent-navy span { background:#8aa7ff; }
+.accent-cobalt span { background:#58a6ff; }
+.accent-teal span { background:#55d6c0; }
+.accent-coral span { background:#ff9a8b; }
+
+@media (max-width:640px) {
+  .attachment-actions { right:10px; bottom:9px; }
+  .attachment-send, .attachment-remove { height:29px; font-size:8px; }
+}
+
+/* Remove legacy lime scanlines from non-Green looks. */
+.app-page[data-mode='professional']::after { display:none !important; }
+.app-page[data-mode='gamer'][data-theme='purple']::after,
+.app-page[data-mode='gamer'][data-theme='blue']::after,
+.app-page[data-mode='gamer'][data-theme='red']::after {
+  opacity:.08 !important;
+  background:repeating-linear-gradient(0deg, transparent 0 4px, rgba(var(--signal-rgb),.07) 5px 6px) !important;
+}
+.app-page[data-mode='professional'] .private-badge { background:rgba(var(--signal-rgb),.08) !important; border-color:rgba(var(--signal-rgb),.22) !important; }
+.app-page[data-mode='professional'] .topbar { border-bottom-color:rgba(var(--signal-rgb),.12) !important; }

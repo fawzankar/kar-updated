@@ -29,6 +29,7 @@ export function ensureSchema() {
       sender_name TEXT,
       media_data TEXT,
       media_type TEXT,
+      media_transcript TEXT,
       is_read BOOLEAN NOT NULL DEFAULT FALSE,
       kept BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
