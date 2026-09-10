@@ -2692,3 +2692,454 @@ html[data-fowzan-mode="professional"] .appearance-overlay {
   background: rgba(3,4,7,.82) !important;
   backdrop-filter: blur(18px) !important;
 }
+
+
+/* ============================================================
+   MINIMAL MODE + RESPONSIVE ALIGNMENT PASS
+   ============================================================ */
+
+/* The second experience is called Minimal everywhere visually. */
+.appearance-modal .experience-card .professional-preview b {
+  letter-spacing: .08em;
+}
+
+/* Consistent action alignment across desktop and mobile. */
+.hero-actions,
+.top-actions,
+.appearance-actions,
+.composer-foot,
+.composer-meta,
+.identity-controls,
+.attachment-actions,
+.media-actions {
+  align-items: center;
+}
+
+.top-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.appearance-actions .primary-button {
+  width: 100%;
+}
+
+/* Prevent buttons from shrinking into unreadable pills. */
+.primary-button,
+.secondary-button,
+.private-button,
+.ghost-button,
+.refresh-button,
+.send-button,
+.appearance-close,
+.attachment-actions button,
+.media-actions button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Lock/private control stays aligned with the rest of the header on narrow screens. */
+@media (max-width: 760px) {
+  .topbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .brand {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .brand-muted {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .top-actions {
+    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+    gap: 7px !important;
+  }
+
+  .top-actions > button,
+  .private-button,
+  .refresh-button,
+  .ghost-button {
+    min-height: 42px !important;
+    padding: 9px 11px !important;
+  }
+
+  .private-button span,
+  .refresh-button span {
+    display: none;
+  }
+
+  .hero-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    width: 100%;
+  }
+
+  .hero-actions > * {
+    width: 100% !important;
+  }
+
+  .composer-foot,
+  .composer-meta {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    justify-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .composer-foot > *,
+  .composer-meta > * {
+    min-width: 0;
+  }
+
+  .identity-controls {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+  }
+
+  .identity-controls > input:not([type=checkbox]) {
+    width: 100% !important;
+  }
+
+  /* Attachment controls get a clean two-column layout instead of cramped inline buttons. */
+  .attachment-actions,
+  .media-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+    width: 100% !important;
+  }
+
+  .attachment-actions button,
+  .media-actions button {
+    width: 100% !important;
+    min-height: 44px !important;
+    justify-content: center !important;
+  }
+
+  .appearance-modal {
+    width: min(94vw, 620px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    overflow-y: auto !important;
+    padding: 20px !important;
+  }
+
+  .experience-grid {
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+  }
+
+  .accent-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .accent-choice {
+    min-width: 0 !important;
+  }
+
+  .appearance-actions {
+    position: sticky;
+    bottom: 0;
+    padding-top: 10px;
+    background: inherit;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-width,
+  .topbar {
+    width: calc(100% - 20px) !important;
+  }
+
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    padding: 14px 0 !important;
+  }
+
+  .brand-icon {
+    width: 29px !important;
+    height: 29px !important;
+  }
+
+  .private-button,
+  .refresh-button,
+  .ghost-button {
+    width: 42px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+
+  .prompt-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .message-composer {
+    padding: 12px !important;
+  }
+
+  .message-composer textarea {
+    min-height: 150px !important;
+    font-size: clamp(1.65rem, 9vw, 2.5rem) !important;
+  }
+
+  .attachment-actions,
+  .media-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .accent-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .public-thread-foot {
+    flex-wrap: wrap !important;
+    align-items: center !important;
+  }
+
+  .public-thread-foot button {
+    min-height: 38px !important;
+    padding: 7px 9px !important;
+  }
+}
+
+/* Never allow the old green tertiary border/focus treatment to leak into the UI. */
+html[data-fowzan-mode="professional"] .message-composer:focus-within,
+html[data-fowzan-mode="professional"] .prompt-grid button:hover {
+  border-color: var(--pro-accent) !important;
+  box-shadow: 0 18px 60px var(--pro-glow) !important;
+}
+
+
+/* ============================================================
+   MINIMAL FINAL ART DIRECTION
+   Supplied contour-map artwork becomes the full-page visual language.
+   Five themes only: purple / blue / red / rose / mono.
+   ============================================================ */
+
+html[data-fowzan-mode="professional"] {
+  --minimal-bg: #090a0d;
+  --minimal-ink: #f5f6f8;
+  --minimal-muted: #a9afb9;
+  --minimal-accent: #b56cff;
+  --minimal-contrast: #f0c6ff;
+  --minimal-border: rgba(255,255,255,.13);
+  --minimal-card: rgba(11,12,17,.80);
+}
+
+html[data-fowzan-mode="professional"][data-fowzan-theme="purple"] {
+  --minimal-bg:#0a0712; --minimal-ink:#fbf7ff; --minimal-muted:#b8a8c7;
+  --minimal-accent:#b56cff; --minimal-contrast:#f0c6ff;
+  --minimal-border:rgba(181,108,255,.26); --minimal-card:rgba(14,9,23,.82);
+}
+html[data-fowzan-mode="professional"][data-fowzan-theme="blue"] {
+  --minimal-bg:#050b14; --minimal-ink:#f3faff; --minimal-muted:#a7bacd;
+  --minimal-accent:#58a6ff; --minimal-contrast:#b7e5ff;
+  --minimal-border:rgba(88,166,255,.25); --minimal-card:rgba(7,14,24,.82);
+}
+html[data-fowzan-mode="professional"][data-fowzan-theme="red"] {
+  --minimal-bg:#12070a; --minimal-ink:#fff7f8; --minimal-muted:#c7a8ad;
+  --minimal-accent:#ff5c70; --minimal-contrast:#ffc0c8;
+  --minimal-border:rgba(255,92,112,.25); --minimal-card:rgba(21,9,12,.82);
+}
+html[data-fowzan-mode="professional"][data-fowzan-theme="rose"] {
+  --minimal-bg:#11070d; --minimal-ink:#fff7fb; --minimal-muted:#c7a9b8;
+  --minimal-accent:#f472b6; --minimal-contrast:#ffc4df;
+  --minimal-border:rgba(244,114,182,.25); --minimal-card:rgba(20,9,16,.82);
+}
+html[data-fowzan-mode="professional"][data-fowzan-theme="mono"] {
+  --minimal-bg:#08090b; --minimal-ink:#f5f5f6; --minimal-muted:#a9abb0;
+  --minimal-accent:#f1f1f2; --minimal-contrast:#9ea1a8;
+  --minimal-border:rgba(255,255,255,.16); --minimal-card:rgba(12,13,16,.84);
+}
+
+/* Use the supplied reference image itself, recolored per theme. */
+html[data-fowzan-mode="professional"] .app-page {
+  min-height: 100vh;
+  background-color: var(--minimal-bg) !important;
+  background-image:
+    linear-gradient(rgba(7,8,11,.42), rgba(7,8,11,.42)),
+    url("/minimal-purple-contours.jpg") !important;
+  background-size: cover, cover !important;
+  background-position: center, center !important;
+  background-attachment: fixed, fixed !important;
+  color: var(--minimal-ink) !important;
+}
+
+html[data-fowzan-mode="professional"][data-fowzan-theme="blue"] .app-page {
+  background-image:
+    linear-gradient(rgba(5,8,13,.40), rgba(5,8,13,.40)),
+    url("/minimal-blue-contours.jpg") !important;
+}
+html[data-fowzan-mode="professional"][data-fowzan-theme="red"] .app-page {
+  background-image:
+    linear-gradient(rgba(10,5,7,.40), rgba(10,5,7,.40)),
+    url("/minimal-red-contours.jpg") !important;
+}
+html[data-fowzan-mode="professional"][data-fowzan-theme="rose"] .app-page {
+  background-image:
+    linear-gradient(rgba(10,5,8,.40), rgba(10,5,8,.40)),
+    url("/minimal-rose-contours.jpg") !important;
+}
+html[data-fowzan-mode="professional"][data-fowzan-theme="mono"] .app-page {
+  background-image:
+    linear-gradient(rgba(6,7,9,.38), rgba(6,7,9,.38)),
+    url("/minimal-mono-contours.jpg") !important;
+}
+
+/* Remove the old grid/scanline wash so the contour artwork is the only major geometry. */
+html[data-fowzan-mode="professional"] .app-page::before,
+html[data-fowzan-mode="professional"] .app-page::after {
+  background: none !important;
+  opacity: 0 !important;
+}
+
+/* Minimal uses one clean sans UI face and a restrained display face. */
+html[data-fowzan-mode="professional"] .app-page,
+html[data-fowzan-mode="professional"] .app-page button,
+html[data-fowzan-mode="professional"] .app-page input,
+html[data-fowzan-mode="professional"] .app-page textarea {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+html[data-fowzan-mode="professional"] .app-page h1,
+html[data-fowzan-mode="professional"] .app-page h2,
+html[data-fowzan-mode="professional"] .app-page h3 {
+  font-family: "DM Sans", Inter, ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: -.04em !important;
+}
+
+/* Cards become translucent dark glass over the actual contour map. */
+html[data-fowzan-mode="professional"] .message-composer,
+html[data-fowzan-mode="professional"] .public-thread,
+html[data-fowzan-mode="professional"] .prompt-grid button,
+html[data-fowzan-mode="professional"] .loading-card,
+html[data-fowzan-mode="professional"] .empty-browser,
+html[data-fowzan-mode="professional"] .reply-composer,
+html[data-fowzan-mode="professional"] .public-reply-form > input:not([type=checkbox]),
+html[data-fowzan-mode="professional"] .identity-controls > input:not([type=checkbox]) {
+  background: var(--minimal-card) !important;
+  color: var(--minimal-ink) !important;
+  border-color: var(--minimal-border) !important;
+  box-shadow: 0 22px 70px rgba(0,0,0,.28) !important;
+  backdrop-filter: blur(10px) saturate(115%);
+}
+
+html[data-fowzan-mode="professional"] .prompt-grid button:hover,
+html[data-fowzan-mode="professional"] .public-thread:hover {
+  border-color: var(--minimal-accent) !important;
+  background: color-mix(in srgb, var(--minimal-card) 86%, var(--minimal-accent)) !important;
+  box-shadow: 0 24px 80px color-mix(in srgb, var(--minimal-accent) 18%, transparent) !important;
+}
+
+html[data-fowzan-mode="professional"] .primary-button,
+html[data-fowzan-mode="professional"] .send-button {
+  background: var(--minimal-accent) !important;
+  color: #08090b !important;
+  border-color: transparent !important;
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--minimal-accent) 28%, transparent) !important;
+}
+
+html[data-fowzan-mode="professional"] .secondary-button,
+html[data-fowzan-mode="professional"] .private-button,
+html[data-fowzan-mode="professional"] .ghost-button,
+html[data-fowzan-mode="professional"] .refresh-button {
+  background: rgba(8,9,12,.72) !important;
+  color: var(--minimal-ink) !important;
+  border-color: var(--minimal-border) !important;
+}
+html[data-fowzan-mode="professional"] .secondary-button:hover,
+html[data-fowzan-mode="professional"] .private-button:hover,
+html[data-fowzan-mode="professional"] .ghost-button:hover,
+html[data-fowzan-mode="professional"] .refresh-button:hover {
+  border-color: var(--minimal-accent) !important;
+  color: var(--minimal-ink) !important;
+}
+
+html[data-fowzan-mode="professional"] .eyebrow,
+html[data-fowzan-mode="professional"] .hero-badge,
+html[data-fowzan-mode="professional"] .section-intro h2 span,
+html[data-fowzan-mode="professional"] .public-hero h1 em {
+  color: var(--minimal-accent) !important;
+}
+html[data-fowzan-mode="professional"] .hero-lead,
+html[data-fowzan-mode="professional"] .threads-heading p,
+html[data-fowzan-mode="professional"] .composer-meta,
+html[data-fowzan-mode="professional"] .composer-foot {
+  color: var(--minimal-muted) !important;
+}
+
+/* The appearance picker follows the same dark Minimal art direction. */
+html[data-fowzan-mode="professional"] .appearance-modal {
+  background: rgba(9,10,14,.96) !important;
+  color: var(--minimal-ink) !important;
+  border-color: var(--minimal-border) !important;
+}
+html[data-fowzan-mode="professional"] .appearance-modal .experience-card {
+  background: rgba(14,15,20,.92) !important;
+  color: var(--minimal-ink) !important;
+  border-color: var(--minimal-border) !important;
+}
+html[data-fowzan-mode="professional"] .appearance-modal .experience-card.active {
+  border-color: var(--minimal-accent) !important;
+  box-shadow: 0 0 0 1px var(--minimal-accent), 0 18px 55px rgba(0,0,0,.28) !important;
+}
+html[data-fowzan-mode="professional"] .appearance-modal .experience-card small {
+  color: var(--minimal-muted) !important;
+}
+html[data-fowzan-mode="professional"] .appearance-modal .accent-choice {
+  background: rgba(14,15,20,.9) !important;
+  border-color: var(--minimal-border) !important;
+}
+html[data-fowzan-mode="professional"] .appearance-modal .accent-choice.active {
+  border-color: var(--minimal-accent) !important;
+}
+
+/* Responsive layout: no horizontal overflow, controls remain aligned. */
+@media (max-width: 760px) {
+  html[data-fowzan-mode="professional"] .app-page {
+    background-attachment: scroll, scroll !important;
+    background-size: auto, auto !important;
+  }
+  .topbar {
+    grid-template-columns: minmax(0,1fr) auto !important;
+  }
+  .top-actions {
+    justify-content: flex-end !important;
+  }
+  .hero-actions,
+  .composer-foot,
+  .composer-meta,
+  .attachment-actions,
+  .media-actions {
+    width: 100% !important;
+  }
+  .attachment-actions,
+  .media-actions {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+@media (max-width: 480px) {
+  .page-width,
+  .topbar {
+    width: calc(100% - 20px) !important;
+  }
+  .top-actions {
+    gap: 6px !important;
+  }
+  .prompt-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .attachment-actions,
+  .media-actions {
+    grid-template-columns: 1fr !important;
+  }
+}
