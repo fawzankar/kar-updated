@@ -5166,8 +5166,8 @@ html, body { max-width:100%; overflow-x:hidden; }
 /* Small intentional gap inside the shared A MESSAGE lockup, for both Gamer and Minimal. */
 .public-page .public-hero h1 .hero-message-line .hero-message-gap {
   display: inline-block !important;
-  width: 0.10em !important;
-  min-width: 0.10em !important;
+  width: 0.23em !important;
+  min-width: 0.23em !important;
   margin: 0 !important;
   padding: 0 !important;
   letter-spacing: 0 !important;
