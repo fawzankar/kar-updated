@@ -45,7 +45,7 @@ function formatTime(value: string) {
 
 export default function Page() {
   const [view, setView] = useState<'public' | 'private'>('public')
-  const [theme, setTheme] = useState<'white' | 'green' | 'red' | 'blue' | 'purple' | 'amber' | 'rose'>('white')
+  const [theme, setTheme] = useState<'white' | 'black' | 'green' | 'purple' | 'red' | 'blue' | 'rose'>('white')
   const [thought, setThought] = useState('')
   const [sent, setSent] = useState(false)
   const [senderName, setSenderName] = useState('')
@@ -276,7 +276,7 @@ export default function Page() {
   async function sharePoll(poll: Poll) {
     const url = `${window.location.origin}/poll/${poll.id}`
     try {
-      if (navigator.share) await navigator.share({ title: 'A poll from Fowzan's Inbox', text: poll.question, url })
+      if (navigator.share) await navigator.share({ title: "A poll from Fowzan's Inbox", text: poll.question, url })
       else { await navigator.clipboard.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
     } catch { setCopied(false) }
   }
@@ -441,7 +441,7 @@ export default function Page() {
     <main className="app-page public-page" data-theme={theme}>
       <div className="cyber-bg" aria-hidden="true"><i /><i /><i /><div className="space-stars">{Array.from({ length: 72 }, (_, index) => <span key={index} style={{ top: `${(index * 47) % 100}%`, left: `${(index * 73 + 11) % 100}%`, animationDelay: `${-(index % 17) * 0.42}s`, animationDuration: `${4.5 + (index % 7) * 0.8}s` }} />)}</div><div className="asteroid-field">{Array.from({ length: 10 }, (_, index) => <i key={index} style={{ top: `${(index * 31 + 8) % 94}%`, left: `${(index * 61 - 12) % 112 - 4}%`, animationDelay: `${-(index % 9) * 1.15}s`, animationDuration: `${18 + (index % 6) * 2.1}s`, transform: `scale(${0.7 + (index % 5) * 0.22}) rotate(${(index * 23) % 360}deg)` }} />)}</div>{matrixStreams.slice(0, 12).map((stream, index) => <b key={index}>{Array.from(stream).map((char, charIndex) => <span key={charIndex}>{char}</span>)}</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" /><div className="grain" />
       <div className="particle-field" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</div>
-      <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><label className="theme-picker"><span>THEME</span><select aria-label="Choose color theme" value={theme} onChange={(event) => setTheme(event.target.value as typeof theme)}><option value="white">WHITE</option><option value="green">GREEN</option><option value="red">RED</option><option value="blue">BLUE</option><option value="purple">PURPLE</option><option value="amber">AMBER</option><option value="rose">ROSE</option></select></label><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></div></header>
+      <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><label className="theme-picker"><span>THEME</span><select aria-label="Choose color theme" value={theme} onChange={(event) => setTheme(event.target.value as typeof theme)}><option value="white">WHITE</option><option value="black">BLACK</option><option value="green">GREEN</option><option value="purple">PURPLE</option><option value="red">RED</option><option value="blue">BLUE</option><option value="rose">ROSE</option></select></label><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></div></header>
 
       <section className="public-hero page-width">
         <div className="hero-badge"><span /> ANONYMOUS MESSAGES TO FOWZAN</div>

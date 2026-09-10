@@ -326,7 +326,6 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
 .app-page[data-theme='blue'] { --signal: #53d6ff; --signal-rgb: 83,214,255; --flare: #4675ff; --flare-rgb: 70,117,255; --signal-text: #e0f8ff; }
 .app-page[data-theme='purple'] { --signal: #c77dff; --signal-rgb: 199,125,255; --flare: #7b2cbf; --flare-rgb: 123,44,191; --signal-text: #f4e6ff; }
 .app-page[data-theme='amber'] { --signal: #ffd166; --signal-rgb: 255,209,102; --flare: #ff7a18; --flare-rgb: 255,122,24; --signal-text: #fff4cf; }
-.app-page[data-theme='cyan'] { --signal: #43f5e5; --signal-rgb: 67,245,229; --flare: #00a6fb; --flare-rgb: 0,166,251; --signal-text: #dffffb; }
 .app-page[data-theme='rose'] { --signal: #ff9ed1; --signal-rgb: 255,158,209; --flare: #ff5470; --flare-rgb: 255,84,112; --signal-text: #fff0f8; }
 .app-page[data-theme='red'] .hero-badge, .app-page[data-theme='purple'] .hero-badge { box-shadow: 0 0 24px rgba(var(--signal-rgb),.08); }
 .app-page[data-theme='red'] .primary-button, .app-page[data-theme='purple'] .primary-button { box-shadow: 0 10px 30px rgba(var(--flare-rgb),.12); }
@@ -1221,6 +1220,9 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
 .app-page[data-theme='white'] { --signal:#fff; --signal-rgb:255,255,255; --flare:#050505; --flare-rgb:5,5,5; --signal-text:#fff; }
 .app-page[data-theme='white'] .primary-button { color:#050505; background:#fff; }
 .app-page[data-theme='white'] .hero-badge, .app-page[data-theme='white'] .public-poll { border-color:rgba(255,255,255,.22); }
+.app-page[data-theme='black'] { --signal:#f5f5f5; --signal-rgb:245,245,245; --flare:#000; --flare-rgb:0,0,0; --signal-text:#f5f5f5; }
+.app-page[data-theme='black'] .primary-button { color:#050505; background:#f5f5f5; }
+
 
 @media (max-width:640px) {
   .poll-admin-card { padding:16px; }
