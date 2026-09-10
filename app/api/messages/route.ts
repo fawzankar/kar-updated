@@ -5,7 +5,7 @@ import { isOwner } from '@/lib/auth'
 const MAX_MESSAGE = 500
 const MAX_REPLY = 1000
 
-async function rateLimit(request: Request, key: 'message' | 'reply') {
+async function rateLimit(request: Request, key: 'message' | 'reply' | 'vote') {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
   const bucket = `${ip}:${key}`
   const result = await pool.query(`
@@ -16,7 +16,8 @@ async function rateLimit(request: Request, key: 'message' | 'reply') {
       reset_at = CASE WHEN rate_limits.reset_at < NOW() THEN NOW() + INTERVAL '1 minute' ELSE rate_limits.reset_at END
     RETURNING count
   `, [bucket])
-  return Number(result.rows[0].count) <= (key === 'message' ? 5 : 10)
+  const maximum = key === 'message' ? 5 : key === 'reply' ? 10 : 20
+  return Number(result.rows[0].count) <= maximum
 }
 
 function clean(value: unknown, max: number) {
@@ -26,6 +27,15 @@ function clean(value: unknown, max: number) {
 function asId(value: unknown) {
   const id = Number(value)
   return Number.isSafeInteger(id) && id > 0 ? id : null
+}
+
+function cleanMediaUrl(value: unknown) {
+  const candidate = clean(value, 2000)
+  if (!candidate) return null
+  try {
+    const url = new URL(candidate)
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null
+  } catch { return null }
 }
 
 export async function GET(request: Request) {
@@ -38,7 +48,7 @@ export async function GET(request: Request) {
     if (!id) return NextResponse.json({ error: 'Invalid thread.' }, { status: 400 })
     const result = await pool.query(`
       SELECT m.id, m.text, m.sender_name AS "senderName", m.created_at AS time,
-        COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author) ORDER BY r.created_at ASC, r.id ASC)
+        COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type) ORDER BY r.created_at ASC, r.id ASC)
         FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
       FROM messages m
       LEFT JOIN responses r ON r.message_id = m.id
@@ -55,13 +65,14 @@ export async function GET(request: Request) {
     if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const messages = await pool.query(`
-      SELECT id, text, sender_name AS "senderName", is_read, kept, created_at AS time
+      SELECT id, text, sender_name AS "senderName", is_read, kept, created_at AS time,
+        (SELECT COUNT(*) FROM thread_votes WHERE message_id = messages.id) AS upvotes
       FROM messages
       WHERE deleted_at IS NULL
       ORDER BY created_at DESC
     `)
     const replies = await pool.query(`
-      SELECT id, message_id, text, author, created_at AS time
+      SELECT id, message_id, text, author, media_url AS "mediaUrl", media_type AS "mediaType", created_at AS time
       FROM responses
       WHERE message_id IS NOT NULL
       ORDER BY created_at ASC, id ASC
@@ -75,6 +86,7 @@ export async function GET(request: Request) {
         senderName: m.senderName,
         unread: !m.is_read,
         kept: m.kept,
+        upvotes: Number(m.upvotes),
         time: m.time,
         replies: [],
       })
@@ -88,6 +100,8 @@ export async function GET(request: Request) {
         text: r.text,
         time: r.time,
         author: r.author || 'Fowzan',
+        mediaUrl: r.mediaUrl,
+        mediaType: r.mediaType,
       })
     }
 
@@ -99,6 +113,7 @@ export async function GET(request: Request) {
         text: m.text,
         time: m.time,
         author: m.senderName || 'Anonymous',
+        upvotes: m.upvotes,
         replies: m.replies,
       })),
       answeredThoughtIds: allMessages.filter((m) => m.replies.length > 0).map((m) => m.id),
@@ -107,7 +122,8 @@ export async function GET(request: Request) {
 
   const result = await pool.query(`
     SELECT m.id, m.text, m.created_at AS time,
-      COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author) ORDER BY r.created_at ASC, r.id ASC)
+      (SELECT COUNT(*) FROM thread_votes WHERE message_id = m.id) AS upvotes,
+      COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type) ORDER BY r.created_at ASC, r.id ASC)
       FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
     FROM messages m
     LEFT JOIN responses r ON r.message_id = m.id
@@ -123,6 +139,7 @@ export async function GET(request: Request) {
       text: r.text,
       time: r.time,
       author: 'Anonymous',
+      upvotes: Number(r.upvotes),
       replies: r.replies.map((x: any) => ({ ...x, id: Number(x.id) })),
     }))
   }, { headers: { 'Cache-Control': 'no-store' } })
@@ -133,8 +150,9 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}))
   const action = clean(body.action, 40)
 
-  if (action === 'message' || action === 'public-reply') {
-    if (!(await rateLimit(request, action === 'message' ? 'message' : 'reply'))) {
+  if (action === 'message' || action === 'public-reply' || action === 'toggle-upvote') {
+    const limitKey = action === 'message' ? 'message' : action === 'public-reply' ? 'reply' : 'vote'
+    if (!(await rateLimit(request, limitKey))) {
       return NextResponse.json({ error: 'Too many submissions. Please wait a minute and try again.' }, { status: 429 })
     }
   }
@@ -167,11 +185,28 @@ export async function POST(request: Request) {
     if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const messageId = asId(body.messageId)
     const text = clean(body.text, MAX_REPLY)
-    if (!messageId || !text) return NextResponse.json({ error: 'Invalid reply.' }, { status: 400 })
+    const mediaUrl = cleanMediaUrl(body.mediaUrl)
+    const mediaType = body.mediaType === 'gif' ? 'gif' : body.mediaType === 'image' ? 'image' : null
+    if (!messageId || (!text && !mediaUrl)) return NextResponse.json({ error: 'Write a reply or add an image/GIF URL.' }, { status: 400 })
+    if (clean(body.mediaUrl, 2000) && !mediaUrl) return NextResponse.json({ error: 'Use a valid http(s) image or GIF URL.' }, { status: 400 })
     const exists = await pool.query(`SELECT id FROM messages WHERE id = $1 AND deleted_at IS NULL`, [messageId])
     if (!exists.rows[0]) return NextResponse.json({ error: 'Message not found.' }, { status: 404 })
-    await pool.query(`INSERT INTO responses (message_id, text, author) VALUES ($1, $2, 'Fowzan')`, [messageId, text])
+    await pool.query(`INSERT INTO responses (message_id, text, author, media_url, media_type) VALUES ($1, $2, 'Fowzan', $3, $4)`, [messageId, text, mediaUrl, mediaUrl ? mediaType || 'image' : null])
     return NextResponse.json({ ok: true })
+  }
+
+  if (action === 'toggle-upvote') {
+    const messageId = asId(body.messageId)
+    const voterKey = clean(body.voterKey, 128)
+    if (!messageId || voterKey.length < 16) return NextResponse.json({ error: 'Invalid vote.' }, { status: 400 })
+    const exists = await pool.query(`SELECT id FROM messages WHERE id = $1 AND deleted_at IS NULL`, [messageId])
+    if (!exists.rows[0]) return NextResponse.json({ error: 'Thread not found.' }, { status: 404 })
+    const current = await pool.query(`SELECT 1 FROM thread_votes WHERE message_id = $1 AND voter_key = $2`, [messageId, voterKey])
+    const voted = !current.rows[0]
+    if (voted) await pool.query(`INSERT INTO thread_votes (message_id, voter_key) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [messageId, voterKey])
+    else await pool.query(`DELETE FROM thread_votes WHERE message_id = $1 AND voter_key = $2`, [messageId, voterKey])
+    const count = await pool.query(`SELECT COUNT(*) AS upvotes FROM thread_votes WHERE message_id = $1`, [messageId])
+    return NextResponse.json({ ok: true, voted, upvotes: Number(count.rows[0].upvotes) })
   }
 
   return NextResponse.json({ error: 'Unknown action.' }, { status: 400 })

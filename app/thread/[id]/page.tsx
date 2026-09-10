@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Loader2, MessageCircle, Share2 } from 'lucide-react'
 
-type Reply = { id: number; text: string; time: string; author: string }
+type Reply = { id: number; text: string; time: string; author: string; mediaUrl?: string | null; mediaType?: 'image' | 'gif' | null }
 type Thread = { id: number; text: string; senderName?: string | null; time: string; replies: Reply[] }
 
 function displayTime(value: string) {
@@ -46,7 +46,7 @@ export default function SharedThreadPage() {
         <p className="shared-thread-date">Started {displayTime(thread.time)}</p>
         <div className="shared-thread-messages">
           <div className="shared-message"><b>{thread.senderName || 'Anonymous'}</b><p>{thread.text}</p></div>
-          {thread.replies.map((reply) => <div key={reply.id} className={`shared-message ${reply.author === 'Fowzan' ? 'from-owner' : ''}`}><b>{reply.author}</b><p>{reply.text}</p></div>)}
+          {thread.replies.map((reply) => <div key={reply.id} className={`shared-message ${reply.author === 'Fowzan' ? 'from-owner' : ''}`}><b>{reply.author}</b>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}</div>)}
         </div>
       </article>}
     </section>

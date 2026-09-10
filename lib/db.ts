@@ -37,7 +37,15 @@ export function ensureSchema() {
       message_id BIGINT REFERENCES messages(id) ON DELETE CASCADE,
       text TEXT NOT NULL,
       author TEXT NOT NULL DEFAULT 'Fowzan',
+      media_url TEXT,
+      media_type TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS thread_votes (
+      message_id BIGINT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+      voter_key TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (message_id, voter_key)
     );
     CREATE TABLE IF NOT EXISTS rate_limits (
       bucket TEXT PRIMARY KEY,
@@ -49,9 +57,12 @@ export function ensureSchema() {
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS kept BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE responses ADD COLUMN IF NOT EXISTS author TEXT NOT NULL DEFAULT 'Fowzan';
+    ALTER TABLE responses ADD COLUMN IF NOT EXISTS media_url TEXT;
+    ALTER TABLE responses ADD COLUMN IF NOT EXISTS media_type TEXT;
     CREATE INDEX IF NOT EXISTS messages_created_idx ON messages(created_at DESC);
     CREATE INDEX IF NOT EXISTS responses_message_idx ON responses(message_id);
     CREATE INDEX IF NOT EXISTS rate_limits_reset_idx ON rate_limits(reset_at);
+    CREATE INDEX IF NOT EXISTS thread_votes_message_idx ON thread_votes(message_id);
   `).then(() => undefined)
 
   globalThis.__fowzanSchemaPromise = setup.catch((error) => {

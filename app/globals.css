@@ -325,6 +325,9 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
 .app-page[data-theme='red'] { --signal: #ff3b5c; --signal-rgb: 255,59,92; --flare: #a90f2f; --flare-rgb: 169,15,47; --signal-text: #ffe7eb; }
 .app-page[data-theme='blue'] { --signal: #53d6ff; --signal-rgb: 83,214,255; --flare: #4675ff; --flare-rgb: 70,117,255; --signal-text: #e0f8ff; }
 .app-page[data-theme='purple'] { --signal: #c77dff; --signal-rgb: 199,125,255; --flare: #7b2cbf; --flare-rgb: 123,44,191; --signal-text: #f4e6ff; }
+.app-page[data-theme='amber'] { --signal: #ffd166; --signal-rgb: 255,209,102; --flare: #ff7a18; --flare-rgb: 255,122,24; --signal-text: #fff4cf; }
+.app-page[data-theme='cyan'] { --signal: #43f5e5; --signal-rgb: 67,245,229; --flare: #00a6fb; --flare-rgb: 0,166,251; --signal-text: #dffffb; }
+.app-page[data-theme='rose'] { --signal: #ff9ed1; --signal-rgb: 255,158,209; --flare: #ff5470; --flare-rgb: 255,84,112; --signal-text: #fff0f8; }
 .app-page[data-theme='red'] .hero-badge, .app-page[data-theme='purple'] .hero-badge { box-shadow: 0 0 24px rgba(var(--signal-rgb),.08); }
 .app-page[data-theme='red'] .primary-button, .app-page[data-theme='purple'] .primary-button { box-shadow: 0 10px 30px rgba(var(--flare-rgb),.12); }
 .app-page { background: radial-gradient(ellipse 55% 42% at 50% -4%, rgba(var(--flare-rgb),.25), transparent 72%), radial-gradient(ellipse 38% 30% at 96% 42%, rgba(var(--signal-rgb),.11), transparent 75%), #030403; }
@@ -1159,3 +1162,22 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
 .shared-message b { color: #b7ff36; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }.shared-message p { margin: 9px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.65; }
 @media (prefers-reduced-motion: reduce) { .thread-item, .icon-action, .share-square, .primary-button, .secondary-button, .refresh-button { transition: none !important; } .cyber-bg::after { display: none; } }
 @media (max-width: 640px) { .admin-hero-actions { grid-template-columns: 1fr repeat(3, 42px); }.thread-search { font-size: 9px; }.public-thread-foot > div { gap: 8px; }.shared-thread-card { border-radius: 9px; }.shared-thread-card h1 { font-size: 28px; } }
+
+/* Owner-only rich replies. External media is loaded only when its thread is visible. */
+.media-reply-tools { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.media-reply-tools button { height: 30px; padding: 0 9px; display: inline-flex; align-items: center; gap: 5px; color: var(--muted-foreground); background: rgba(var(--signal-rgb),.04); border: 1px solid rgba(var(--signal-rgb),.22); border-radius: 5px; font: 700 8px var(--font-sans-custom), monospace; letter-spacing: .08em; text-transform: uppercase; }
+.media-reply-tools button:hover, .media-reply-tools button.active { color: var(--signal-text); border-color: var(--signal); background: rgba(var(--signal-rgb),.13); }
+.media-reply-tools input { flex: 1 1 210px; min-width: 0; height: 30px; padding: 0 9px; color: var(--foreground); background: rgba(0,0,0,.24); border: 1px solid rgba(var(--signal-rgb),.25); border-radius: 5px; outline: none; font-size: 10px; }
+.media-reply-tools input:focus { border-color: var(--signal); }
+.reply-media { display: block; width: min(100%, 420px); margin-top: 10px; overflow: hidden; border: 1px solid rgba(var(--signal-rgb),.3); border-radius: 8px; background: #050605; }
+.reply-media img { display: block; width: 100%; max-height: 360px; object-fit: contain; background: #050605; }
+.upvote-button { min-width: 49px; justify-content: center; border: 1px solid rgba(var(--signal-rgb),.18) !important; border-radius: 999px !important; padding: 6px 8px !important; }
+.upvote-button:hover, .upvote-button.voted { color: var(--signal-text) !important; background: rgba(var(--signal-rgb),.12) !important; border-color: rgba(var(--signal-rgb),.55) !important; }
+.upvote-button.voted svg { fill: currentColor; }
+
+/* Matrix rain stays atmospheric while doing less work: fewer layers, transform-only motion, no expensive blur. */
+.cyber-bg { contain: paint; isolation: isolate; }
+.cyber-bg b { will-change: transform; filter: none; backface-visibility: hidden; transform: translateZ(0); }
+.space-stars span { will-change: opacity, transform; }
+@media (max-width: 640px) { .media-reply-tools input { flex-basis: 100%; }.reply-media { max-width: 100%; }.space-stars span:nth-child(3n), .asteroid-field i:nth-child(2n) { display: none; }.cyber-bg b:nth-of-type(3n) { display: none; } }
+@media (prefers-reduced-motion: reduce) { .cyber-bg b, .space-stars span, .asteroid-field i, .particle-field i, .ambient-orb { animation: none !important; } }
