@@ -1413,9 +1413,6 @@ body { text-rendering: optimizeSpeed; }
 
 /* Mobile gets a deliberately lighter background workload. */
 @media (max-width: 900px) {
-  .space-stars span:nth-child(2n),
-  .asteroid-field i,
-  .cyber-bg b:nth-of-type(n/**/+5) { display: none; }
   .ambient-orb { display: none; }
   .app-page::before { display: none; }
 }
@@ -4883,5 +4880,67 @@ html, body { max-width:100%; overflow-x:hidden; }
     margin-top: .02em !important;
     letter-spacing: -0.05em !important;
     word-spacing: -0.07em !important;
+  }
+}
+
+
+/* FINAL FIX — dense Matrix rain, particles, and tight hero heading */
+.app-page[data-mode='gamer'] .cyber-bg {
+  opacity: .92 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+.app-page[data-mode='gamer'] .cyber-bg b {
+  display: block !important;
+  opacity: .58 !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+  letter-spacing: .08em !important;
+  animation-duration: 10s !important;
+}
+.app-page[data-mode='gamer'] .particle-field {
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+.app-page[data-mode='gamer'] .particle-field i {
+  display: block !important;
+  opacity: .68 !important;
+  width: 3px !important;
+  height: 3px !important;
+}
+
+/* Keep the hero readable while making the three heading lines feel like one lockup. */
+.public-page .public-hero h1 {
+  line-height: .70 !important;
+  letter-spacing: -.07em !important;
+}
+.public-page .public-hero h1 .hero-message-line {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  letter-spacing: -.07em !important;
+  word-spacing: 0 !important;
+  white-space: nowrap !important;
+}
+@media (max-width: 640px) {
+  .public-page .public-hero h1 {
+    line-height: .72 !important;
+    letter-spacing: -.055em !important;
+  }
+  .public-page .public-hero h1 .hero-message-line {
+    letter-spacing: -.055em !important;
+  }
+  .app-page[data-mode='gamer'] .cyber-bg b {
+    font-size: 9px !important;
+    opacity: .52 !important;
   }
 }
