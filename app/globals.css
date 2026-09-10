@@ -4022,3 +4022,198 @@ html, body { max-width:100%; overflow-x:hidden; }
   .public-page .public-hero h1 { font-size:clamp(2.55rem,12.6vw,4.5rem) !important; }
   .public-page .hero-lead { font-size:.88rem !important; }
 }
+
+/* ============================================================
+   MINIMAL / MOBILE REFINEMENT — private inbox + appearance
+   ============================================================ */
+.app-page[data-mode='professional'] .appearance-button {
+  background: rgba(255,253,248,.94) !important;
+  color: var(--editorial-ink, #191816) !important;
+  border-color: rgba(23,22,19,.15) !important;
+  box-shadow: 0 6px 18px rgba(30,24,18,.06) !important;
+}
+.app-page[data-mode='professional'] .appearance-button svg {
+  color: var(--editorial-accent, #456e87) !important;
+}
+.app-page[data-mode='gamer'] .appearance-button {
+  background: #080a0c !important;
+  color: var(--signal, #c77dff) !important;
+  border-color: rgba(var(--signal-rgb),.5) !important;
+  box-shadow: 0 0 18px rgba(var(--signal-rgb),.08) !important;
+}
+.app-page[data-mode='gamer'] .appearance-button svg { color: var(--signal) !important; }
+
+/* The owner header should read like a real site header, not a utility strip. */
+.app-page[data-mode='professional'] .admin-topbar {
+  width: min(1160px, calc(100% - 40px)) !important;
+  min-height: 66px !important;
+  margin: 16px auto 0 !important;
+  padding: 9px 12px 9px 18px !important;
+  border: 1px solid rgba(23,22,19,.12) !important;
+  border-radius: 18px !important;
+  background: rgba(255,253,248,.88) !important;
+  box-shadow: 0 12px 40px rgba(40,32,22,.08) !important;
+  backdrop-filter: blur(18px) !important;
+}
+.app-page[data-mode='professional'] .admin-topbar .brand.wordmark {
+  color: var(--editorial-ink) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: .13em !important;
+}
+.app-page[data-mode='professional'] .admin-topbar .brand svg {
+  width: 18px !important; height: 18px !important;
+  color: var(--editorial-accent) !important;
+}
+.app-page[data-mode='professional'] .admin-topbar .top-actions .ghost-button {
+  min-height: 40px !important;
+  padding: 0 13px !important;
+  border-radius: 11px !important;
+  background: rgba(255,253,248,.92) !important;
+  border-color: rgba(23,22,19,.14) !important;
+  color: var(--editorial-ink) !important;
+}
+.app-page[data-mode='professional'] .admin-topbar .top-actions .ghost-button svg { color: var(--editorial-accent) !important; }
+
+/* Bigger inbox marker + editorial private heading. */
+.app-page[data-mode='professional'] .admin-inbox-eyebrow {
+  gap: 10px !important;
+  font-size: 12px !important;
+  letter-spacing: .18em !important;
+}
+.app-page[data-mode='professional'] .admin-inbox-eyebrow svg {
+  width: 21px !important;
+  height: 21px !important;
+  stroke-width: 1.8 !important;
+}
+.app-page[data-mode='professional'] .admin-hero {
+  padding-top: 76px !important;
+  padding-bottom: 34px !important;
+  align-items: flex-end !important;
+}
+.app-page[data-mode='professional'] .admin-title {
+  font-size: clamp(3.8rem, 7.2vw, 7rem) !important;
+  line-height: .82 !important;
+  color: var(--editorial-ink) !important;
+}
+.app-page[data-mode='professional'] .admin-title span { color: var(--editorial-accent) !important; }
+.app-page[data-mode='professional'] .admin-subtitle {
+  max-width: 590px !important;
+  font-size: 14px !important;
+  line-height: 1.75 !important;
+  color: var(--minimal-muted) !important;
+}
+
+/* Make the actual inbox workspace feel like a visible paper/editorial interface. */
+.app-page[data-mode='professional'] .thread-browser,
+.app-page[data-mode='professional'] .conversation-card,
+.app-page[data-mode='professional'] .conversation-empty,
+.app-page[data-mode='professional'] .poll-admin-card,
+.app-page[data-mode='professional'] .poll-admin-mini,
+.app-page[data-mode='professional'] .stat-card,
+.app-page[data-mode='professional'] .queue-item {
+  background: rgba(255,253,248,.94) !important;
+  color: var(--editorial-ink) !important;
+  border-color: rgba(23,22,19,.13) !important;
+  box-shadow: 0 18px 55px rgba(45,34,23,.08) !important;
+}
+.app-page[data-mode='professional'] .thread-item {
+  background: rgba(249,246,239,.82) !important;
+  color: var(--editorial-ink) !important;
+  border-bottom-color: rgba(23,22,19,.09) !important;
+}
+.app-page[data-mode='professional'] .thread-item:hover,
+.app-page[data-mode='professional'] .thread-item.active {
+  background: #fffdf8 !important;
+  border-color: var(--editorial-accent) !important;
+}
+.app-page[data-mode='professional'] .conversation-head,
+.app-page[data-mode='professional'] .browser-head {
+  background: rgba(255,253,248,.98) !important;
+  border-bottom-color: rgba(23,22,19,.1) !important;
+}
+.app-page[data-mode='professional'] .conversation-scroll {
+  background: linear-gradient(180deg, rgba(246,241,232,.55), rgba(255,253,248,.92)) !important;
+}
+.app-page[data-mode='professional'] .chat-bubble {
+  background: #fffdf8 !important;
+  color: #24211d !important;
+  border-color: rgba(23,22,19,.1) !important;
+  box-shadow: 0 8px 24px rgba(45,34,23,.06) !important;
+}
+.app-page[data-mode='professional'] .chat-bubble.outgoing {
+  background: var(--editorial-accent-soft) !important;
+  border-color: color-mix(in srgb, var(--editorial-accent) 30%, transparent) !important;
+}
+.app-page[data-mode='professional'] .reply-dock {
+  background: rgba(255,253,248,.98) !important;
+  border-top-color: rgba(23,22,19,.12) !important;
+}
+.app-page[data-mode='professional'] .reply-composer input {
+  background: #f5f0e7 !important;
+  color: #24211d !important;
+  border-color: rgba(23,22,19,.13) !important;
+}
+.app-page[data-mode='professional'] .stat-card span,
+.app-page[data-mode='professional'] .stat-card small { color: #756f67 !important; }
+.app-page[data-mode='professional'] .stat-card strong { color: var(--editorial-ink) !important; }
+
+/* Give the owner actions a consistent icon-button language. */
+.app-page[data-mode='professional'] .admin-hero-actions .share-square,
+.app-page[data-mode='professional'] .admin-hero-actions .refresh-button {
+  background: rgba(255,253,248,.96) !important;
+  color: var(--editorial-ink) !important;
+  border-color: rgba(23,22,19,.14) !important;
+  box-shadow: 0 8px 22px rgba(45,34,23,.06) !important;
+}
+.app-page[data-mode='professional'] .admin-hero-actions svg { color: var(--editorial-accent) !important; }
+
+/* Mobile: same header proportions as the public Minimal header. */
+@media (max-width:760px) {
+  .app-page[data-mode='professional'] .admin-topbar {
+    width: calc(100% - 20px) !important;
+    min-height: 58px !important;
+    margin: 10px auto 0 !important;
+    padding: 7px 8px 7px 12px !important;
+    border-radius: 15px !important;
+  }
+  .app-page[data-mode='professional'] .admin-topbar .brand.wordmark {
+    max-width: 55% !important;
+    font-size: 9px !important;
+    letter-spacing: .08em !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+  .app-page[data-mode='professional'] .admin-topbar .brand svg { width: 16px !important; height: 16px !important; }
+  .app-page[data-mode='professional'] .admin-topbar .top-actions { gap: 5px !important; }
+  .app-page[data-mode='professional'] .admin-topbar .top-actions .ghost-button {
+    width: 40px !important; min-width: 40px !important; height: 40px !important; min-height: 40px !important;
+    padding: 0 !important; border-radius: 11px !important;
+  }
+  .app-page[data-mode='professional'] .admin-topbar .action-label { display:none !important; }
+  .app-page[data-mode='professional'] .admin-hero {
+    width: calc(100% - 24px) !important;
+    padding-top: 52px !important;
+    padding-bottom: 26px !important;
+    gap: 20px !important;
+  }
+  .app-page[data-mode='professional'] .admin-inbox-eyebrow { font-size: 10px !important; letter-spacing: .16em !important; }
+  .app-page[data-mode='professional'] .admin-inbox-eyebrow svg { width: 22px !important; height: 22px !important; }
+  .app-page[data-mode='professional'] .admin-title {
+    font-size: clamp(3.25rem, 16vw, 5.2rem) !important;
+    line-height: .84 !important;
+    max-width: 100% !important;
+    overflow-wrap: normal !important;
+  }
+  .app-page[data-mode='professional'] .admin-subtitle { font-size: 12px !important; line-height: 1.7 !important; }
+  .app-page[data-mode='professional'] .quick-stats { margin-top: 0 !important; }
+}
+@media (max-width:420px) {
+  .app-page[data-mode='professional'] .admin-topbar { width: calc(100% - 12px) !important; }
+  .app-page[data-mode='professional'] .admin-topbar .brand.wordmark { max-width: 49% !important; font-size: 8px !important; }
+  .app-page[data-mode='professional'] .admin-topbar .top-actions .ghost-button { width: 36px !important; min-width: 36px !important; height: 36px !important; min-height: 36px !important; }
+  .app-page[data-mode='professional'] .admin-hero { width: calc(100% - 18px) !important; }
+}
