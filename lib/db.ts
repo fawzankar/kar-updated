@@ -51,6 +51,7 @@ export function ensureSchema() {
       id BIGSERIAL PRIMARY KEY,
       question TEXT NOT NULL,
       options JSONB NOT NULL,
+      image_data TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       deleted_at TIMESTAMPTZ
     );
@@ -73,6 +74,7 @@ export function ensureSchema() {
     ALTER TABLE responses ADD COLUMN IF NOT EXISTS author TEXT NOT NULL DEFAULT 'Fowzan';
     ALTER TABLE responses ADD COLUMN IF NOT EXISTS media_url TEXT;
     ALTER TABLE responses ADD COLUMN IF NOT EXISTS media_type TEXT;
+    ALTER TABLE polls ADD COLUMN IF NOT EXISTS image_data TEXT;
     CREATE INDEX IF NOT EXISTS messages_created_idx ON messages(created_at DESC);
     CREATE INDEX IF NOT EXISTS responses_message_idx ON responses(message_id);
     CREATE INDEX IF NOT EXISTS rate_limits_reset_idx ON rate_limits(reset_at);

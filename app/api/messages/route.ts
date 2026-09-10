@@ -34,6 +34,13 @@ function cleanOptions(value: unknown) {
   return value.map((item) => clean(item, 120)).filter(Boolean).slice(0, 8)
 }
 
+function cleanImageData(value: unknown) {
+  const candidate = clean(value, 3500000)
+  if (!candidate) return null
+  const match = candidate.match(/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/)
+  return match ? candidate : null
+}
+
 function cleanMediaUrl(value: unknown) {
   const candidate = clean(value, 2000)
   if (!candidate) return null
@@ -70,7 +77,7 @@ export async function GET(request: Request) {
     const id = asId(params.get('id'))
     if (!id) return NextResponse.json({ error: 'Invalid poll.' }, { status: 400 })
     const result = await pool.query(`
-      SELECT p.id, p.question, p.options, p.created_at AS time,
+      SELECT p.id, p.question, p.options, p.image_data AS "imageData", p.created_at AS time,
         COUNT(v.poll_id) AS total_votes,
         COALESCE(json_agg(json_build_object('optionIndex', v.option_index) ORDER BY v.option_index) FILTER (WHERE v.poll_id IS NOT NULL), '[]') AS votes
       FROM polls p LEFT JOIN poll_votes v ON v.poll_id = p.id
@@ -95,7 +102,7 @@ export async function GET(request: Request) {
       ORDER BY created_at DESC
     `)
     const polls = await pool.query(`
-      SELECT p.id, p.question, p.options, p.created_at AS time, COUNT(v.poll_id) AS total_votes
+      SELECT p.id, p.question, p.options, p.image_data AS "imageData", p.created_at AS time, COUNT(v.poll_id) AS total_votes
       FROM polls p LEFT JOIN poll_votes v ON v.poll_id = p.id
       WHERE p.deleted_at IS NULL GROUP BY p.id ORDER BY p.created_at DESC
     `)
@@ -145,12 +152,12 @@ export async function GET(request: Request) {
         replies: m.replies,
       })),
       answeredThoughtIds: allMessages.filter((m) => m.replies.length > 0).map((m) => m.id),
-      polls: polls.rows.map((p) => ({ id: Number(p.id), question: p.question, options: p.options, totalVotes: Number(p.total_votes), time: p.time })),
+      polls: polls.rows.map((p) => ({ id: Number(p.id), question: p.question, options: p.options, imageData: p.imageData ?? null, totalVotes: Number(p.total_votes), time: p.time })),
     }, { headers: { 'Cache-Control': 'no-store' } })
   }
 
   const polls = await pool.query(`
-    SELECT p.id, p.question, p.options, p.created_at AS time,
+    SELECT p.id, p.question, p.options, p.image_data AS "imageData", p.created_at AS time,
       COALESCE(json_agg(json_build_object('optionIndex', v.option_index, 'count', 1) ORDER BY v.option_index)
         FILTER (WHERE v.poll_id IS NOT NULL), '[]') AS votes
     FROM polls p
@@ -207,8 +214,9 @@ export async function POST(request: Request) {
     if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const question = clean(body.question, 240)
     const options = cleanOptions(body.options)
+    const imageData = cleanImageData(body.imageData)
     if (!question || options.length < 2) return NextResponse.json({ error: 'Add a question and at least two options.' }, { status: 400 })
-    const result = await pool.query(`INSERT INTO polls (question, options) VALUES ($1, $2::jsonb) RETURNING id`, [question, JSON.stringify(options)])
+    const result = await pool.query(`INSERT INTO polls (question, options, image_data) VALUES ($1, $2::jsonb, $3) RETURNING id`, [question, JSON.stringify(options), imageData])
     return NextResponse.json({ ok: true, id: Number(result.rows[0].id) })
   }
 
@@ -310,7 +318,15 @@ export async function DELETE(request: Request) {
 
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
 
-  if (type === 'reply') {
+  if (type === "poll") {
+      const pollId = Number(id)
+      if (!Number.isSafeInteger(pollId)) return NextResponse.json({ error: "Invalid poll id." }, { status: 400 })
+      const deleted = await deletePoll(pollId)
+      if (!deleted) return NextResponse.json({ error: "Poll not found." }, { status: 404 })
+      return NextResponse.json({ ok: true })
+    }
+
+    if (type === 'reply') {
     const messageId = asId(params.get('messageId'))
     if (!messageId) return NextResponse.json({ error: 'Invalid thread id.' }, { status: 400 })
     const result = await pool.query(`DELETE FROM responses WHERE id = $1 AND message_id = $2 RETURNING id`, [id, messageId])
