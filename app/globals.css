@@ -4787,3 +4787,60 @@ html, body { max-width:100%; overflow-x:hidden; }
     flex-basis: 22px !important;
   }
 }
+
+
+/* Final mobile hero fit: keep the full CTA headline inside narrow phone viewports. */
+@media (max-width: 640px) {
+  .public-page .public-hero h1 {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    font-size: clamp(1.9rem, 7.2vw, 3rem) !important;
+    line-height: .92 !important;
+    letter-spacing: -.045em !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .app-page[data-mode='gamer'] .public-hero h1 {
+    font-size: clamp(1.8rem, 7vw, 2.9rem) !important;
+    line-height: .94 !important;
+    letter-spacing: -.025em !important;
+  }
+
+  .app-page[data-mode='professional'] .public-hero h1 {
+    font-size: clamp(2.7rem, 13vw, 5rem) !important;
+    line-height: .9 !important;
+    letter-spacing: -.065em !important;
+  }
+
+  .public-page .public-hero h1 em {
+    display: inline-block;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 390px) {
+  .app-page[data-mode='gamer'] .public-hero h1 {
+    font-size: 1.72rem !important;
+  }
+}
+
+
+/* FINAL: palette is a direct theme-cycle button; no nested select can intercept taps. */
+.app-page[data-mode='gamer'] .public-topbar .theme-picker,
+.app-page[data-mode='professional'] .public-topbar .theme-picker {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+.app-page[data-mode='gamer'] .public-topbar .theme-picker svg,
+.app-page[data-mode='professional'] .public-topbar .theme-picker svg {
+  pointer-events: none !important;
+  display: block !important;
+}
