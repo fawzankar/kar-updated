@@ -72,7 +72,7 @@ export async function GET(request: Request) {
     const id = asId(params.get('id'))
     if (!id) return NextResponse.json({ error: 'Invalid thread.' }, { status: 400 })
     const result = await pool.query(`
-      SELECT m.id, m.text, m.sender_name AS "senderName", m.media_data AS "mediaData", m.media_type AS "mediaType", m.created_at AS time,
+      SELECT m.id, m.text, m.sender_name AS "senderName", m.media_data AS "mediaData", m.media_type AS "mediaType", m.media_transcript AS "mediaTranscript", m.created_at AS time,
         COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type, 'upvotes', (SELECT COUNT(*) FROM reply_votes rv WHERE rv.response_id = r.id)) ORDER BY r.created_at ASC, r.id ASC)
         FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
       FROM messages m
@@ -108,7 +108,7 @@ export async function GET(request: Request) {
     if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const messages = await pool.query(`
-      SELECT id, text, sender_name AS "senderName", is_read, kept, created_at AS time,
+      SELECT id, text, sender_name AS "senderName", media_data AS "mediaData", media_type AS "mediaType", media_transcript AS "mediaTranscript", is_read, kept, created_at AS time,
         (SELECT COUNT(*) FROM thread_votes WHERE message_id = messages.id) AS upvotes
       FROM messages
       WHERE deleted_at IS NULL
@@ -133,6 +133,9 @@ export async function GET(request: Request) {
         id: Number(m.id),
         text: m.text,
         senderName: m.senderName,
+        mediaData: m.mediaData ?? null,
+        mediaType: m.mediaType ?? null,
+        mediaTranscript: m.mediaTranscript ?? null,
         unread: !m.is_read,
         kept: m.kept,
         upvotes: Number(m.upvotes),
@@ -164,6 +167,9 @@ export async function GET(request: Request) {
         time: m.time,
         author: m.senderName || 'Anonymous',
         upvotes: m.upvotes,
+        mediaData: m.mediaData ?? null,
+        mediaType: m.mediaType ?? null,
+        mediaTranscript: m.mediaTranscript ?? null,
         replies: m.replies,
       })),
       answeredThoughtIds: allMessages.filter((m) => m.replies.length > 0).map((m) => m.id),
@@ -183,7 +189,7 @@ export async function GET(request: Request) {
   `)
 
   const result = await pool.query(`
-    SELECT m.id, m.text, m.media_data AS "mediaData", m.media_type AS "mediaType", m.created_at AS time,
+    SELECT m.id, m.text, m.media_data AS "mediaData", m.media_type AS "mediaType", m.media_transcript AS "mediaTranscript", m.created_at AS time,
       (SELECT COUNT(*) FROM thread_votes WHERE message_id = m.id) AS upvotes,
       COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type, 'upvotes', (SELECT COUNT(*) FROM reply_votes rv WHERE rv.response_id = r.id)) ORDER BY r.created_at ASC, r.id ASC)
       FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
@@ -201,6 +207,7 @@ export async function GET(request: Request) {
       text: r.text,
       mediaData: r.mediaData ?? null,
       mediaType: r.mediaType ?? null,
+      mediaTranscript: r.mediaTranscript ?? null,
       time: r.time,
       author: 'Anonymous',
       upvotes: Number(r.upvotes),
@@ -257,6 +264,7 @@ export async function POST(request: Request) {
     const senderName = clean(body.senderName, 80) || null
     const mediaCandidate = clean(body.mediaData, 2200000)
     const mediaType = body.mediaType === 'image' ? 'image' : body.mediaType === 'audio' ? 'audio' : null
+    const mediaTranscript = clean(body.mediaTranscript, 1200) || null
     if (!text && !mediaCandidate) return NextResponse.json({ error: 'Message cannot be empty.' }, { status: 400 })
     if (mediaCandidate) {
       const prefix = mediaType === 'image' ? /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/ : /^data:audio\/(webm|ogg|mp4|mpeg|wav);base64,[A-Za-z0-9+/=]+$/
@@ -264,8 +272,8 @@ export async function POST(request: Request) {
       if (mediaCandidate.length > 2100000) return NextResponse.json({ error: 'Attachment is too large.' }, { status: 400 })
     }
     const result = await pool.query(
-      `INSERT INTO messages (text, sender_name, media_data, media_type) VALUES ($1, $2, $3, $4) RETURNING id`,
-      [text, senderName, mediaCandidate || null, mediaCandidate ? mediaType : null]
+      `INSERT INTO messages (text, sender_name, media_data, media_type, media_transcript) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [text, senderName, mediaCandidate || null, mediaCandidate ? mediaType : null, mediaType === 'audio' ? mediaTranscript : null]
     )
     return NextResponse.json({ ok: true, id: Number(result.rows[0].id) })
   }
