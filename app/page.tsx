@@ -769,7 +769,7 @@ export default function Page() {
 
       <section className="public-hero page-width">
         <div className="hero-badge"><span /> HEY THERE 👋</div>
-        <h1>SEND<br />FOWZAN<br /><em className="hero-message-line">A&nbsp;MESSAGE</em></h1>
+        <h1>SEND<br />FOWZAN<br /><em className="hero-message-line">A<span className="hero-message-gap">&nbsp;</span>MESSAGE</em></h1>
         <p className="hero-lead">Say whatever you want to say. Ask a question, leave a thought, or just check in. Your name stays hidden unless you choose to add it.</p>
         <div className="hero-actions"><a href="#leave-message" className="primary-button"><PenLine size={16} /><span>send a message</span><ChevronRight size={17} /></a><a href="#chat-board" className="secondary-button chat-board-hero-button" aria-label="Visit Reply Board" title="Visit Reply Board"><MessageCircle size={16} /><span>Visit Reply Board</span><ChevronRight size={17} /></a><button className="secondary-button" onClick={sharePage} aria-label={copied ? 'Link copied' : "Share Fowzan's inbox"} title={copied ? 'Link copied' : "Share Fowzan's inbox"}>{copied ? <Check size={15} /> : <Share2 size={15} />}<span>{copied ? 'link copied' : "share Fowzan's inbox"}</span></button></div>
       </section>

@@ -5060,3 +5060,115 @@ html, body { max-width:100%; overflow-x:hidden; }
     font-size: 2.75rem !important;
   }
 }
+
+
+/* FINAL CLEAN GAMER HERO FIX — isolated from Minimal mode */
+.app-page[data-mode='gamer'] .public-hero {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.app-page[data-mode='gamer'] .public-hero .hero-badge {
+  margin-bottom: 0 !important;
+}
+
+.app-page[data-mode='gamer'] .public-hero h1 {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 30px 0 0 !important;
+  padding: 0 !important;
+  font-size: clamp(2.2rem, 9.5vw, 4rem) !important;
+  line-height: 1.06 !important;
+  letter-spacing: -0.045em !important;
+  overflow: visible !important;
+}
+
+.app-page[data-mode='gamer'] .public-hero h1 .hero-message-line {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.045em !important;
+  word-spacing: 0 !important;
+}
+
+/* Matrix + particles are decorative only: they never participate in hero layout. */
+.app-page[data-mode='gamer'] .cyber-bg,
+.app-page[data-mode='gamer'] .particle-field {
+  pointer-events: none !important;
+}
+
+.app-page[data-mode='gamer'] .cyber-bg {
+  z-index: 0 !important;
+  opacity: .34 !important;
+}
+
+.app-page[data-mode='gamer'] .particle-field {
+  z-index: 1 !important;
+  opacity: .65 !important;
+}
+
+.app-page[data-mode='gamer'] .cyber-bg b {
+  z-index: 0 !important;
+  font-size: 9px !important;
+  line-height: 1.55 !important;
+  opacity: .18 !important;
+}
+
+.app-page[data-mode='gamer'] .particle-field i {
+  opacity: .22 !important;
+}
+
+@media (max-width: 640px) {
+  .app-page[data-mode='gamer'] .public-hero {
+    padding-top: 68px !important;
+    padding-bottom: 68px !important;
+  }
+
+  .app-page[data-mode='gamer'] .public-hero h1 {
+    margin-top: 30px !important;
+    font-size: clamp(2.15rem, 9.5vw, 3rem) !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.04em !important;
+  }
+
+  .app-page[data-mode='gamer'] .public-hero h1 .hero-message-line {
+    letter-spacing: -0.04em !important;
+  }
+
+  .app-page[data-mode='gamer'] .cyber-bg {
+    opacity: .28 !important;
+  }
+
+  .app-page[data-mode='gamer'] .cyber-bg b {
+    display: block !important;
+    font-size: 7px !important;
+    line-height: 1.6 !important;
+    opacity: .16 !important;
+  }
+
+  .app-page[data-mode='gamer'] .particle-field i {
+    display: block !important;
+    opacity: .18 !important;
+    width: 2px !important;
+    height: 2px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .app-page[data-mode='gamer'] .public-hero h1 {
+    font-size: 2.05rem !important;
+  }
+}
+
+
+/* Small intentional gap inside the shared A MESSAGE lockup, for both Gamer and Minimal. */
+.public-page .public-hero h1 .hero-message-line .hero-message-gap {
+  display: inline-block !important;
+  width: 0.10em !important;
+  min-width: 0.10em !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  letter-spacing: 0 !important;
+}
