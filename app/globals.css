@@ -1220,10 +1220,6 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
 .app-page[data-theme='white'] { --signal:#fff; --signal-rgb:255,255,255; --flare:#050505; --flare-rgb:5,5,5; --signal-text:#fff; }
 .app-page[data-theme='white'] .primary-button { color:#050505; background:#fff; }
 .app-page[data-theme='white'] .hero-badge, .app-page[data-theme='white'] .public-poll { border-color:rgba(255,255,255,.22); }
-.app-page[data-theme='black'] { --signal:#f5f5f5; --signal-rgb:245,245,245; --flare:#000; --flare-rgb:0,0,0; --signal-text:#f5f5f5; }
-.app-page[data-theme='black'] .primary-button { color:#050505; background:#f5f5f5; }
-
-
 @media (max-width:640px) {
   .poll-admin-card { padding:16px; }
   .poll-admin-mini { align-items:flex-start; flex-wrap:wrap; }
