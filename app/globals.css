@@ -4217,3 +4217,452 @@ html, body { max-width:100%; overflow-x:hidden; }
   .app-page[data-mode='professional'] .admin-topbar .top-actions .ghost-button { width: 36px !important; min-width: 36px !important; height: 36px !important; min-height: 36px !important; }
   .app-page[data-mode='professional'] .admin-hero { width: calc(100% - 18px) !important; }
 }
+
+
+/* ============================================================
+   FINAL MOBILE HEADER + MINIMAL INBOX POLISH
+   ============================================================ */
+.app-page[data-mode='professional'] .appearance-button,
+.app-page[data-mode='gamer'] .appearance-button {
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:8px !important;
+}
+.app-page[data-mode='professional'] .appearance-button svg,
+.app-page[data-mode='gamer'] .appearance-button svg {
+  display:block !important;
+  width:17px !important;
+  height:17px !important;
+  flex:0 0 17px !important;
+}
+
+/* Minimal public header: give the wordmark room and make all three controls explicit. */
+.app-page[data-mode='professional'] .public-topbar .brand.wordmark {
+  max-width:none !important;
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+.app-page[data-mode='professional'] .public-topbar .topbar-controls {
+  flex:0 0 auto !important;
+  min-width:0 !important;
+}
+
+/* The Minimal owner header is a proper site header, not a utility strip. */
+.app-page[data-mode='professional'] .admin-topbar .brand.wordmark {
+  max-width:none !important;
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+.app-page[data-mode='professional'] .admin-topbar .top-actions {
+  flex:0 0 auto !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:7px !important;
+}
+
+/* Make the actual inbox marker feel like an interface heading. */
+.app-page[data-mode='professional'] .admin-inbox-eyebrow {
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:11px !important;
+}
+.app-page[data-mode='professional'] .admin-inbox-eyebrow svg {
+  width:24px !important;
+  height:24px !important;
+  flex:0 0 24px !important;
+  stroke-width:1.8 !important;
+}
+
+/* Long messages must always remain readable inside their bubble/card. */
+.public-page .thread-main-message p,
+.public-page .public-reply p,
+.admin-page .chat-bubble p,
+.admin-page .thread-item p,
+.queue-item p {
+  overflow-wrap:anywhere !important;
+  word-break:break-word !important;
+  white-space:pre-wrap !important;
+}
+.admin-page .chat-bubble,
+.admin-page .conversation-card,
+.admin-page .conversation-scroll,
+.public-page .public-thread,
+.public-page .public-reply {
+  min-width:0 !important;
+  max-width:100% !important;
+}
+
+@media (max-width:760px) {
+  /* Override old legacy rules that hid the appearance icon. */
+  .app-page[data-mode='professional'] .appearance-button svg,
+  .app-page[data-mode='gamer'] .appearance-button svg {
+    display:block !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    width:18px !important;
+    height:18px !important;
+  }
+
+  .app-page[data-mode='professional'] .public-topbar,
+  .app-page[data-mode='gamer'] .public-topbar,
+  .app-page[data-mode='professional'] .admin-topbar,
+  .app-page[data-mode='gamer'] .admin-topbar {
+    width:calc(100% - 16px) !important;
+    max-width:none !important;
+    min-height:58px !important;
+    box-sizing:border-box !important;
+    padding:8px 8px 8px 13px !important;
+    gap:7px !important;
+    border-radius:16px !important;
+  }
+
+  .app-page[data-mode='professional'] .public-topbar .brand.wordmark,
+  .app-page[data-mode='gamer'] .public-topbar .brand.wordmark,
+  .app-page[data-mode='professional'] .admin-topbar .brand.wordmark,
+  .app-page[data-mode='gamer'] .admin-topbar .brand.wordmark {
+    max-width:none !important;
+    flex:1 1 auto !important;
+    font-size:10px !important;
+    letter-spacing:.075em !important;
+  }
+  .app-page[data-mode='professional'] .public-topbar .brand.wordmark svg,
+  .app-page[data-mode='gamer'] .public-topbar .brand.wordmark svg,
+  .app-page[data-mode='professional'] .admin-topbar .brand.wordmark svg,
+  .app-page[data-mode='gamer'] .admin-topbar .brand.wordmark svg {
+    width:18px !important;
+    height:18px !important;
+    flex:0 0 18px !important;
+  }
+
+  .app-page[data-mode='professional'] .appearance-button,
+  .app-page[data-mode='gamer'] .appearance-button,
+  .app-page[data-mode='professional'] .private-button,
+  .app-page[data-mode='gamer'] .private-button,
+  .app-page[data-mode='professional'] .theme-picker,
+  .app-page[data-mode='gamer'] .theme-picker {
+    width:42px !important;
+    min-width:42px !important;
+    height:42px !important;
+    min-height:42px !important;
+    flex:0 0 42px !important;
+    padding:0 !important;
+    border-radius:12px !important;
+    box-sizing:border-box !important;
+  }
+  .app-page[data-mode='professional'] .appearance-button span,
+  .app-page[data-mode='gamer'] .appearance-button span,
+  .app-page[data-mode='professional'] .private-button span,
+  .app-page[data-mode='gamer'] .private-button span {
+    display:none !important;
+  }
+  .app-page[data-mode='professional'] .appearance-button svg,
+  .app-page[data-mode='gamer'] .appearance-button svg,
+  .app-page[data-mode='professional'] .private-button svg,
+  .app-page[data-mode='gamer'] .private-button svg,
+  .app-page[data-mode='professional'] .theme-picker > svg,
+  .app-page[data-mode='gamer'] .theme-picker > svg {
+    width:19px !important;
+    height:19px !important;
+    flex:0 0 19px !important;
+  }
+
+  /* Color selector is an actual palette button, with the native select kept invisible on top. */
+  .app-page[data-mode='professional'] .theme-picker,
+  .app-page[data-mode='gamer'] .theme-picker {
+    display:flex !important;
+    position:relative !important;
+    align-items:center !important;
+    justify-content:center !important;
+    overflow:hidden !important;
+  }
+  .app-page[data-mode='professional'] .theme-picker select,
+  .app-page[data-mode='gamer'] .theme-picker select {
+    position:absolute !important;
+    inset:0 !important;
+    width:100% !important;
+    min-width:100% !important;
+    height:100% !important;
+    padding:0 !important;
+    opacity:0 !important;
+    font-size:16px !important;
+    cursor:pointer !important;
+  }
+
+  /* Never let the Gamer display heading become wider than the phone. */
+  .app-page[data-mode='gamer'] .public-hero {
+    width:calc(100% - 32px) !important;
+    max-width:100% !important;
+    box-sizing:border-box !important;
+  }
+  .app-page[data-mode='gamer'] .public-hero h1 {
+    max-width:100% !important;
+    font-size:clamp(2.65rem,15.5vw,5rem) !important;
+    line-height:.86 !important;
+    letter-spacing:-.035em !important;
+    overflow-wrap:normal !important;
+    word-break:normal !important;
+  }
+  .app-page[data-mode='gamer'] .public-hero h1 em {
+    display:inline-block !important;
+    max-width:100% !important;
+  }
+
+  /* Minimal hero remains editorial, but never clips its words. */
+  .app-page[data-mode='professional'] .public-hero h1 {
+    max-width:100% !important;
+    overflow-wrap:normal !important;
+    word-break:normal !important;
+  }
+
+  /* Private inbox: larger heading marker, visible cards, comfortable mobile spacing. */
+  .app-page[data-mode='professional'] .admin-hero {
+    width:calc(100% - 28px) !important;
+    padding-top:58px !important;
+    padding-bottom:30px !important;
+  }
+  .app-page[data-mode='professional'] .admin-title {
+    font-size:clamp(3.1rem,15.5vw,5rem) !important;
+    max-width:100% !important;
+  }
+  .app-page[data-mode='professional'] .admin-subtitle {
+    max-width:100% !important;
+    font-size:13px !important;
+    line-height:1.7 !important;
+  }
+  .app-page[data-mode='professional'] .quick-stats {
+    width:calc(100% - 28px) !important;
+  }
+  .app-page[data-mode='professional'] .stat-card {
+    min-height:132px !important;
+  }
+
+  /* Owner controls use icons on phones, but keep large touch targets. */
+  .app-page[data-mode='professional'] .admin-topbar .top-actions .ghost-button,
+  .app-page[data-mode='gamer'] .admin-topbar .top-actions .ghost-button {
+    width:42px !important;
+    min-width:42px !important;
+    height:42px !important;
+    min-height:42px !important;
+    padding:0 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+  }
+  .app-page[data-mode='professional'] .admin-topbar .top-actions .action-label,
+  .app-page[data-mode='gamer'] .admin-topbar .top-actions .action-label { display:none !important; }
+}
+
+@media (max-width:420px) {
+  .app-page[data-mode='professional'] .public-topbar,
+  .app-page[data-mode='gamer'] .public-topbar,
+  .app-page[data-mode='professional'] .admin-topbar,
+  .app-page[data-mode='gamer'] .admin-topbar {
+    width:calc(100% - 10px) !important;
+    padding-left:9px !important;
+    padding-right:7px !important;
+  }
+  .app-page[data-mode='professional'] .public-topbar .brand.wordmark,
+  .app-page[data-mode='gamer'] .public-topbar .brand.wordmark,
+  .app-page[data-mode='professional'] .admin-topbar .brand.wordmark,
+  .app-page[data-mode='gamer'] .admin-topbar .brand.wordmark {
+    font-size:9px !important;
+    letter-spacing:.06em !important;
+  }
+  .app-page[data-mode='professional'] .appearance-button,
+  .app-page[data-mode='gamer'] .appearance-button,
+  .app-page[data-mode='professional'] .private-button,
+  .app-page[data-mode='gamer'] .private-button,
+  .app-page[data-mode='professional'] .theme-picker,
+  .app-page[data-mode='gamer'] .theme-picker,
+  .app-page[data-mode='professional'] .admin-topbar .top-actions .ghost-button,
+  .app-page[data-mode='gamer'] .admin-topbar .top-actions .ghost-button {
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+    min-height:40px !important;
+    flex-basis:40px !important;
+  }
+}
+
+/* =========================================================
+   FINAL MOBILE HEADER CORRECTION
+   The appearance control is intentionally icon-first; the
+   brand stays readable instead of being squeezed away.
+   ========================================================= */
+.app-page[data-mode='professional'] .public-topbar .brand.wordmark {
+  font-family: Georgia, 'Times New Roman', serif !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: .035em !important;
+  white-space: nowrap !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+}
+
+.app-page[data-mode='professional'] .public-topbar .brand.wordmark svg,
+.app-page[data-mode='gamer'] .public-topbar .brand.wordmark svg {
+  width: 21px !important;
+  height: 21px !important;
+  flex: 0 0 21px !important;
+}
+
+/* Keep the appearance icon visible. Never render an empty square. */
+.app-page[data-mode='professional'] .public-topbar .appearance-button,
+.app-page[data-mode='gamer'] .public-topbar .appearance-button {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 44px !important;
+}
+
+.app-page[data-mode='professional'] .public-topbar .appearance-button svg,
+.app-page[data-mode='gamer'] .public-topbar .appearance-button svg {
+  display: block !important;
+  width: 21px !important;
+  height: 21px !important;
+  flex: 0 0 21px !important;
+}
+
+.app-page[data-mode='professional'] .public-topbar .appearance-button span,
+.app-page[data-mode='gamer'] .public-topbar .appearance-button span {
+  display: none !important;
+}
+
+/* The color selector becomes a compact palette control on phones. */
+.app-page[data-mode='professional'] .public-topbar .theme-picker,
+.app-page[data-mode='gamer'] .public-topbar .theme-picker {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  padding: 0 !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  flex: 0 0 44px !important;
+}
+.app-page[data-mode='professional'] .public-topbar .theme-picker > svg,
+.app-page[data-mode='gamer'] .public-topbar .theme-picker > svg {
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  pointer-events: none !important;
+}
+.app-page[data-mode='professional'] .public-topbar .theme-picker span { display: none !important; }
+.app-page[data-mode='professional'] .public-topbar .theme-picker select,
+.app-page[data-mode='gamer'] .public-topbar .theme-picker select {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.app-page[data-mode='professional'] .public-topbar .private-button,
+.app-page[data-mode='gamer'] .public-topbar .private-button {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 44px !important;
+}
+.app-page[data-mode='professional'] .public-topbar .private-button svg,
+.app-page[data-mode='gamer'] .public-topbar .private-button svg {
+  width: 21px !important;
+  height: 21px !important;
+}
+.app-page[data-mode='professional'] .public-topbar .private-button span,
+.app-page[data-mode='gamer'] .public-topbar .private-button span { display:none !important; }
+
+@media (max-width: 640px) {
+  .app-page[data-mode='professional'] .public-topbar,
+  .app-page[data-mode='gamer'] .public-topbar {
+    width: calc(100% - 20px) !important;
+    min-height: 64px !important;
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  .app-page[data-mode='professional'] .public-topbar .brand.wordmark,
+  .app-page[data-mode='gamer'] .public-topbar .brand.wordmark {
+    font-size: 13px !important;
+    letter-spacing: .025em !important;
+    gap: 7px !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  .app-page[data-mode='professional'] .public-topbar .topbar-controls,
+  .app-page[data-mode='gamer'] .public-topbar .topbar-controls {
+    margin-left: auto !important;
+    gap: 6px !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .app-page[data-mode='professional'] .public-topbar,
+  .app-page[data-mode='gamer'] .public-topbar {
+    width: calc(100% - 12px) !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  .app-page[data-mode='professional'] .public-topbar .brand.wordmark,
+  .app-page[data-mode='gamer'] .public-topbar .brand.wordmark {
+    font-size: 12px !important;
+    gap: 6px !important;
+  }
+  .app-page[data-mode='professional'] .public-topbar .brand.wordmark svg,
+  .app-page[data-mode='gamer'] .public-topbar .brand.wordmark svg {
+    width: 19px !important;
+    height: 19px !important;
+    flex-basis: 19px !important;
+  }
+  .app-page[data-mode='professional'] .public-topbar .appearance-button,
+  .app-page[data-mode='gamer'] .public-topbar .appearance-button,
+  .app-page[data-mode='professional'] .public-topbar .theme-picker,
+  .app-page[data-mode='gamer'] .public-topbar .theme-picker,
+  .app-page[data-mode='professional'] .public-topbar .private-button,
+  .app-page[data-mode='gamer'] .public-topbar .private-button {
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    flex-basis: 40px !important;
+  }
+  .app-page[data-mode='professional'] .public-topbar .appearance-button svg,
+  .app-page[data-mode='gamer'] .public-topbar .appearance-button svg,
+  .app-page[data-mode='professional'] .public-topbar .theme-picker > svg,
+  .app-page[data-mode='gamer'] .public-topbar .theme-picker > svg,
+  .app-page[data-mode='professional'] .public-topbar .private-button svg,
+  .app-page[data-mode='gamer'] .public-topbar .private-button svg {
+    width: 19px !important;
+    height: 19px !important;
+  }
+}
