@@ -4862,37 +4862,31 @@ html, body { max-width:100%; overflow-x:hidden; }
 }
 
 
-/* FINAL HERO SPACING */
+/* Final hero heading tight spacing */
 .public-page .public-hero h1 {
-  line-height: 0.68 !important;
-  letter-spacing: -0.07em !important;
+  line-height: .82 !important;
 }
-
 .public-page .public-hero h1 em {
-  display: inline !important;
-  margin-top: 0 !important;
-  letter-spacing: -0.07em !important;
-  word-spacing: -0.12em !important;
+  display: inline-block !important;
+  margin-top: .025em !important;
+  letter-spacing: -0.055em !important;
+  word-spacing: -0.08em !important;
 }
-
 @media (max-width: 640px) {
   .public-page .public-hero h1 {
-    line-height: 0.70 !important;
-    letter-spacing: -0.055em !important;
+    line-height: .84 !important;
   }
-
   .public-page .public-hero h1 em {
-    display: inline !important;
-    margin-top: 0 !important;
-    letter-spacing: -0.055em !important;
-    word-spacing: -0.10em !important;
+    margin-top: .02em !important;
+    letter-spacing: -0.05em !important;
+    word-spacing: -0.07em !important;
   }
 }
 
 
-/* FINAL FIX — dense Matrix rain, particles, and tight hero heading */
+/* FINAL FIX — balanced hero spacing + genuinely full Matrix/particle field */
 .app-page[data-mode='gamer'] .cyber-bg {
-  opacity: .92 !important;
+  opacity: .82 !important;
   position: fixed !important;
   inset: 0 !important;
   width: 100vw !important;
@@ -4902,11 +4896,12 @@ html, body { max-width:100%; overflow-x:hidden; }
 }
 .app-page[data-mode='gamer'] .cyber-bg b {
   display: block !important;
-  opacity: .58 !important;
-  font-size: 11px !important;
-  line-height: 1.5 !important;
+  top: -170px !important;
+  font-size: 10px !important;
+  line-height: 1.48 !important;
   letter-spacing: .08em !important;
   animation-duration: 10s !important;
+  text-shadow: 0 0 8px rgba(var(--signal-rgb),.85) !important;
 }
 .app-page[data-mode='gamer'] .particle-field {
   display: block !important;
@@ -4919,34 +4914,54 @@ html, body { max-width:100%; overflow-x:hidden; }
 }
 .app-page[data-mode='gamer'] .particle-field i {
   display: block !important;
-  opacity: .68 !important;
-  width: 3px !important;
-  height: 3px !important;
+  opacity: .58 !important;
+  width: 2px !important;
+  height: 2px !important;
 }
 
-/* Keep the hero readable while making the three heading lines feel like one lockup. */
-.public-page .public-hero h1 {
-  line-height: .70 !important;
-  letter-spacing: -.07em !important;
+/* The heading is a lockup: readable gaps between lines, but no loose spacing inside A MESSAGE. */
+.app-page[data-mode='gamer'] .public-hero h1 {
+  margin-top: 34px !important;
+  line-height: .88 !important;
+  letter-spacing: -.055em !important;
 }
-.public-page .public-hero h1 .hero-message-line {
+.app-page[data-mode='gamer'] .public-hero h1 .hero-message-line {
   display: inline !important;
   margin: 0 !important;
   padding: 0 !important;
-  letter-spacing: -.07em !important;
-  word-spacing: 0 !important;
+  letter-spacing: -.055em !important;
+  word-spacing: normal !important;
   white-space: nowrap !important;
 }
+
 @media (max-width: 640px) {
-  .public-page .public-hero h1 {
-    line-height: .72 !important;
-    letter-spacing: -.055em !important;
-  }
-  .public-page .public-hero h1 .hero-message-line {
-    letter-spacing: -.055em !important;
+  .app-page[data-mode='gamer'] .cyber-bg {
+    opacity: .78 !important;
   }
   .app-page[data-mode='gamer'] .cyber-bg b {
+    display: block !important;
     font-size: 9px !important;
-    opacity: .52 !important;
+    line-height: 1.48 !important;
+    letter-spacing: .06em !important;
+    opacity: .42 !important;
+  }
+  .app-page[data-mode='gamer'] .particle-field i {
+    display: block !important;
+    opacity: .5 !important;
+    width: 2px !important;
+    height: 2px !important;
+  }
+  .app-page[data-mode='gamer'] .public-hero {
+    padding-top: 74px !important;
+  }
+  .app-page[data-mode='gamer'] .public-hero h1 {
+    margin-top: 30px !important;
+    font-size: clamp(2.6rem, 15.2vw, 5.8rem) !important;
+    line-height: .9 !important;
+    letter-spacing: -.045em !important;
+  }
+  .app-page[data-mode='gamer'] .public-hero h1 .hero-message-line {
+    letter-spacing: -.045em !important;
+    word-spacing: normal !important;
   }
 }
