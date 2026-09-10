@@ -4,12 +4,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, Check, ChevronRight, Inbox, LockKeyhole, LogOut,
   Bell, BellRing, Download, Film, ImageIcon, Mail, MessageCircle, PenLine, RefreshCw, Send, Share2, Sparkles,
-  Star, ThumbsUp, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot
+  Star, ThumbsUp, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot, BarChart3, Plus
 } from 'lucide-react'
 
 type ThreadReply = { id: number; text: string; time: string; author: string; mediaUrl?: string | null; mediaType?: 'image' | 'gif' | null }
 type Thought = { id: number; text: string; time: string; unread?: boolean; kept?: boolean; senderName?: string | null; upvotes?: number; replies: ThreadReply[] }
 type PublicResponse = { id: number; text: string; time: string; author: string; upvotes?: number; replies: ThreadReply[] }
+type Poll = { id: number; question: string; options: string[]; counts: number[]; totalVotes: number; time: string }
 
 const prompts = [
   'What are you really into these days?',
@@ -44,7 +45,7 @@ function formatTime(value: string) {
 
 export default function Page() {
   const [view, setView] = useState<'public' | 'private'>('public')
-  const [theme, setTheme] = useState<'green' | 'red' | 'blue' | 'purple' | 'amber' | 'cyan' | 'rose'>('purple')
+  const [theme, setTheme] = useState<'white' | 'green' | 'red' | 'blue' | 'purple' | 'amber' | 'rose'>('white')
   const [thought, setThought] = useState('')
   const [sent, setSent] = useState(false)
   const [senderName, setSenderName] = useState('')
@@ -57,6 +58,11 @@ export default function Page() {
   const [selected, setSelected] = useState<Thought | null>(null)
   const [showKeeps, setShowKeeps] = useState(false)
   const [responses, setResponses] = useState<PublicResponse[]>([])
+  const [polls, setPolls] = useState<Poll[]>([])
+  const [votedPolls, setVotedPolls] = useState<Record<number, number>>({})
+  const [pollQuestion, setPollQuestion] = useState('')
+  const [pollOptions, setPollOptions] = useState(['', ''])
+  const [pollCreating, setPollCreating] = useState(false)
   const [replyingTo, setReplyingTo] = useState<number | null>(null)
   const [replyText, setReplyText] = useState('')
   const [replyName, setReplyName] = useState('')
@@ -94,6 +100,7 @@ export default function Page() {
       if (!response.ok) throw new Error('Could not load public conversations.')
       const data = await response.json()
       setResponses(data.responses ?? [])
+      setPolls(data.polls ?? [])
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not load the page.') }
     finally { setLoading(false) }
   }
@@ -132,6 +139,15 @@ export default function Page() {
       const saved = JSON.parse(localStorage.getItem('fowzan-upvoted-threads') ?? '[]')
       if (Array.isArray(saved)) setVotedThreadIds(new Set(saved.filter((id) => Number.isSafeInteger(id))))
     } catch { /* A missing or malformed local preference should never affect the inbox. */ }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('fowzan-poll-votes') ?? '{}')
+      if (saved && typeof saved === 'object') setVotedPolls(saved)
+      if (!localStorage.getItem('fowzan-anonymous-voter')) localStorage.setItem('fowzan-anonymous-voter', crypto.randomUUID())
+      voterKey.current = localStorage.getItem('fowzan-anonymous-voter')
+    } catch { voterKey.current = null }
   }, [])
 
   useEffect(() => {
@@ -229,6 +245,40 @@ export default function Page() {
       setThoughts((current) => current.map((entry) => entry.id === id ? { ...entry, kept: data.kept } : entry))
       setSelected((current) => current?.id === id ? { ...current, kept: data.kept } : current)
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not update the message.') }
+  }
+
+  async function createPoll() {
+    const question = pollQuestion.trim()
+    const options = pollOptions.map((item) => item.trim()).filter(Boolean)
+    if (!question || options.length < 2 || pollCreating) return
+    setPollCreating(true); setError('')
+    try {
+      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create-poll', question, options }) })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error ?? 'Could not create the poll.')
+      setPollQuestion(''); setPollOptions(['', '']); await loadOwner(true)
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not create the poll.') }
+    finally { setPollCreating(false) }
+  }
+
+  async function votePoll(poll: Poll, optionIndex: number) {
+    if (votedPolls[poll.id] !== undefined) return
+    const key = voterKey.current || localStorage.getItem('fowzan-anonymous-voter') || crypto.randomUUID()
+    voterKey.current = key; localStorage.setItem('fowzan-anonymous-voter', key)
+    try {
+      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'vote-poll', pollId: poll.id, optionIndex, voterKey: key }) })
+      const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error ?? 'Could not vote.')
+      setPolls((current) => current.map((item) => item.id === poll.id ? { ...item, counts: data.counts, totalVotes: data.totalVotes } : item))
+      setVotedPolls((current) => { const next = { ...current, [poll.id]: optionIndex }; localStorage.setItem('fowzan-poll-votes', JSON.stringify(next)); return next })
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not vote.') }
+  }
+
+  async function sharePoll(poll: Poll) {
+    const url = `${window.location.origin}/poll/${poll.id}`
+    try {
+      if (navigator.share) await navigator.share({ title: 'A poll from Fowzan's Inbox', text: poll.question, url })
+      else { await navigator.clipboard.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
+    } catch { setCopied(false) }
   }
 
   async function sharePage() {
@@ -350,6 +400,15 @@ export default function Page() {
         <div className="stat-card"><span>status</span><strong className="status-live"><CircleDot size={13} /> live</strong><small>{lastUpdated ? `updated ${formatTime(lastUpdated.toISOString())}` : 'syncing now'}</small></div>
       </section>
 
+      <section className="poll-admin-card page-width">
+        <div className="poll-admin-head"><div><div className="eyebrow"><BarChart3 size={13} /> wall poll</div><h2>Ask everyone.</h2><p>Create an anonymous poll that appears on the public wall.</p></div></div>
+        <input className="poll-question-input" value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} placeholder="What do you want to ask?" maxLength={240} />
+        <div className="poll-option-editor">{pollOptions.map((option, index) => <div className="poll-option-row" key={index}><span>{index + 1}</span><input value={option} onChange={(e) => setPollOptions((current) => current.map((item, i) => i === index ? e.target.value : item))} placeholder={`Option ${index + 1}`} maxLength={120} />{pollOptions.length > 2 && <button type="button" onClick={() => setPollOptions((current) => current.filter((_, i) => i !== index))}><X size={14} /></button>}</div>)}</div>
+        <div className="poll-admin-actions"><button className="ghost-button" type="button" onClick={() => setPollOptions((current) => current.length < 8 ? [...current, ''] : current)} disabled={pollOptions.length >= 8}><Plus size={14} /> add option</button><button className="primary-button" type="button" onClick={createPoll} disabled={!pollQuestion.trim() || pollOptions.filter(Boolean).length < 2 || pollCreating}>{pollCreating ? 'publishing…' : <>Publish poll <ChevronRight size={16} /></>}</button></div>
+      </section>
+
+      <section className="admin-polls page-width"><div className="queue-head"><div><div className="eyebrow"><BarChart3 size={13} /> live polls</div><h2>On the wall.</h2></div><span>{polls.length} live</span></div>{polls.length > 0 && <div className="poll-admin-list">{polls.map((poll) => <div className="poll-admin-mini" key={poll.id}><strong>{poll.question}</strong><span>{poll.totalVotes} anonymous {poll.totalVotes === 1 ? 'vote' : 'votes'}</span><button className="ghost-button" onClick={() => sharePoll(poll)}><Share2 size={13} /> share</button></div>)}</div>}</section>
+
       <section className="admin-workspace page-width">
         <aside className="thread-browser">
           <div className="browser-head"><div><div className="eyebrow"><MessageCircle size={13} /> all threads</div><p>{visibleThoughts.length} {visibleThoughts.length === 1 ? 'conversation' : 'conversations'}</p></div><span className="live-dot"><i /> live</span><input className="thread-search" value={threadQuery} onChange={(event) => setThreadQuery(event.target.value)} placeholder="search threads" aria-label="Search threads" /></div>
@@ -382,7 +441,7 @@ export default function Page() {
     <main className="app-page public-page" data-theme={theme}>
       <div className="cyber-bg" aria-hidden="true"><i /><i /><i /><div className="space-stars">{Array.from({ length: 72 }, (_, index) => <span key={index} style={{ top: `${(index * 47) % 100}%`, left: `${(index * 73 + 11) % 100}%`, animationDelay: `${-(index % 17) * 0.42}s`, animationDuration: `${4.5 + (index % 7) * 0.8}s` }} />)}</div><div className="asteroid-field">{Array.from({ length: 10 }, (_, index) => <i key={index} style={{ top: `${(index * 31 + 8) % 94}%`, left: `${(index * 61 - 12) % 112 - 4}%`, animationDelay: `${-(index % 9) * 1.15}s`, animationDuration: `${18 + (index % 6) * 2.1}s`, transform: `scale(${0.7 + (index % 5) * 0.22}) rotate(${(index * 23) % 360}deg)` }} />)}</div>{matrixStreams.slice(0, 12).map((stream, index) => <b key={index}>{Array.from(stream).map((char, charIndex) => <span key={charIndex}>{char}</span>)}</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" /><div className="grain" />
       <div className="particle-field" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</div>
-      <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><label className="theme-picker"><span>THEME</span><select aria-label="Choose color theme" value={theme} onChange={(event) => setTheme(event.target.value as typeof theme)}><option value="green">GREEN</option><option value="red">RED</option><option value="blue">BLUE</option><option value="purple">PURPLE</option><option value="amber">AMBER</option><option value="cyan">CYAN</option><option value="rose">ROSE</option></select></label><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></div></header>
+      <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><label className="theme-picker"><span>THEME</span><select aria-label="Choose color theme" value={theme} onChange={(event) => setTheme(event.target.value as typeof theme)}><option value="white">WHITE</option><option value="green">GREEN</option><option value="red">RED</option><option value="blue">BLUE</option><option value="purple">PURPLE</option><option value="amber">AMBER</option><option value="rose">ROSE</option></select></label><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></div></header>
 
       <section className="public-hero page-width">
         <div className="hero-badge"><span /> ANONYMOUS MESSAGES TO FOWZAN</div>
@@ -402,6 +461,7 @@ export default function Page() {
       {error && <div className="error-banner page-width">{error}</div>}
 
       <section className="public-threads page-width"><div className="threads-heading"><div><div className="eyebrow"><MessageCircle size={13} /> FOWZAN&apos;S REPLIES</div><h2>REPLY BOARD.</h2><p>Messages Fowzan chooses to answer appear here — and you can keep the conversation going.</p><small className="thread-contribute-hint">Have something to add? Join the thread and contribute your own reply.</small></div><span>{responses.length} live</span></div>
+        {polls.length > 0 && <div className="public-poll-list">{polls.map((poll) => <article className="public-poll" key={poll.id}><div className="poll-meta"><span><BarChart3 size={13} /> ANONYMOUS POLL</span><button onClick={() => sharePoll(poll)} aria-label="Share this poll"><Share2 size={14} /></button></div><h3>{poll.question}</h3><div className="poll-options">{poll.options.map((option, index) => { const total = poll.totalVotes || 0; const pct = total ? Math.round((poll.counts[index] / total) * 100) : 0; const voted = votedPolls[poll.id] !== undefined; return <button key={option + index} className={`poll-option ${voted ? 'show-result' : ''} ${votedPolls[poll.id] === index ? 'selected' : ''}`} onClick={() => votePoll(poll, index)} disabled={voted}><span className="poll-option-label">{option}</span>{voted && <><i style={{ width: `${pct}%` }} /><b>{pct}%</b></>}</button> })}</div><div className="poll-foot"><span>{poll.totalVotes} anonymous {poll.totalVotes === 1 ? 'vote' : 'votes'}</span><span>{formatTime(poll.time)}</span></div></article>})}</div>}
         {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{responses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><h3>{response.text}</h3>{response.replies.length > 0 && <div className="public-replies">{response.replies.map((reply) => <div key={reply.id}><div><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}</div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareThread(response)}><Share2 size={14} /> share</button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join thread</button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!responses.length && <div className="empty-browser public-empty"><MessageCircle size={20} /><strong>Fowzan has not replied yet.</strong><span>Come back soon to see messages Fowzan chooses to answer.</span></div>}</div>}
       </section>
 

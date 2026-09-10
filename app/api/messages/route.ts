@@ -29,6 +29,11 @@ function asId(value: unknown) {
   return Number.isSafeInteger(id) && id > 0 ? id : null
 }
 
+function cleanOptions(value: unknown) {
+  if (!Array.isArray(value)) return []
+  return value.map((item) => clean(item, 120)).filter(Boolean).slice(0, 8)
+}
+
 function cleanMediaUrl(value: unknown) {
   const candidate = clean(value, 2000)
   if (!candidate) return null
@@ -61,6 +66,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ thread: { ...thread, id: Number(thread.id), replies: thread.replies.map((reply: any) => ({ ...reply, id: Number(reply.id) })) } }, { headers: { 'Cache-Control': 'no-store' } })
   }
 
+  if (params.get('view') === 'poll') {
+    const id = asId(params.get('id'))
+    if (!id) return NextResponse.json({ error: 'Invalid poll.' }, { status: 400 })
+    const result = await pool.query(`
+      SELECT p.id, p.question, p.options, p.created_at AS time,
+        COUNT(v.poll_id) AS total_votes,
+        COALESCE(json_agg(json_build_object('optionIndex', v.option_index) ORDER BY v.option_index) FILTER (WHERE v.poll_id IS NOT NULL), '[]') AS votes
+      FROM polls p LEFT JOIN poll_votes v ON v.poll_id = p.id
+      WHERE p.id = $1 AND p.deleted_at IS NULL GROUP BY p.id
+    `, [id])
+    if (!result.rows[0]) return NextResponse.json({ error: 'This poll is not available to share.' }, { status: 404 })
+    const poll = result.rows[0]
+    const options = Array.isArray(poll.options) ? poll.options : []
+    const counts = Array(options.length).fill(0)
+    for (const vote of poll.votes ?? []) if (Number.isInteger(vote.optionIndex) && vote.optionIndex >= 0 && vote.optionIndex < counts.length) counts[vote.optionIndex]++
+    return NextResponse.json({ poll: { id: Number(poll.id), question: poll.question, options, counts, totalVotes: counts.reduce((a,b)=>a+b,0), time: poll.time } }, { headers: { 'Cache-Control': 'no-store' } })
+  }
+
   if (ownerView) {
     if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -70,6 +93,11 @@ export async function GET(request: Request) {
       FROM messages
       WHERE deleted_at IS NULL
       ORDER BY created_at DESC
+    `)
+    const polls = await pool.query(`
+      SELECT p.id, p.question, p.options, p.created_at AS time, COUNT(v.poll_id) AS total_votes
+      FROM polls p LEFT JOIN poll_votes v ON v.poll_id = p.id
+      WHERE p.deleted_at IS NULL GROUP BY p.id ORDER BY p.created_at DESC
     `)
     const replies = await pool.query(`
       SELECT id, message_id, text, author, media_url AS "mediaUrl", media_type AS "mediaType", created_at AS time
@@ -117,8 +145,20 @@ export async function GET(request: Request) {
         replies: m.replies,
       })),
       answeredThoughtIds: allMessages.filter((m) => m.replies.length > 0).map((m) => m.id),
+      polls: polls.rows.map((p) => ({ id: Number(p.id), question: p.question, options: p.options, totalVotes: Number(p.total_votes), time: p.time })),
     }, { headers: { 'Cache-Control': 'no-store' } })
   }
+
+  const polls = await pool.query(`
+    SELECT p.id, p.question, p.options, p.created_at AS time,
+      COALESCE(json_agg(json_build_object('optionIndex', v.option_index, 'count', 1) ORDER BY v.option_index)
+        FILTER (WHERE v.poll_id IS NOT NULL), '[]') AS votes
+    FROM polls p
+    LEFT JOIN poll_votes v ON v.poll_id = p.id
+    WHERE p.deleted_at IS NULL
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
+  `)
 
   const result = await pool.query(`
     SELECT m.id, m.text, m.created_at AS time,
@@ -141,7 +181,13 @@ export async function GET(request: Request) {
       author: 'Anonymous',
       upvotes: Number(r.upvotes),
       replies: r.replies.map((x: any) => ({ ...x, id: Number(x.id) })),
-    }))
+    })),
+    polls: polls.rows.map((p) => {
+      const options = Array.isArray(p.options) ? p.options : []
+      const counts = Array(options.length).fill(0)
+      for (const vote of p.votes ?? []) if (Number.isInteger(vote.optionIndex) && vote.optionIndex >= 0 && vote.optionIndex < counts.length) counts[vote.optionIndex]++
+      return { id: Number(p.id), question: p.question, options, counts, totalVotes: counts.reduce((a, b) => a + b, 0), time: p.time }
+    })
   }, { headers: { 'Cache-Control': 'no-store' } })
 }
 
@@ -150,11 +196,34 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}))
   const action = clean(body.action, 40)
 
-  if (action === 'message' || action === 'public-reply' || action === 'toggle-upvote') {
+  if (action === 'message' || action === 'public-reply' || action === 'toggle-upvote' || action === 'vote-poll') {
     const limitKey = action === 'message' ? 'message' : action === 'public-reply' ? 'reply' : 'vote'
     if (!(await rateLimit(request, limitKey))) {
       return NextResponse.json({ error: 'Too many submissions. Please wait a minute and try again.' }, { status: 429 })
     }
+  }
+
+  if (action === 'create-poll') {
+    if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const question = clean(body.question, 240)
+    const options = cleanOptions(body.options)
+    if (!question || options.length < 2) return NextResponse.json({ error: 'Add a question and at least two options.' }, { status: 400 })
+    const result = await pool.query(`INSERT INTO polls (question, options) VALUES ($1, $2::jsonb) RETURNING id`, [question, JSON.stringify(options)])
+    return NextResponse.json({ ok: true, id: Number(result.rows[0].id) })
+  }
+
+  if (action === 'vote-poll') {
+    const pollId = asId(body.pollId)
+    const optionIndex = Number(body.optionIndex)
+    const voterKey = clean(body.voterKey, 128)
+    if (!pollId || !Number.isInteger(optionIndex) || optionIndex < 0 || voterKey.length < 16) return NextResponse.json({ error: 'Invalid poll vote.' }, { status: 400 })
+    const poll = await pool.query(`SELECT options FROM polls WHERE id = $1 AND deleted_at IS NULL`, [pollId])
+    if (!poll.rows[0] || !Array.isArray(poll.rows[0].options) || optionIndex >= poll.rows[0].options.length) return NextResponse.json({ error: 'Poll not found.' }, { status: 404 })
+    await pool.query(`INSERT INTO poll_votes (poll_id, option_index, voter_key) VALUES ($1, $2, $3) ON CONFLICT (poll_id, voter_key) DO NOTHING`, [pollId, optionIndex, voterKey])
+    const result = await pool.query(`SELECT option_index, COUNT(*) AS count FROM poll_votes WHERE poll_id = $1 GROUP BY option_index`, [pollId])
+    const counts = Array(poll.rows[0].options.length).fill(0)
+    for (const row of result.rows) counts[Number(row.option_index)] = Number(row.count)
+    return NextResponse.json({ ok: true, counts, totalVotes: counts.reduce((a,b)=>a+b,0), voted: true })
   }
 
   if (action === 'message') {

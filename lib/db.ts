@@ -47,6 +47,20 @@ export function ensureSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       PRIMARY KEY (message_id, voter_key)
     );
+    CREATE TABLE IF NOT EXISTS polls (
+      id BIGSERIAL PRIMARY KEY,
+      question TEXT NOT NULL,
+      options JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      deleted_at TIMESTAMPTZ
+    );
+    CREATE TABLE IF NOT EXISTS poll_votes (
+      poll_id BIGINT NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+      option_index INTEGER NOT NULL,
+      voter_key TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (poll_id, voter_key)
+    );
     CREATE TABLE IF NOT EXISTS rate_limits (
       bucket TEXT PRIMARY KEY,
       count INTEGER NOT NULL DEFAULT 0,
@@ -62,6 +76,8 @@ export function ensureSchema() {
     CREATE INDEX IF NOT EXISTS messages_created_idx ON messages(created_at DESC);
     CREATE INDEX IF NOT EXISTS responses_message_idx ON responses(message_id);
     CREATE INDEX IF NOT EXISTS rate_limits_reset_idx ON rate_limits(reset_at);
+    CREATE INDEX IF NOT EXISTS polls_created_idx ON polls(created_at DESC);
+    CREATE INDEX IF NOT EXISTS poll_votes_poll_idx ON poll_votes(poll_id);
     CREATE INDEX IF NOT EXISTS thread_votes_message_idx ON thread_votes(message_id);
   `).then(() => undefined)
 
