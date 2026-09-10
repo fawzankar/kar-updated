@@ -2967,6 +2967,7 @@ body { text-rendering: optimizeSpeed; }
 .app-page[data-mode='professional'] .media-tool:hover,
 .app-page[data-mode='professional'] .ghost-button:hover,
 .app-page[data-mode='professional'] .refresh-button:hover { border-color:var(--minimal-accent) !important; background:#f0ede6 !important; }
+}
 
 /* Professional palettes: each changes the complete accent/border system. */
 .app-page[data-mode='professional'][data-theme='rose'] { --minimal-bg:#fbf4f5; --minimal-surface:#fffafa; --minimal-surface-2:#f6e9eb; --minimal-text:#24181b; --minimal-muted:#7b6469; --minimal-accent:#a94b62; --minimal-line:#e2c5cc; --minimal-geo:#f0d9de; }
