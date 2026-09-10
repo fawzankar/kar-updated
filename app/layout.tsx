@@ -32,7 +32,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className="bg-background" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var e=localStorage.getItem('fowzan-experience'),t=localStorage.getItem('fowzan-theme');if(e==='gamer'||e==='professional')document.documentElement.dataset.fowzanMode=e;if(t)document.documentElement.dataset.fowzanTheme=t;}catch(_){}})()` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var e=localStorage.getItem('fowzan-experience'),t=localStorage.getItem('fowzan-theme');if(e==='gamer'||e==='professional')document.documentElement.dataset.fowzanMode=e;if(t)document.documentElement.dataset.fowzanTheme=t}catch(_){}})()` }} />
       </head>
       <body className={`${spaceMono.variable} ${pressStart.variable} antialiased`}>
         {children}

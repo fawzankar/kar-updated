@@ -59,7 +59,7 @@ function formatTime(value: string) {
 
 export default function Page() {
   const [view, setView] = useState<'public' | 'private'>('public')
-  const [theme, setTheme] = useState<'white' | 'green' | 'purple' | 'red' | 'blue' | 'rose' | 'cobalt' | 'sand' | 'mint' | 'coral' | 'ink' | 'plum'>('purple')
+  const [theme, setTheme] = useState<'white' | 'green' | 'purple' | 'red' | 'blue' | 'rose' | 'amber' | 'slate'>('purple')
   const [experience, setExperience] = useState<'gamer' | 'professional'>('gamer')
   const [appearanceOpen, setAppearanceOpen] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -67,11 +67,11 @@ export default function Page() {
   const [mediaType, setMediaType] = useState<'image' | 'audio' | null>(null)
   const [mediaTranscript, setMediaTranscript] = useState('')
   const [recording, setRecording] = useState(false)
-  const recordingStateRef = useRef(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
   const mediaChunksRef = useRef<Blob[]>([])
   const speechRecognitionRef = useRef<any>(null)
+  const speechFinalRef = useRef('')
   const recordingStartedAtRef = useRef(0)
   const [thought, setThought] = useState('')
   const [sent, setSent] = useState(false)
@@ -118,28 +118,23 @@ export default function Page() {
   useEffect(() => {
     const savedExperience = localStorage.getItem('fowzan-experience') as 'gamer' | 'professional' | null
     const savedTheme = localStorage.getItem('fowzan-theme') as typeof theme | null
-    if (savedExperience === 'gamer' || savedExperience === 'professional') setExperience(savedExperience)
-    if (savedTheme && ['white','green','purple','red','blue','rose','cobalt','sand','mint','coral','ink','plum'].includes(savedTheme)) {
-      const normalized = savedTheme === 'green' ? 'purple' : savedExperience === 'professional' && ['purple','red','white','green'].includes(savedTheme) ? 'cobalt' : savedTheme
-      setTheme(normalized as typeof theme)
+    if (savedExperience === 'gamer' || savedExperience === 'professional') {
+      setExperience(savedExperience)
+      document.documentElement.dataset.fowzanMode = savedExperience
+    }
+    if (savedTheme && ['white','green','purple','red','blue','rose','amber','slate'].includes(savedTheme)) {
+      setTheme(savedTheme)
+      document.documentElement.dataset.fowzanTheme = savedTheme
     }
     if (!savedExperience || !savedTheme) setShowOnboarding(true)
   }, [])
 
   function chooseAppearance(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme) {
-    setExperience(nextExperience)
-    setTheme(nextTheme)
-    localStorage.setItem('fowzan-experience', nextExperience)
-    localStorage.setItem('fowzan-theme', nextTheme)
+    setExperience(nextExperience); setTheme(nextTheme)
     document.documentElement.dataset.fowzanMode = nextExperience
     document.documentElement.dataset.fowzanTheme = nextTheme
-  }
-
-  function handleExperienceSelect(nextExperience: 'gamer' | 'professional') {
-    const nextTheme = nextExperience === 'gamer'
-      ? (['purple', 'blue', 'red', 'green'].includes(theme) ? theme : 'purple')
-      : (['cobalt', 'blue', 'plum', 'rose', 'sand', 'mint', 'coral', 'ink'].includes(theme) ? theme : 'cobalt')
-    chooseAppearance(nextExperience, nextTheme as typeof theme)
+    localStorage.setItem('fowzan-experience', nextExperience)
+    localStorage.setItem('fowzan-theme', nextTheme)
   }
 
   function handleAppearanceChange(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme) {
@@ -148,30 +143,16 @@ export default function Page() {
     setShowOnboarding(false)
   }
 
-  function readFileAsDataUrl(file: File, maxBytes: number) {
-    return new Promise<string>((resolve, reject) => {
-      if (file.size > maxBytes) return reject(new Error(`Please keep ${file.type.startsWith('image/') ? 'images' : 'voice notes'} under ${Math.round(maxBytes / 1024 / 1024 * 10) / 10} MB.`))
-      const reader = new FileReader()
-      reader.onload = () => resolve(String(reader.result))
-      reader.onerror = () => reject(new Error('Could not read that file.'))
-      reader.readAsDataURL(file)
-    })
-  }
-
-  async function handleImage(file: File | undefined) {
-    if (!file) return
-    if (!file.type.startsWith('image/')) { setError('Please choose an image.'); return }
-    try {
-      setMediaData(await readFileAsDataUrl(file, 900000))
-      setMediaType('image')
-      setMediaTranscript('')
-      setError('')
-    } catch (err) { setError(err instanceof Error ? err.message : 'Could not add the image.') }
-  }
-
-  function stopSpeechCapture() {
-    try { speechRecognitionRef.current?.stop() } catch {}
-    speechRecognitionRef.current = null
+  function chooseRecorderMime() {
+    if (typeof MediaRecorder === 'undefined') return ''
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+      'audio/ogg',
+    ]
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || ''
   }
 
   function startSpeechCapture() {
@@ -181,49 +162,111 @@ export default function Page() {
       const recognition = new Recognition()
       recognition.continuous = true
       recognition.interimResults = true
-      recognition.lang = navigator.language || 'en-US'
-      let finalText = ''
+      recognition.lang = 'en-US'
       recognition.onresult = (event: any) => {
-        let interim = ''
+        let interimText = ''
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const part = String(event.results[i][0]?.transcript ?? '').trim()
-          if (event.results[i].isFinal) finalText = `${finalText} ${part}`.trim()
-          else interim = `${interim} ${part}`.trim()
+          const piece = event.results[i]?.[0]?.transcript ?? ''
+          if (event.results[i].isFinal) speechFinalRef.current = `${speechFinalRef.current} ${piece}`.trim()
+          else interimText += piece
         }
-        setMediaTranscript(`${finalText} ${interim}`.trim().slice(0, 1200))
+        setMediaTranscript(`${speechFinalRef.current}${interimText ? ` ${interimText}` : ''}`.trim())
       }
       recognition.onerror = () => {}
-      recognition.onend = () => {
-        if (recordingStateRef.current && mediaRecorderRef.current) {
-          try { recognition.start() } catch {}
-        }
-      }
       recognition.start()
       speechRecognitionRef.current = recognition
     } catch {}
   }
 
+  function stopSpeechCapture() {
+    try { speechRecognitionRef.current?.stop() } catch {}
+    speechRecognitionRef.current = null
+  }
+
+  function compressImage(file: File) {
+    return new Promise<string>((resolve, reject) => {
+      const url = URL.createObjectURL(file)
+      const image = new Image()
+      image.onload = () => {
+        URL.revokeObjectURL(url)
+        const maxSide = 1280
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale))
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale))
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('Could not prepare the image.')); return }
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+        const output = canvas.toDataURL('image/jpeg', 0.76)
+        if (output.length > 1150000) {
+          const smaller = document.createElement('canvas')
+          const factor = 0.72
+          smaller.width = Math.max(1, Math.round(canvas.width * factor))
+          smaller.height = Math.max(1, Math.round(canvas.height * factor))
+          const smallCtx = smaller.getContext('2d')
+          if (!smallCtx) { reject(new Error('Could not prepare the image.')); return }
+          smallCtx.drawImage(canvas, 0, 0, smaller.width, smaller.height)
+          resolve(smaller.toDataURL('image/jpeg', 0.68))
+        } else resolve(output)
+      }
+      image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that image.')) }
+      image.src = url
+    })
+  }
+
+  async function handleImage(file: File | undefined) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setError('Please choose an image.'); return }
+    try {
+      const data = file.type === 'image/gif' && file.size <= 700000
+        ? await readFileAsDataUrl(file, 700000)
+        : await compressImage(file)
+      setMediaData(data)
+      setMediaType('image')
+      setMediaTranscript('')
+      setError('')
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not add the image.') }
+  }
+
+  function readFileAsDataUrl(file: File, maxBytes: number) {
+    return new Promise<string>((resolve, reject) => {
+      if (file.size > maxBytes) return reject(new Error(`Please keep ${file.type.startsWith('image/') ? 'images' : 'voice notes'} under ${Math.round(maxBytes / 1024) } KB.`))
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result))
+      reader.onerror = () => reject(new Error('Could not read that file.'))
+      reader.readAsDataURL(file)
+    })
+  }
+
   async function toggleRecording() {
     if (recording) {
-      try { mediaRecorderRef.current?.requestData() } catch {}
       try { mediaRecorderRef.current?.stop() } catch {}
       return
     }
-
+    if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+      setError('Voice notes require HTTPS. Open the secure Vercel URL.')
+      return
+    }
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setError('Voice notes are not supported by this browser.')
       return
     }
 
     try {
+      setError('')
+      setMediaData(null)
+      setMediaType(null)
+      setMediaTranscript('')
+      speechFinalRef.current = ''
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
       })
-      const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/ogg']
-      const mimeType = candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate))
-      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
-      mediaChunksRef.current = []
       mediaStreamRef.current = stream
+      const mimeType = chooseRecorderMime()
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 48000 })
+        : new MediaRecorder(stream)
+      mediaChunksRef.current = []
       recordingStartedAtRef.current = Date.now()
 
       recorder.ondataavailable = (event) => {
@@ -232,64 +275,63 @@ export default function Page() {
       recorder.onerror = () => {
         stream.getTracks().forEach((track) => track.stop())
         mediaStreamRef.current = null
-        mediaRecorderRef.current = null
         setRecording(false)
-        recordingStateRef.current = false
-        stopSpeechCapture()
-        setError('The voice recorder hit a browser error. Please try again.')
+        setError('The browser could not record that voice note.')
       }
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
+        stopSpeechCapture()
         stream.getTracks().forEach((track) => track.stop())
         mediaStreamRef.current = null
-        const blob = new Blob(mediaChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
         mediaRecorderRef.current = null
         setRecording(false)
-        recordingStateRef.current = false
-        stopSpeechCapture()
-        if (blob.size < 1000) { setError('That voice note was too short or empty. Please try again.'); return }
-        if (blob.size > 850000) { setError('Please keep voice notes short (about 60 seconds or less).'); return }
-        const reader = new FileReader()
-        reader.onload = () => {
-          setMediaData(String(reader.result))
-          setMediaType('audio')
-          setError('')
+        const elapsed = Date.now() - recordingStartedAtRef.current
+        const blob = new Blob(mediaChunksRef.current, { type: recorder.mimeType || mimeType || 'audio/webm' })
+        mediaChunksRef.current = []
+        if (elapsed < 300 || blob.size < 200) {
+          setError('The voice note was too short. Hold record for a moment and try again.')
+          return
         }
-        reader.onerror = () => setError('Could not prepare the voice note.')
-        reader.readAsDataURL(blob)
+        if (blob.size > 850000) {
+          setError('That voice note is too large. Please record a shorter note.')
+          return
+        }
+        try {
+          const data = await readFileAsDataUrl(new File([blob], 'voice-note', { type: blob.type || 'audio/webm' }), 850000)
+          setMediaData(data)
+          setMediaType('audio')
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Could not prepare the voice note.')
+        }
       }
 
-      recorder.start(250)
       mediaRecorderRef.current = recorder
-      setMediaData(null)
-      setMediaType(null)
-      setMediaTranscript('')
+      recorder.start(250)
       setRecording(true)
-      recordingStateRef.current = true
-      setError('')
       startSpeechCapture()
 
       window.setTimeout(() => {
-        if (mediaRecorderRef.current === recorder && recorder.state === 'recording') {
-          try { recorder.stop() } catch {}
-        }
+        if (mediaRecorderRef.current === recorder && recorder.state === 'recording') recorder.stop()
       }, 60000)
-    } catch {
-      setError('Microphone access was not granted.')
+    } catch (err) {
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
+      mediaStreamRef.current = null
+      setRecording(false)
+      setError(err instanceof DOMException && err.name === 'NotAllowedError' ? 'Microphone access was blocked. Allow the microphone and try again.' : 'Microphone access was not granted.')
     }
   }
 
   function clearMedia() {
     try { mediaRecorderRef.current?.stop() } catch {}
-    mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
-    mediaRecorderRef.current = null
-    mediaStreamRef.current = null
     stopSpeechCapture()
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
+    mediaStreamRef.current = null
+    mediaRecorderRef.current = null
     mediaChunksRef.current = []
+    setRecording(false)
     setMediaData(null)
     setMediaType(null)
     setMediaTranscript('')
-    setRecording(false)
-    recordingStateRef.current = false
+    speechFinalRef.current = ''
   }
 
   const visibleResponses = useMemo(() => {
@@ -685,7 +727,7 @@ export default function Page() {
           <div className="thread-list">
             {visibleThoughts.map((item) => <button key={item.id} onClick={() => openThought(item)} className={`thread-item ${selected?.id === item.id ? 'active' : ''}`}>
               <div className="thread-item-top"><span>{item.senderName || 'Anonymous'}</span>{item.unread && <b>new</b>}</div>
-              {item.mediaData && (item.mediaType === 'image' ? <img className="thread-media-thumb" src={item.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <audio className="thread-media-audio" controls src={item.mediaData} />)}<p>{item.text}</p><div><span>{item.replies.length} {item.replies.length === 1 ? 'reply' : 'replies'} · {item.upvotes ?? 0} votes</span><span>{formatTime(item.time)}</span></div>
+              {item.mediaData && (item.mediaType === 'image' ? <img className="thread-media-thumb" src={item.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="thread-media-audio" controls preload="metadata" src={item.mediaData} />{item.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{item.mediaTranscript}</div>}</>)}<p>{item.text}</p><div><span>{item.replies.length} {item.replies.length === 1 ? 'reply' : 'replies'} · {item.upvotes ?? 0} votes</span><span>{formatTime(item.time)}</span></div>
             </button>)}
             {!visibleThoughts.length && <div className="empty-browser"><MessageCircle size={20} /><strong>{showKeeps ? 'No keepsakes yet' : 'Your inbox is empty'}</strong><span>New anonymous messages will appear here.</span></div>}
           </div>
@@ -695,7 +737,7 @@ export default function Page() {
           {!selected ? <div className="conversation-empty"><div className="empty-icon"><MessageCircle size={23} /></div><h2>Choose a conversation</h2><p>Select a message from the left to open its thread.</p></div> : <div className="conversation-card">
             <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {selected.upvotes ?? 0} votes · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => shareThread(selected)} title="Share this thread" aria-label="Share this thread">{copied ? <Check size={15} /> : <Share2 size={15} />}</button><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><Trash2 size={14} /> {deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</button></div></div>
             <div className="conversation-scroll">
-              <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div> {selected.mediaData && (selected.mediaType === "image" ? <img className="message-media-image" src={selected.mediaData} alt="Attachment" /> : <><audio className="message-media-audio" controls src={selected.mediaData} /><div className="stored-transcript"><small>WORDS</small><p>{selected.mediaTranscript || 'Voice note'}</p></div></>)}{selected.text && <p>{selected.text}</p>}</article>
+              <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div>{selected.mediaData && (selected.mediaType === "image" ? <img className="message-media-image" src={selected.mediaData} alt="Attachment" /> : <><audio className="message-media-audio" controls preload="metadata" src={selected.mediaData} />{selected.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{selected.mediaTranscript}</div>}</>)}{selected.text && <p>{selected.text}</p>}</article>
               {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author === 'Fowzan' ? 'Fowzan' : reply.author}</span><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="bubble-actions"><button className={`bubble-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={11} /> {reply.upvotes ?? 0}</button><button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`} title="Remove only this reply" aria-label="Remove only this reply"><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'remove reply'}</button></div></article>)}
             </div>
             <div className="reply-dock"><div className="reply-composer"><input ref={replyInputRef} value={ownerReplies[selected.id] ?? ''} onChange={(e) => { const value = e.target.value; setOwnerReplies((c) => ({ ...c, [selected.id]: value })); localStorage.setItem(`fowzan-draft-${selected.id}`, value) }} placeholder="Write a reply as Fowzan…" maxLength={1000} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitOwnerReply(selected.id) } }} /><button onClick={() => submitOwnerReply(selected.id)} disabled={(!ownerReplies[selected.id]?.trim() && !ownerMediaUrls[selected.id]?.trim()) || replySending === selected.id}>{replySending === selected.id ? <Loader2 size={17} className="spin" /> : <Send size={16} />}</button></div><div className="media-reply-tools"><button className={ownerMediaModes[selected.id] === 'image' ? 'active' : ''} onClick={() => setOwnerMediaModes((current) => ({ ...current, [selected.id]: current[selected.id] === 'image' ? null : 'image' }))}><ImageIcon size={13} /> image</button><button className={ownerMediaModes[selected.id] === 'gif' ? 'active' : ''} onClick={() => setOwnerMediaModes((current) => ({ ...current, [selected.id]: current[selected.id] === 'gif' ? null : 'gif' }))}><Film size={13} /> GIF</button>{ownerMediaModes[selected.id] && <input value={ownerMediaUrls[selected.id] ?? ''} onChange={(event) => setOwnerMediaUrls((current) => ({ ...current, [selected.id]: event.target.value }))} placeholder={`Paste a ${ownerMediaModes[selected.id]} URL…`} inputMode="url" />}</div><div className="composer-foot"><span>{ownerReplies[selected.id] || ownerMediaUrls[selected.id] ? 'Draft saved on this device · Enter to send' : 'R reply · S save · J/K browse · Esc close'}</span><span>{(ownerReplies[selected.id] ?? '').length}/1000</span></div></div>
@@ -711,7 +753,7 @@ export default function Page() {
     <main className="app-page public-page" data-theme={theme} data-mode={experience}>
       <div className="cyber-bg" aria-hidden="true"><i /><i /><i /><div className="space-stars">{Array.from({ length: 36 }, (_, index) => <span key={index} style={{ top: `${(index * 47) % 100}%`, left: `${(index * 73 + 11) % 100}%`, animationDelay: `${-(index % 17) * 0.42}s`, animationDuration: `${4.5 + (index % 7) * 0.8}s` }} />)}</div><div className="asteroid-field">{Array.from({ length: 5 }, (_, index) => <i key={index} style={{ top: `${(index * 31 + 8) % 94}%`, left: `${(index * 61 - 12) % 112 - 4}%`, animationDelay: `${-(index % 9) * 1.15}s`, animationDuration: `${18 + (index % 6) * 2.1}s`, transform: `scale(${0.7 + (index % 5) * 0.22}) rotate(${(index * 23) % 360}deg)` }} />)}</div>{matrixStreams.map((stream, index) => <b key={index}>{Array.from(stream).map((char, charIndex) => <span key={charIndex}>{char}</span>)}</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" />
       <div className="particle-field" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</div>
-      <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><button className="appearance-button" onClick={() => setAppearanceOpen(true)}><Sparkles size={14} /> {experience === "gamer" ? "gamer" : "professional"}</button><label className="theme-picker"><span>COLOR</span><select aria-label="Choose color theme" value={theme} onChange={(event) => handleAppearanceChange(experience, event.target.value as typeof theme)}>{(experience === "gamer" ? ["purple","blue","red"] : ["cobalt","blue","plum","rose","sand","mint","coral","ink"]).map((accent) => <option key={accent} value={accent}>{accent.toUpperCase()}</option>)}</select></label><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></div></header>
+      <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><button className="appearance-button" onClick={() => setAppearanceOpen(true)}><Sparkles size={14} /> {experience === "gamer" ? "gamer" : "professional"}</button><label className="theme-picker"><span>COLOR</span><select aria-label="Choose color theme" value={theme} onChange={(event) => handleAppearanceChange(experience, event.target.value as typeof theme)}>{(experience === "gamer" ? ["purple","red","green","rose","blue","white"] : ["blue","purple","rose","red","green","amber","white","slate"]).map((accent) => <option key={accent} value={accent}>{accent.toUpperCase()}</option>)}</select></label><button className="private-button" onClick={() => setView('private')}><LockKeyhole size={14} /> private inbox</button></div></header>
 
       <section className="public-hero page-width">
         <div className="hero-badge"><span /> ANONYMOUS MESSAGES TO FOWZAN</div>
@@ -721,11 +763,7 @@ export default function Page() {
       </section>
 
       <section id="leave-message" className="composer-section page-width"><div className="section-intro"><div className="eyebrow"><PenLine size={13} /> MESSAGE FOWZAN</div><h2>WHAT DO YOU<br /><span>WANT TO SEND?</span></h2></div>
-        <div className="message-composer"><div className="composer-label"><span className="pulse-dot" /> YOUR ANONYMOUS MESSAGE</div><textarea value={thought} onChange={(e) => setThought(e.target.value)} placeholder="Send Fowzan a thought, question, or message..." rows={5} maxLength={500} /><div className="composer-meta"><span>{thought.length}/500</span><span>your name is hidden</span></div>{mediaData && <div className={`attachment-preview ${mediaType === 'audio' ? 'voice-attachment' : 'photo-attachment'}`}>
-          <div className="attachment-preview-head"><span>{mediaType === 'audio' ? 'VOICE NOTE' : 'PHOTO ATTACHMENT'}</span><button type="button" onClick={clearMedia} aria-label="Remove attachment"><X size={14} /></button></div>
-          {mediaType === "image" ? <img src={mediaData} alt="Selected attachment" /> : <><div className="voice-preview-row"><span className="voice-wave" aria-hidden="true">{Array.from({ length: 28 }, (_, i) => <i key={i} style={{ height: `${10 + ((i * 17) % 23)}px` }} />)}</span><audio controls src={mediaData} /></div><div className="voice-transcript"><small>WORDS</small><p>{mediaTranscript || 'Transcript will appear here when your browser supports live speech recognition.'}</p></div></>}
-          <div className="attachment-actions"><button type="button" className="attachment-delete" onClick={clearMedia}><Trash2 size={13} /> Delete</button><button type="button" className="attachment-send" onClick={submitThought} disabled={sending}>{sending ? <Loader2 size={13} className="spin" /> : <Send size={13} />} Send attachment</button></div>
-        </div>}<div className="composer-media-tools"><label className="media-tool"><ImageIcon size={14} /> photo<input type="file" accept="image/*" onChange={(e) => { void handleImage(e.target.files?.[0]); e.currentTarget.value = "" }} /></label><button type="button" className={`media-tool ${recording ? "recording" : ""}`} onClick={() => { void toggleRecording() }}><span className="record-dot" />{recording ? "stop recording" : "voice note"}</button></div></div>
+        <div className="message-composer"><div className="composer-label"><span className="pulse-dot" /> YOUR ANONYMOUS MESSAGE</div><textarea value={thought} onChange={(e) => setThought(e.target.value)} placeholder="Send Fowzan a thought, question, or message..." rows={5} maxLength={500} /><div className="composer-meta"><span>{thought.length}/500</span><span>your name is hidden</span></div>{mediaData && <div className={`attachment-preview ${mediaType === 'audio' ? 'attachment-voice' : 'attachment-photo'}`}><div className="attachment-preview-main">{mediaType === "image" ? <img src={mediaData} alt="Selected attachment" /> : <><div className="voice-wave" aria-hidden="true">{Array.from({ length: 28 }, (_, i) => <i key={i} style={{ height: `${10 + ((i * 17) % 25)}px` }} />)}</div><audio controls preload="metadata" src={mediaData} /></>}</div>{mediaType === 'audio' && <div className="voice-words"><span>WORDS</span><p>{mediaTranscript || 'Your browser may show live words while you speak. The audio itself will still be sent.'}</p></div>}<div className="attachment-actions"><button type="button" className="attachment-delete" onClick={clearMedia}><Trash2 size={14} /> Delete</button><button type="button" className="attachment-send" onClick={submitThought} disabled={sending}>{sending ? <Loader2 size={14} className="spin" /> : <Send size={14} />} {sending ? 'Sending…' : 'Send attachment'}</button></div></div>}<div className="composer-media-tools"><label className="media-tool"><ImageIcon size={14} /> photo<input type="file" accept="image/*" onChange={(e) => { void handleImage(e.target.files?.[0]); e.currentTarget.value = "" }} /></label><button type="button" className={`media-tool ${recording ? "recording" : ""}`} onClick={() => { void toggleRecording() }}><span className="record-dot" />{recording ? "stop recording" : "voice note"}</button></div></div>
         <div className="identity-controls"><label><input type="checkbox" checked={revealName} onChange={(e) => setRevealName(e.target.checked)} /><span className="switch" /> include my name</label>{revealName && <input value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="display name" maxLength={80} />}</div>
         <button className="primary-button send-button" onClick={submitThought} disabled={(!thought.trim() && !mediaData) || sending}>{sending ? <><Loader2 size={16} className="spin" /> sending…</> : <>Send to Fowzan <Send size={16} /></>}</button>
       </section>
@@ -780,11 +818,9 @@ export default function Page() {
             ))}
           </div>
         )}
-        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><div className="thread-main-message">{response.mediaData && (response.mediaType === "image" ? <img className="message-media-image" src={response.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="message-media-audio" controls src={response.mediaData} /><div className="stored-transcript"><small>WORDS</small><p>{response.mediaTranscript || 'Voice note'}</p></div></>)}{response.text && <h3>{response.text}</h3>}</div>{response.replies.length > 0 && <div className="public-replies"><div className="replies-label"><span>CONVERSATION</span><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span></div>{response.replies.map((reply) => <div className="public-reply" key={reply.id}><div className="public-reply-head"><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="public-reply-actions"><button className={`reply-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={12} /> {reply.upvotes ?? 0}</button></div></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'} · {response.upvotes ?? 0} thread votes</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareThread(response)}><Share2 size={14} /> share</button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join thread</button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><Search size={20} /><strong>{publicSearch ? 'No conversations found.' : 'Fowzan has not replied yet.'}</strong><span>{publicSearch ? 'Try another word or search the replies too.' : 'Come back soon to see messages Fowzan chooses to answer.'}</span></div>}</div>}</section>
+        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><div className="thread-main-message">{response.mediaData && (response.mediaType === "image" ? <img className="message-media-image" src={response.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="message-media-audio" controls preload="metadata" src={response.mediaData} />{response.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{response.mediaTranscript}</div>}</>)}{response.text && <h3>{response.text}</h3>}</div>{response.replies.length > 0 && <div className="public-replies"><div className="replies-label"><span>CONVERSATION</span><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span></div>{response.replies.map((reply) => <div className="public-reply" key={reply.id}><div className="public-reply-head"><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="public-reply-actions"><button className={`reply-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={12} /> {reply.upvotes ?? 0}</button></div></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'} · {response.upvotes ?? 0} thread votes</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareThread(response)}><Share2 size={14} /> share</button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join thread</button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><Search size={20} /><strong>{publicSearch ? 'No conversations found.' : 'Fowzan has not replied yet.'}</strong><span>{publicSearch ? 'Try another word or search the replies too.' : 'Come back soon to see messages Fowzan chooses to answer.'}</span></div>}</div>}</section>
 
-      {(showOnboarding || appearanceOpen) && <div className="appearance-overlay" role="dialog" aria-modal="true" aria-label="Choose appearance"><div className="appearance-modal"><button className="appearance-close" onClick={() => { if (!showOnboarding) setAppearanceOpen(false) }} aria-label="Close"><X size={17} /></button><div className="eyebrow"><Sparkles size={13} /> CHOOSE YOUR EXPERIENCE</div><h2>{showOnboarding ? "Make it yours." : "Appearance"}</h2><p>{showOnboarding ? "Pick the vibe and color you want. We'll remember it when you come back." : "Switch between the two looks whenever you want."}</p><div className="experience-grid"><button className={`experience-card ${experience === 'gamer' ? 'active' : ''}`} onClick={() => handleExperienceSelect('gamer')}><div className="experience-preview gamer-preview"><span>0101</span><i /><b>FOWZAN</b></div><strong>🎮 Gamer</strong><small>Matrix rain · cyber · neon</small></button><button className={`experience-card ${experience === 'professional' ? 'active' : ''}`} onClick={() => handleExperienceSelect('professional')}><div className="experience-preview professional-preview"><div className="pro-preview-window"><span>INBOX</span><i /><b>FOWZAN</b><small>PRIVATE · ANONYMOUS · PERSONAL</small></div></div><strong>Professional</strong><small>Editorial · studio · modern</small></button></div><div className="accent-heading">Choose a color</div><div className="accent-grid">{(experience === 'gamer'
-  ? ['purple','blue','red','green']
-  : ['cobalt','blue','plum','rose','sand','mint','coral','ink']).map((accent) => <button key={accent} className={`accent-choice ${theme === accent ? 'active' : ''} accent-${accent}`} onClick={() => setTheme(accent as typeof theme)} aria-label={`${accent} accent`}><span /></button>)}</div><div className="appearance-actions"><button className="primary-button" onClick={() => { chooseAppearance(experience, theme); setShowOnboarding(false); setAppearanceOpen(false) }}>{showOnboarding ? "Continue" : "Save appearance"}<ChevronRight size={16} /></button></div></div></div>}
+      {(showOnboarding || appearanceOpen) && <div className="appearance-overlay" role="dialog" aria-modal="true" aria-label="Choose appearance"><div className="appearance-modal"><button className="appearance-close" onClick={() => { if (!showOnboarding) setAppearanceOpen(false) }} aria-label="Close"><X size={17} /></button><div className="eyebrow"><Sparkles size={13} /> CHOOSE YOUR EXPERIENCE</div><h2>{showOnboarding ? "Make it yours." : "Appearance"}</h2><p>{showOnboarding ? "Pick the vibe and color you want. We'll remember it when you come back." : "Switch between the two looks whenever you want."}</p><div className="experience-grid"><button className={`experience-card ${experience === 'gamer' ? 'active' : ''}`} onClick={() => setExperience('gamer')}><div className="experience-preview gamer-preview"><span>0101</span><i /><b>FOWZAN</b></div><strong>🎮 Gamer</strong><small>Matrix rain · cyber · neon</small></button><button className={`experience-card ${experience === 'professional' ? 'active' : ''}`} onClick={() => setExperience('professional')}><div className="experience-preview professional-preview"><span>F</span><b>FOWZAN&apos;S INBOX</b></div><strong>💼 Professional</strong><small>Clean · premium · refined</small></button></div><div className="accent-heading">Choose a color</div><div className="accent-grid">{(experience === 'gamer' ? ['purple','red','green','rose','blue','white'] : ['blue','purple','rose','red','green','amber','white','slate']).map((accent) => <button key={accent} className={`accent-choice ${theme === accent ? 'active' : ''} accent-${accent}`} onClick={() => setTheme(accent as typeof theme)} aria-label={`${accent} accent`}><span /></button>)}</div><div className="appearance-actions"><button className="primary-button" onClick={() => { chooseAppearance(experience, theme); setShowOnboarding(false); setAppearanceOpen(false) }}>{showOnboarding ? "Continue" : "Save appearance"}<ChevronRight size={16} /></button></div></div></div>}
       {sent && <div className="modal-backdrop" onClick={() => setSent(false)}><article className="success-modal" onClick={(e) => e.stopPropagation()}><div className="success-icon"><Check size={21} /></div><div className="eyebrow">message delivered</div><h2>That was sent.</h2><p>Your message is safely in Fowzan's inbox. Leave another whenever you feel like it.</p><button className="primary-button" onClick={() => setSent(false)}>Send another <ChevronRight size={17} /></button></article></div>}
     </main>
   )
