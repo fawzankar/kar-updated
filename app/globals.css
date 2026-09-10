@@ -3720,3 +3720,305 @@ body { text-rendering: optimizeSpeed; }
   background:rgba(255,253,248,.96) !important;
   color:var(--editorial-ink) !important;
 }
+
+/* Final mobile inbox pass: stack dense workspaces, prevent overflow, and use icon-first actions. */
+@media (max-width: 760px) {
+  .admin-page { overflow-x: hidden !important; }
+  .admin-page .page-width { width: min(100% - 24px, 680px) !important; }
+  .admin-topbar { width: calc(100% - 20px) !important; margin: 10px auto 0 !important; padding: 7px 9px 7px 12px !important; min-height: 56px !important; border-radius: 15px !important; }
+  .admin-topbar .brand { max-width: 45%; font-size: 9px; letter-spacing: .09em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top-actions { gap: 6px !important; flex-wrap: nowrap !important; }
+  .top-actions > button, .admin-hero-actions > button { min-width: 40px !important; min-height: 40px !important; justify-content: center !important; }
+  .top-actions .action-label, .admin-hero-actions .action-label { display: none !important; }
+  .admin-hero { grid-template-columns: 1fr !important; gap: 18px !important; padding-top: 64px !important; }
+  .admin-hero-actions { display: grid !important; grid-template-columns: minmax(0,1fr) repeat(3,40px) !important; gap: 7px !important; width: 100% !important; }
+  .admin-hero-actions .refresh-button { min-width: 0 !important; }
+  .quick-stats { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 8px !important; }
+  .stat-card { min-width: 0 !important; padding: 14px !important; }
+  .poll-admin-card { padding: 16px !important; }
+  .poll-admin-actions { display: grid !important; grid-template-columns: 42px minmax(0,1fr) !important; gap: 8px !important; }
+  .poll-admin-actions .ghost-button { min-width: 42px !important; padding-inline: 0 !important; }
+  .poll-admin-actions .ghost-button svg { margin: 0 !important; }
+  .poll-admin-actions .primary-button { min-width: 0 !important; }
+  .poll-admin-mini { min-width: 0 !important; }
+  .poll-admin-mini-actions { margin-left: auto !important; }
+  .poll-admin-mini-actions .action-label { display: none !important; }
+  .poll-admin-mini-actions button { min-width: 38px !important; width: 38px !important; height: 38px !important; padding: 0 !important; justify-content: center !important; }
+  .admin-workspace { display: flex !important; flex-direction: column !important; gap: 12px !important; }
+  .thread-browser, .conversation-shell { width: 100% !important; min-width: 0 !important; }
+  .thread-browser { max-height: none !important; }
+  .thread-list { max-height: 42vh !important; overflow-y: auto !important; overscroll-behavior: contain; }
+  .thread-item { min-width: 0 !important; width: 100% !important; }
+  .thread-item p, .thread-main-message p, .thread-main-message h3, .conversation-card p { overflow-wrap: anywhere !important; word-break: break-word !important; }
+  .conversation-card { min-width: 0 !important; overflow: hidden !important; }
+  .conversation-head { gap: 10px !important; align-items: flex-start !important; }
+  .conversation-actions { flex: 0 0 auto !important; display: flex !important; gap: 5px !important; flex-wrap: wrap !important; justify-content: flex-end !important; }
+  .conversation-actions .delete-thread-button { width: 40px !important; min-width: 40px !important; height: 40px !important; padding: 0 !important; justify-content: center !important; }
+  .conversation-actions .action-label { display: none !important; }
+  .conversation-scroll { max-height: 58vh !important; }
+  .chat-bubble { max-width: 94% !important; min-width: 0 !important; }
+  .chat-bubble .message-media-image, .message-media-image, .reply-media img, .poll-wall-image { max-width: 100% !important; height: auto !important; }
+  .chat-board-tools, .composer-tools { flex-wrap: wrap !important; }
+  .queue-grid { grid-template-columns: 1fr !important; }
+  .queue-item { min-width: 0 !important; }
+  .public-thread { width: 100% !important; min-width: 0 !important; }
+  .public-thread-foot { gap: 10px !important; align-items: flex-start !important; flex-wrap: wrap !important; }
+  .public-thread-foot > div { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; width: 100% !important; }
+  .public-thread-foot button { flex: 1 1 0 !important; min-width: 42px !important; justify-content: center !important; }
+  .public-thread-foot button .action-label { display: none !important; }
+  .public-replies { overflow: hidden !important; }
+  .public-reply { min-width: 0 !important; }
+  .public-reply p { overflow-wrap: anywhere !important; }
+  .public-reply-form { min-width: 0 !important; }
+  .reply-composer { width: 100% !important; min-width: 0 !important; }
+  .reply-composer input { min-width: 0 !important; width: 100% !important; }
+  .site-footer { margin-top: 34px !important; padding-bottom: 28px !important; }
+}
+
+@media (max-width: 420px) {
+  .admin-page .page-width { width: calc(100% - 18px) !important; }
+  .admin-topbar { width: calc(100% - 14px) !important; }
+  .admin-topbar .brand { max-width: 38%; }
+  .quick-stats { grid-template-columns: 1fr 1fr !important; }
+  .stat-card { padding: 12px !important; }
+  .stat-card small { font-size: 8px !important; }
+  .admin-hero-actions { grid-template-columns: minmax(0,1fr) repeat(3,38px) !important; }
+  .admin-hero-actions > button, .top-actions > button { min-width: 38px !important; width: 38px !important; height: 38px !important; }
+  .thread-list { max-height: 38vh !important; }
+  .conversation-head { flex-direction: column !important; }
+  .conversation-actions { width: 100% !important; justify-content: flex-start !important; }
+  .public-thread-foot > span { width: 100%; }
+}
+
+/* ============================================================
+   MOBILE UX FIXES — compact icon headers + no text clipping
+   ============================================================ */
+html, body { max-width:100%; overflow-x:hidden; }
+.app-page { overflow-x:clip !important; }
+
+@media (max-width: 760px) {
+  /* Public + private headers: never let controls push the page wider. */
+  .public-topbar,
+  .admin-topbar {
+    width:calc(100% - 16px) !important;
+    max-width:none !important;
+    box-sizing:border-box !important;
+    min-height:54px !important;
+    padding:6px 7px 6px 10px !important;
+    gap:6px !important;
+    border-radius:14px !important;
+  }
+  .public-topbar .brand,
+  .admin-topbar .brand {
+    flex:1 1 auto !important;
+    min-width:0 !important;
+    max-width:none !important;
+    width:auto !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    white-space:nowrap !important;
+    font-size:9px !important;
+    letter-spacing:.07em !important;
+  }
+  .topbar-controls,
+  .top-actions {
+    flex:0 0 auto !important;
+    width:auto !important;
+    min-width:0 !important;
+    gap:5px !important;
+    display:flex !important;
+    align-items:center !important;
+  }
+  .appearance-button,
+  .private-button,
+  .top-actions > button {
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+    min-height:40px !important;
+    padding:0 !important;
+    border-radius:11px !important;
+    justify-content:center !important;
+    align-items:center !important;
+    flex:0 0 40px !important;
+  }
+  .appearance-button span,
+  .private-button span,
+  .top-actions .action-label { display:none !important; }
+  .appearance-button svg,
+  .private-button svg,
+  .top-actions svg { width:17px !important; height:17px !important; flex:0 0 auto !important; }
+
+  /* Color is a real icon control on mobile; the select still opens normally. */
+  .theme-picker {
+    position:relative !important;
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+    flex:0 0 40px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border:1px solid var(--minimal-line, rgba(23,22,19,.14)) !important;
+    border-radius:11px !important;
+    background:rgba(255,255,255,.58) !important;
+    color:var(--editorial-accent, currentColor) !important;
+    overflow:hidden !important;
+  }
+  .theme-picker > svg { width:17px !important; height:17px !important; pointer-events:none !important; }
+  .theme-picker > span { display:none !important; }
+  .theme-picker select {
+    position:absolute !important;
+    inset:0 !important;
+    width:100% !important;
+    min-width:100% !important;
+    height:100% !important;
+    opacity:0 !important;
+    cursor:pointer !important;
+  }
+
+  /* Private/admin mobile hero: icon actions stay aligned in one row. */
+  .admin-page .admin-hero {
+    width:calc(100% - 24px) !important;
+    max-width:none !important;
+    padding-top:48px !important;
+    gap:20px !important;
+  }
+  .admin-page .admin-title,
+  .admin-page .admin-title span {
+    max-width:100% !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+  }
+  .admin-page .admin-hero-actions {
+    grid-template-columns:minmax(0,1fr) repeat(3,40px) !important;
+    min-width:0 !important;
+    width:100% !important;
+  }
+  .admin-page .refresh-button {
+    min-width:0 !important;
+    width:100% !important;
+    padding:0 12px !important;
+    justify-content:center !important;
+    overflow:hidden !important;
+  }
+  .admin-page .refresh-button .action-label { display:none !important; }
+  .admin-page .share-square { width:40px !important; min-width:40px !important; height:40px !important; padding:0 !important; }
+
+  /* The huge gamer/editorial headlines must wrap inside the viewport. */
+  .public-page .public-hero {
+    width:calc(100% - 28px) !important;
+    max-width:none !important;
+    box-sizing:border-box !important;
+    padding-top:54px !important;
+    padding-bottom:58px !important;
+  }
+  .public-page .public-hero h1 {
+    width:100% !important;
+    max-width:100% !important;
+    margin-left:0 !important;
+    margin-right:0 !important;
+    font-size:clamp(2.75rem,13.2vw,5.2rem) !important;
+    line-height:.9 !important;
+    letter-spacing:-.035em !important;
+    overflow-wrap:normal !important;
+    word-break:normal !important;
+  }
+  .public-page .public-hero h1 em {
+    display:block !important;
+    max-width:100% !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+  }
+  .public-page .hero-lead {
+    width:100% !important;
+    max-width:620px !important;
+    font-size:.92rem !important;
+    line-height:1.65 !important;
+    overflow-wrap:anywhere !important;
+  }
+  .public-page .hero-actions {
+    width:100% !important;
+    max-width:620px !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:9px !important;
+  }
+  .public-page .hero-actions > * {
+    width:100% !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+    justify-content:center !important;
+  }
+  .public-page .hero-actions .primary-button,
+  .public-page .hero-actions .secondary-button {
+    min-height:48px !important;
+  }
+
+  /* Public cards and message content: no horizontal clipping, ever. */
+  .public-page .page-width,
+  .public-page .composer-section,
+  .public-page .public-threads,
+  .public-page .public-thread-list,
+  .public-page .public-poll-list { min-width:0 !important; max-width:100% !important; box-sizing:border-box !important; }
+  .public-page .public-thread,
+  .public-page .public-poll,
+  .public-page .public-reply,
+  .public-page .thread-main-message,
+  .public-page .thread-main-message h3,
+  .public-page .thread-main-message p { min-width:0 !important; max-width:100% !important; box-sizing:border-box !important; }
+  .public-page .thread-main-message h3,
+  .public-page .public-reply p { overflow-wrap:anywhere !important; word-break:break-word !important; }
+  .public-page .message-media-image,
+  .public-page .message-media-audio,
+  .public-page .reply-media,
+  .public-page .reply-media img,
+  .public-page .poll-wall-image { display:block !important; max-width:100% !important; width:auto !important; height:auto !important; }
+  .public-page .public-replies { max-width:100% !important; box-sizing:border-box !important; overflow:hidden !important; }
+  .public-page .public-thread-foot { min-width:0 !important; }
+  .public-page .public-thread-foot > span { overflow-wrap:anywhere !important; }
+  .public-page .public-thread-foot > div { min-width:0 !important; }
+  .public-page .public-thread-foot button { min-width:42px !important; height:40px !important; padding:0 10px !important; }
+  .public-page .public-thread-foot .action-label { display:none !important; }
+
+  /* Mobile composer: inputs never escape the card. */
+  .message-composer,
+  .message-composer textarea,
+  .composer-tools,
+  .composer-meta { min-width:0 !important; max-width:100% !important; box-sizing:border-box !important; }
+  .message-composer textarea { width:100% !important; resize:vertical !important; overflow-wrap:anywhere !important; }
+
+  /* Admin thread/reply content is similarly constrained. */
+  .admin-page .conversation-shell,
+  .admin-page .conversation-card,
+  .admin-page .conversation-scroll,
+  .admin-page .chat-board,
+  .admin-page .chat-bubble,
+  .admin-page .reply-dock { min-width:0 !important; max-width:100% !important; box-sizing:border-box !important; }
+  .admin-page .chat-bubble p,
+  .admin-page .thread-message p,
+  .admin-page .conversation-card p { overflow-wrap:anywhere !important; word-break:break-word !important; }
+  .admin-page .chat-bubble img,
+  .admin-page .thread-message img { max-width:100% !important; height:auto !important; }
+
+  /* Icon-first queue actions. */
+  .queue-item b { display:flex !important; align-items:center !important; justify-content:flex-end !important; gap:4px !important; }
+  .queue-item b .action-label { display:none !important; }
+}
+
+@media (max-width:420px) {
+  .public-topbar,
+  .admin-topbar { width:calc(100% - 10px) !important; padding-left:7px !important; }
+  .public-topbar .brand,
+  .admin-topbar .brand { font-size:8px !important; letter-spacing:.045em !important; }
+  .appearance-button,
+  .private-button,
+  .top-actions > button,
+  .theme-picker { width:36px !important; min-width:36px !important; height:36px !important; min-height:36px !important; flex-basis:36px !important; }
+  .appearance-button svg,
+  .private-button svg,
+  .theme-picker svg,
+  .top-actions svg { width:16px !important; height:16px !important; }
+  .public-page .public-hero h1 { font-size:clamp(2.55rem,12.6vw,4.5rem) !important; }
+  .public-page .hero-lead { font-size:.88rem !important; }
+}
