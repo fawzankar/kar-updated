@@ -1648,6 +1648,9 @@ html[data-fowzan-mode='professional'] .app-page[data-mode='gamer'] {
   background:radial-gradient(900px 460px at 8% 0%,rgba(37,99,235,.11),transparent 65%),radial-gradient(760px 420px at 94% 12%,rgba(244,114,182,.10),transparent 62%),linear-gradient(135deg,#f7f9fc 0%,#eef4f8 52%,#f9f7f2 100%);
   color:#172033; font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
+html[data-fowzan-mode='professional'][data-fowzan-theme='purple'] .app-page[data-mode='gamer'] { --signal:#7c3aed; --signal-rgb:124,58,237; --flare:#c2410c; --flare-rgb:194,65,12; --signal-text:#4c1d95; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='green'] .app-page[data-mode='gamer'] { --signal:#059669; --signal-rgb:5,150,105; --flare:#0f766e; --flare-rgb:15,118,110; --signal-text:#065f46; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='rose'] .app-page[data-mode='gamer'] { --signal:#e11d48; --signal-rgb:225,29,72; --flare:#be123c; --flare-rgb:190,18,60; --signal-text:#881337; }
 html[data-fowzan-mode='professional'] .app-page[data-mode='gamer'] .cyber-bg,
 html[data-fowzan-mode='professional'] .app-page[data-mode='gamer'] .particle-field,
 html[data-fowzan-mode='professional'] .app-page[data-mode='gamer'] .ambient-orb { display:none !important; }
