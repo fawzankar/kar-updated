@@ -4863,3 +4863,25 @@ html, body { max-width:100%; overflow-x:hidden; }
   letter-spacing: inherit;
   word-spacing: normal;
 }
+
+
+/* Final hero heading tight spacing */
+.public-page .public-hero h1 {
+  line-height: .82 !important;
+}
+.public-page .public-hero h1 em {
+  display: inline-block !important;
+  margin-top: .025em !important;
+  letter-spacing: -0.055em !important;
+  word-spacing: -0.08em !important;
+}
+@media (max-width: 640px) {
+  .public-page .public-hero h1 {
+    line-height: .84 !important;
+  }
+  .public-page .public-hero h1 em {
+    margin-top: .02em !important;
+    letter-spacing: -0.05em !important;
+    word-spacing: -0.07em !important;
+  }
+}
