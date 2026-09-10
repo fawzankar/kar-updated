@@ -2427,11 +2427,6 @@ body { text-rendering: optimizeSpeed; }
   --minimal-text:#fff5fa; --minimal-muted:#c5a8b8; --minimal-accent:#f472b6; --minimal-contrast:#160713;
   --minimal-line:rgba(244,114,182,.28); --minimal-geo:rgba(255,196,224,.12); --minimal-glow:rgba(244,114,182,.18);
 }
-.app-page[data-mode='professional'][data-theme='red'] {
-  --minimal-bg:#12080a; --minimal-surface:rgba(27,11,14,.91); --minimal-surface-2:rgba(35,14,18,.95);
-  --minimal-text:#fff6f7; --minimal-muted:#c7a8ad; --minimal-accent:#ff5d70; --minimal-contrast:#17070a;
-  --minimal-line:rgba(255,93,112,.28); --minimal-geo:rgba(255,195,201,.11); --minimal-glow:rgba(255,93,112,.18);
-}
 .app-page[data-mode='professional'][data-theme='blue'] {
   --minimal-bg:#070c15; --minimal-surface:rgba(10,17,28,.92); --minimal-surface-2:rgba(14,23,37,.95);
   --minimal-text:#f2f8ff; --minimal-muted:#a9b9ca; --minimal-accent:#5aa9ff; --minimal-contrast:#06101c;
@@ -2726,7 +2721,6 @@ body { text-rendering: optimizeSpeed; }
   background:var(--minimal-bg) !important;
 }
 .app-page[data-mode='professional'][data-theme='rose'] { --minimal-bg:#fff5f8; --minimal-surface:#fffafb; --minimal-surface-2:#fde8ef; --minimal-text:#3a1d28; --minimal-muted:#7c5966; --minimal-accent:#d94f82; --minimal-line:rgba(139,42,78,.22); --minimal-glow:rgba(217,79,130,.12); --minimal-contrast:#fff; }
-.app-page[data-mode='professional'][data-theme='red'] { --minimal-bg:#fff7f5; --minimal-surface:#fffdfc; --minimal-surface-2:#fce9e4; --minimal-text:#3b211d; --minimal-muted:#7e625c; --minimal-accent:#c94735; --minimal-line:rgba(161,57,43,.22); --minimal-glow:rgba(201,71,53,.11); --minimal-contrast:#fff; }
 .app-page[data-mode='professional'][data-theme='blue'] { --minimal-bg:#f3f8fc; --minimal-surface:#fbfdff; --minimal-surface-2:#e5f0f8; --minimal-text:#172a3b; --minimal-muted:#5e7180; --minimal-accent:#3178b8; --minimal-line:rgba(49,120,184,.22); --minimal-glow:rgba(49,120,184,.10); --minimal-contrast:#fff; }
 .app-page[data-mode='professional'][data-theme='purple'] { --minimal-bg:#f7f3fb; --minimal-surface:#fdfaff; --minimal-surface-2:#eee4f8; --minimal-text:#2d2139; --minimal-muted:#6e6079; --minimal-accent:#7b4bb3; --minimal-line:rgba(123,75,179,.22); --minimal-glow:rgba(123,75,179,.10); --minimal-contrast:#fff; }
 .app-page[data-mode='professional'][data-theme='mono'] { --minimal-bg:#f4f4f1; --minimal-surface:#fff; --minimal-surface-2:#e9e9e5; --minimal-text:#181818; --minimal-muted:#686868; --minimal-accent:#252525; --minimal-line:rgba(24,24,24,.18); --minimal-glow:rgba(24,24,24,.08); --minimal-contrast:#fff; }
@@ -2969,7 +2963,6 @@ body { text-rendering: optimizeSpeed; }
 
 /* Professional palettes: each changes the complete accent/border system. */
 .app-page[data-mode='professional'][data-theme='rose'] { --minimal-bg:#fbf4f5; --minimal-surface:#fffafa; --minimal-surface-2:#f6e9eb; --minimal-text:#24181b; --minimal-muted:#7b6469; --minimal-accent:#a94b62; --minimal-line:#e2c5cc; --minimal-geo:#f0d9de; }
-.app-page[data-mode='professional'][data-theme='red'] { --minimal-bg:#faf5f3; --minimal-surface:#fffaf8; --minimal-surface-2:#f4e5e0; --minimal-text:#261a17; --minimal-muted:#7c625a; --minimal-accent:#a43e32; --minimal-line:#dfc1b9; --minimal-geo:#efd9d2; }
 .app-page[data-mode='professional'][data-theme='blue'] { --minimal-bg:#f3f7fa; --minimal-surface:#fbfdff; --minimal-surface-2:#e7eef4; --minimal-text:#15202a; --minimal-muted:#637381; --minimal-accent:#316b8f; --minimal-line:#c3d3de; --minimal-geo:#dbe8ef; }
 .app-page[data-mode='professional'][data-theme='purple'] { --minimal-bg:#f7f4fa; --minimal-surface:#fdfbff; --minimal-surface-2:#eee8f3; --minimal-text:#211a27; --minimal-muted:#74667c; --minimal-accent:#77518e; --minimal-line:#d7c8df; --minimal-geo:#e7dcec; }
 .app-page[data-mode='professional'][data-theme='mono'] { --minimal-bg:#f4f4f2; --minimal-surface:#fdfdfb; --minimal-surface-2:#e9e9e5; --minimal-text:#151515; --minimal-muted:#686868; --minimal-accent:#151515; --minimal-line:#cfcfca; --minimal-geo:#deded9; }
@@ -3026,7 +3019,6 @@ body { text-rendering: optimizeSpeed; }
   color: var(--editorial-ink) !important;
 }
 .app-page[data-mode='professional'][data-theme='rose'] { --editorial-accent:#9c5367; --editorial-accent-soft:rgba(156,83,103,.11); }
-.app-page[data-mode='professional'][data-theme='red'] { --editorial-accent:#9d493e; --editorial-accent-soft:rgba(157,73,62,.10); }
 .app-page[data-mode='professional'][data-theme='blue'] { --editorial-accent:#456e87; --editorial-accent-soft:rgba(69,110,135,.11); }
 .app-page[data-mode='professional'][data-theme='purple'] { --editorial-accent:#76567f; --editorial-accent-soft:rgba(118,86,127,.11); }
 .app-page[data-mode='professional'][data-theme='mono'] { --editorial-accent:#272727; --editorial-accent-soft:rgba(39,39,39,.08); }
@@ -3535,4 +3527,196 @@ body { text-rendering: optimizeSpeed; }
   }
   .app-page[data-mode='professional'] .site-footer-note { font-size:.95rem; }
   .app-page[data-mode='professional'] .site-footer-meta { justify-content:flex-start; flex-wrap:wrap; }
+}
+
+
+/* Appearance onboarding: no experience is applied until the visitor explicitly chooses one. */
+.appearance-modal .primary-button:disabled {
+  opacity:.42;
+  cursor:not-allowed;
+  transform:none !important;
+}
+.appearance-modal .experience-card { cursor:pointer; }
+.appearance-modal .accent-choice { cursor:pointer; }
+
+
+/* ============================================================
+   FINAL MINIMAL POLISH — header, mobile controls, deep background
+   ============================================================ */
+.app-page[data-mode='professional'] {
+  --minimal-accent:#456e87;
+  --minimal-accent-soft:rgba(69,110,135,.14);
+  --minimal-line:rgba(23,22,19,.16);
+  --editorial-accent:#456e87;
+  --editorial-accent-soft:rgba(69,110,135,.12);
+}
+.app-page[data-mode='professional'][data-theme='rose'] { --editorial-accent:#b35f78; --editorial-accent-soft:rgba(179,95,120,.13); --minimal-accent:#b35f78; --minimal-accent-soft:rgba(179,95,120,.13); }
+.app-page[data-mode='professional'][data-theme='blue'] { --editorial-accent:#456e87; --editorial-accent-soft:rgba(69,110,135,.13); --minimal-accent:#456e87; --minimal-accent-soft:rgba(69,110,135,.13); }
+.app-page[data-mode='professional'][data-theme='purple'] { --editorial-accent:#76567f; --editorial-accent-soft:rgba(118,86,127,.13); --minimal-accent:#76567f; --minimal-accent-soft:rgba(118,86,127,.13); }
+.app-page[data-mode='professional'][data-theme='mono'] { --editorial-accent:#252525; --editorial-accent-soft:rgba(37,37,37,.08); --minimal-accent:#252525; --minimal-accent-soft:rgba(37,37,37,.08); }
+
+/* A striking, image-backed editorial field: visually rich, but CSS/image only and fast. */
+.app-page[data-mode='professional'] {
+  background:
+    linear-gradient(180deg,rgba(247,243,235,.84),rgba(235,228,216,.92)),
+    url('/minimal-contours.webp') center top / cover fixed no-repeat !important;
+}
+.app-page[data-mode='professional']::before {
+  inset:0 !important;
+  opacity:.72 !important;
+  background:
+    radial-gradient(circle at 15% 12%,rgba(255,255,255,.92) 0 7%,transparent 30%),
+    radial-gradient(circle at 88% 26%,rgba(69,110,135,.18) 0 5%,transparent 28%),
+    radial-gradient(circle at 52% 92%,rgba(179,95,120,.10) 0 7%,transparent 32%),
+    linear-gradient(120deg,transparent 0 24%,rgba(255,255,255,.34) 24.1% 24.2%,transparent 24.3% 75%,rgba(23,22,19,.035) 75.1% 75.2%,transparent 75.3%);
+  transform:none !important;
+}
+.app-page[data-mode='professional']::after {
+  width:42vw !important;
+  height:42vw !important;
+  max-width:620px !important;
+  max-height:620px !important;
+  right:-14vw !important;
+  top:18% !important;
+  border:1px solid var(--editorial-line) !important;
+  border-radius:50% !important;
+  transform:none !important;
+  box-shadow:0 0 120px var(--editorial-accent-soft) !important;
+  opacity:.65 !important;
+}
+
+/* No full-width ugly bar: the header is a floating, centered control rail. */
+.app-page[data-mode='professional'] .public-topbar {
+  width:min(1160px,calc(100% - 40px)) !important;
+  min-height:66px !important;
+  margin:16px auto 0 !important;
+  padding:9px 12px 9px 18px !important;
+  border:1px solid rgba(23,22,19,.12) !important;
+  border-radius:18px !important;
+  background:rgba(255,253,248,.76) !important;
+  box-shadow:0 12px 40px rgba(40,32,22,.08) !important;
+  backdrop-filter:blur(18px) saturate(1.05) !important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.05) !important;
+}
+.app-page[data-mode='professional'] .public-topbar .brand {
+  min-width:0 !important;
+  flex:1 1 auto !important;
+  justify-content:flex-start !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  font-weight:800 !important;
+  letter-spacing:.14em !important;
+}
+.app-page[data-mode='professional'] .topbar-controls {
+  flex:0 0 auto !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:7px !important;
+  flex-wrap:nowrap !important;
+}
+.app-page[data-mode='professional'] .appearance-button,
+.app-page[data-mode='professional'] .private-button,
+.app-page[data-mode='professional'] .theme-picker select {
+  min-height:40px !important;
+  padding:0 13px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  font-size:10px !important;
+  font-weight:750 !important;
+  letter-spacing:.06em !important;
+  white-space:nowrap !important;
+}
+.app-page[data-mode='professional'] .theme-picker {
+  display:flex !important;
+  align-items:center !important;
+}
+.app-page[data-mode='professional'] .theme-picker select {
+  min-width:76px !important;
+  appearance:auto !important;
+  cursor:pointer !important;
+}
+.app-page[data-mode='professional'] .private-button svg,
+.app-page[data-mode='professional'] .appearance-button svg { flex:0 0 auto !important; }
+
+/* Mobile header: compact chips, no wrapping into a second ugly bar. */
+@media (max-width:760px) {
+  .app-page[data-mode='professional'] .public-topbar {
+    width:calc(100% - 20px) !important;
+    min-height:58px !important;
+    margin:10px auto 0 !important;
+    padding:7px 8px 7px 12px !important;
+    border-radius:15px !important;
+  }
+  .app-page[data-mode='professional'] .public-topbar .brand {
+    max-width:40% !important;
+    font-size:9px !important;
+    letter-spacing:.1em !important;
+  }
+  .app-page[data-mode='professional'] .public-topbar .brand svg { width:14px !important; height:14px !important; }
+  .app-page[data-mode='professional'] .topbar-controls {
+    gap:5px !important;
+    flex:1 1 auto !important;
+  }
+  .app-page[data-mode='professional'] .appearance-button,
+  .app-page[data-mode='professional'] .private-button,
+  .app-page[data-mode='professional'] .theme-picker select {
+    min-width:38px !important;
+    min-height:38px !important;
+    width:38px !important;
+    padding:0 !important;
+    border-radius:11px !important;
+    font-size:0 !important;
+  }
+  .app-page[data-mode='professional'] .appearance-button svg,
+  .app-page[data-mode='professional'] .private-button svg { width:16px !important; height:16px !important; }
+  .app-page[data-mode='professional'] .private-button span { display:none !important; }
+  .app-page[data-mode='professional'] .theme-picker { flex:0 0 auto !important; }
+  .app-page[data-mode='professional'] .theme-picker select {
+    min-width:76px !important;
+    width:76px !important;
+    font-size:10px !important;
+    padding:0 8px !important;
+    text-align:center !important;
+    color:var(--editorial-ink) !important;
+  }
+  .app-page[data-mode='professional'] .public-hero {
+    padding-top:72px !important;
+  }
+}
+@media (max-width:390px) {
+  .app-page[data-mode='professional'] .public-topbar .brand { max-width:31% !important; }
+  .app-page[data-mode='professional'] .theme-picker select { min-width:68px !important; width:68px !important; }
+  .app-page[data-mode='professional'] .appearance-button,
+  .app-page[data-mode='professional'] .private-button { width:36px !important; min-width:36px !important; }
+}
+
+/* Make the Minimal choice visibly intentional and typographic. */
+.appearance-modal .experience-card strong {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:7px !important;
+  font-weight:800 !important;
+}
+.appearance-modal .experience-card strong svg { flex:0 0 auto; }
+.appearance-modal .professional-preview {
+  background:linear-gradient(135deg,#e8e0d3,#fffdf8 58%,#dfe9ed) !important;
+}
+.appearance-modal .professional-preview b {
+  font-weight:800 !important;
+  letter-spacing:.08em !important;
+}
+
+/* Keep nested discussion surfaces distinct and readable in every Minimal color. */
+.app-page[data-mode='professional'] .public-replies {
+  background:rgba(221,214,202,.72) !important;
+  border:1px solid rgba(23,22,19,.12) !important;
+}
+.app-page[data-mode='professional'] .public-reply {
+  background:rgba(255,253,248,.96) !important;
+  color:var(--editorial-ink) !important;
 }
