@@ -48,7 +48,7 @@ function cleanImageData(value: unknown) {
 
 async function deletePoll(pollId: number) {
   const result = await pool.query(
-    `DELETE FROM polls WHERE id = $1 RETURNING id`,
+    `UPDATE polls SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
     [pollId]
   )
   return Boolean(result.rows[0])
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
     const options = Array.isArray(poll.options) ? poll.options : []
     const counts = Array(options.length).fill(0)
     for (const vote of poll.votes ?? []) if (Number.isInteger(vote.optionIndex) && vote.optionIndex >= 0 && vote.optionIndex < counts.length) counts[vote.optionIndex]++
-    return NextResponse.json({ poll: { id: Number(poll.id), question: poll.question, options, counts, totalVotes: counts.reduce((a,b)=>a+b,0), time: poll.time } }, { headers: { 'Cache-Control': 'no-store' } })
+    return NextResponse.json({ poll: { id: Number(poll.id), question: poll.question, options, imageData: poll.imageData ?? null, counts, totalVotes: counts.reduce((a,b)=>a+b,0), time: poll.time } }, { headers: { 'Cache-Control': 'no-store' } })
   }
 
   if (ownerView) {
