@@ -73,6 +73,7 @@ export default function Page() {
   const speechRecognitionRef = useRef<any>(null)
   const speechFinalRef = useRef('')
   const recordingStartedAtRef = useRef(0)
+  const recordingTokenRef = useRef(0)
   const [thought, setThought] = useState('')
   const [sent, setSent] = useState(false)
   const [senderName, setSenderName] = useState('')
@@ -128,6 +129,11 @@ export default function Page() {
     }
     if (!savedExperience || !savedTheme) setShowOnboarding(true)
   }, [])
+
+  useEffect(() => {
+    document.documentElement.dataset.fowzanMode = experience
+    document.documentElement.dataset.fowzanTheme = theme
+  }, [experience, theme])
 
   function chooseAppearance(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme) {
     setExperience(nextExperience); setTheme(nextTheme)
@@ -254,6 +260,7 @@ export default function Page() {
 
     try {
       setError('')
+      const recordingToken = ++recordingTokenRef.current
       setMediaData(null)
       setMediaType(null)
       setMediaTranscript('')
@@ -297,6 +304,7 @@ export default function Page() {
         }
         try {
           const data = await readFileAsDataUrl(new File([blob], 'voice-note', { type: blob.type || 'audio/webm' }), 850000)
+          if (recordingTokenRef.current !== recordingToken) return
           setMediaData(data)
           setMediaType('audio')
         } catch (err) {
@@ -321,6 +329,7 @@ export default function Page() {
   }
 
   function clearMedia() {
+    recordingTokenRef.current += 1
     try { mediaRecorderRef.current?.stop() } catch {}
     stopSpeechCapture()
     mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
@@ -820,7 +829,7 @@ export default function Page() {
         )}
         {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><div className="thread-main-message">{response.mediaData && (response.mediaType === "image" ? <img className="message-media-image" src={response.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="message-media-audio" controls preload="metadata" src={response.mediaData} />{response.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{response.mediaTranscript}</div>}</>)}{response.text && <h3>{response.text}</h3>}</div>{response.replies.length > 0 && <div className="public-replies"><div className="replies-label"><span>CONVERSATION</span><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span></div>{response.replies.map((reply) => <div className="public-reply" key={reply.id}><div className="public-reply-head"><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="public-reply-actions"><button className={`reply-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={12} /> {reply.upvotes ?? 0}</button></div></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'} · {response.upvotes ?? 0} thread votes</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareThread(response)}><Share2 size={14} /> share</button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join thread</button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><Search size={20} /><strong>{publicSearch ? 'No conversations found.' : 'Fowzan has not replied yet.'}</strong><span>{publicSearch ? 'Try another word or search the replies too.' : 'Come back soon to see messages Fowzan chooses to answer.'}</span></div>}</div>}</section>
 
-      {(showOnboarding || appearanceOpen) && <div className="appearance-overlay" role="dialog" aria-modal="true" aria-label="Choose appearance"><div className="appearance-modal"><button className="appearance-close" onClick={() => { if (!showOnboarding) setAppearanceOpen(false) }} aria-label="Close"><X size={17} /></button><div className="eyebrow"><Sparkles size={13} /> CHOOSE YOUR EXPERIENCE</div><h2>{showOnboarding ? "Make it yours." : "Appearance"}</h2><p>{showOnboarding ? "Pick the vibe and color you want. We'll remember it when you come back." : "Switch between the two looks whenever you want."}</p><div className="experience-grid"><button className={`experience-card ${experience === 'gamer' ? 'active' : ''}`} onClick={() => setExperience('gamer')}><div className="experience-preview gamer-preview"><span>0101</span><i /><b>FOWZAN</b></div><strong>🎮 Gamer</strong><small>Matrix rain · cyber · neon</small></button><button className={`experience-card ${experience === 'professional' ? 'active' : ''}`} onClick={() => setExperience('professional')}><div className="experience-preview professional-preview"><span>F</span><b>FOWZAN&apos;S INBOX</b></div><strong>💼 Professional</strong><small>Clean · premium · refined</small></button></div><div className="accent-heading">Choose a color</div><div className="accent-grid">{(experience === 'gamer' ? ['purple','red','green','rose','blue','white'] : ['blue','purple','rose','red','green','amber','white','slate']).map((accent) => <button key={accent} className={`accent-choice ${theme === accent ? 'active' : ''} accent-${accent}`} onClick={() => setTheme(accent as typeof theme)} aria-label={`${accent} accent`}><span /></button>)}</div><div className="appearance-actions"><button className="primary-button" onClick={() => { chooseAppearance(experience, theme); setShowOnboarding(false); setAppearanceOpen(false) }}>{showOnboarding ? "Continue" : "Save appearance"}<ChevronRight size={16} /></button></div></div></div>}
+      {(showOnboarding || appearanceOpen) && <div className="appearance-overlay" role="dialog" aria-modal="true" aria-label="Choose appearance"><div className="appearance-modal"><button className="appearance-close" onClick={() => { if (!showOnboarding) setAppearanceOpen(false) }} aria-label="Close"><X size={17} /></button><div className="eyebrow"><Sparkles size={13} /> CHOOSE YOUR EXPERIENCE</div><h2>{showOnboarding ? "Make it yours." : "Appearance"}</h2><p>{showOnboarding ? "Pick the vibe and color you want. We'll remember it when you come back." : "Switch between the two looks whenever you want."}</p><div className="experience-grid"><button className={`experience-card ${experience === 'gamer' ? 'active' : ''}`} onClick={() => setExperience('gamer')}><div className="experience-preview gamer-preview"><span>0101</span><i /><b>FOWZAN</b></div><strong>🎮 Gamer</strong><small>Matrix rain · cyber · neon</small></button><button className={`experience-card ${experience === 'professional' ? 'active' : ''}`} onClick={() => setExperience('professional')}><div className="experience-preview professional-preview"><span>F</span><b>FOWZAN&apos;S INBOX</b></div><strong>💼 Professional</strong><small>Clean · premium · refined</small></button></div><div className="accent-heading">Choose a color</div><div className="accent-grid">{(experience === 'gamer' ? ['purple','red','green','rose','blue','white'] : ['purple','blue','red','rose','green','amber','slate','white']).map((accent) => <button key={accent} className={`accent-choice ${theme === accent ? 'active' : ''} accent-${accent}`} onClick={() => setTheme(accent as typeof theme)} aria-label={`${accent} accent`}><span /></button>)}</div><div className="appearance-actions"><button className="primary-button" onClick={() => { chooseAppearance(experience, theme); setShowOnboarding(false); setAppearanceOpen(false) }}>{showOnboarding ? "Continue" : "Save appearance"}<ChevronRight size={16} /></button></div></div></div>}
       {sent && <div className="modal-backdrop" onClick={() => setSent(false)}><article className="success-modal" onClick={(e) => e.stopPropagation()}><div className="success-icon"><Check size={21} /></div><div className="eyebrow">message delivered</div><h2>That was sent.</h2><p>Your message is safely in Fowzan's inbox. Leave another whenever you feel like it.</p><button className="primary-button" onClick={() => setSent(false)}>Send another <ChevronRight size={17} /></button></article></div>}
     </main>
   )
