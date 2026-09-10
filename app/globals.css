@@ -1327,3 +1327,46 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
   .poll-image-upload { align-items:flex-start; flex-wrap:wrap; }
   .poll-image-upload > img { margin-left:0; }
 }
+
+/* Thread performance: keep scrolling on the compositor and avoid expensive blur/paint work for every card. */
+.public-thread-list { contain: layout style; }
+.public-thread {
+  content-visibility: auto;
+  contain: layout paint style;
+  contain-intrinsic-size: 0 250px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+.public-thread:hover { transform: none; }
+.public-replies > div { contain: layout paint; }
+.public-thread-foot button { transition: color .16s ease, background-color .16s ease, border-color .16s ease; }
+.saved-thread-button { color: var(--primary) !important; }
+.identity-controls { align-items: center; flex-wrap: wrap; }
+.identity-note { flex-basis: 100%; color: var(--muted-foreground); font-size: 9px; line-height: 1.5; }
+.remember-name { font-size: 9px !important; }
+@media (max-width: 640px) {
+  .public-thread { contain-intrinsic-size: 0 220px; }
+  .public-thread-foot { align-items: flex-start; flex-direction: column; }
+  .public-thread-foot > div { width: 100%; flex-wrap: wrap; }
+}
+
+.chat-board-controls { display: flex; align-items: center; gap: 12px; }
+.saved-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: rgba(20,16,35,.35);
+  color: var(--muted-foreground);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .16s ease, border-color .16s ease, background-color .16s ease;
+}
+.saved-filter:hover, .saved-filter.active { color: var(--primary); border-color: rgba(205,75,255,.42); background: rgba(205,75,255,.06); }
+@media (max-width: 640px) { .chat-board-controls { width: 100%; justify-content: space-between; } }
