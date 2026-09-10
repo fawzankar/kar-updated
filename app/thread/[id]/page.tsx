@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, Loader2, MessageCircle, Share2 } from 'lucide-react'
 
 type Reply = { id: number; text: string; time: string; author: string; mediaUrl?: string | null; mediaType?: 'image' | 'gif' | null }
-type Thread = { id: number; text: string; senderName?: string | null; time: string; replies: Reply[] }
+type Thread = { id: number; text: string; senderName?: string | null; time: string; mediaData?: string | null; mediaType?: 'image' | 'audio' | null; replies: Reply[] }
 
 function displayTime(value: string) {
   const date = new Date(value)
@@ -45,7 +45,7 @@ export default function SharedThreadPage() {
         <h1>{thread.senderName || 'Anonymous'}</h1>
         <p className="shared-thread-date">Started {displayTime(thread.time)}</p>
         <div className="shared-thread-messages">
-          <div className="shared-message"><b>{thread.senderName || 'Anonymous'}</b><p>{thread.text}</p></div>
+          <div className="shared-message"><b>{thread.senderName || 'Anonymous'}</b>{thread.mediaData && (thread.mediaType === 'image' ? <img className="message-media-image" src={thread.mediaData} alt="Attachment" /> : <audio className="message-media-audio" controls src={thread.mediaData} />)}{thread.text && <p>{thread.text}</p>}</div>
           {thread.replies.map((reply) => <div key={reply.id} className={`shared-message ${reply.author === 'Fowzan' ? 'from-owner' : ''}`}><b>{reply.author}</b>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}</div>)}
         </div>
       </article>}

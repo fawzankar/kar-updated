@@ -72,7 +72,7 @@ export async function GET(request: Request) {
     const id = asId(params.get('id'))
     if (!id) return NextResponse.json({ error: 'Invalid thread.' }, { status: 400 })
     const result = await pool.query(`
-      SELECT m.id, m.text, m.sender_name AS "senderName", m.created_at AS time,
+      SELECT m.id, m.text, m.sender_name AS "senderName", m.media_data AS "mediaData", m.media_type AS "mediaType", m.created_at AS time,
         COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type, 'upvotes', (SELECT COUNT(*) FROM reply_votes rv WHERE rv.response_id = r.id)) ORDER BY r.created_at ASC, r.id ASC)
         FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
       FROM messages m
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
     `, [id])
     if (!result.rows[0]) return NextResponse.json({ error: 'This thread is not available to share.' }, { status: 404 })
     const thread = result.rows[0]
-    return NextResponse.json({ thread: { ...thread, id: Number(thread.id), replies: thread.replies.map((reply: any) => ({ ...reply, id: Number(reply.id) })) } }, { headers: { 'Cache-Control': 'no-store' } })
+    return NextResponse.json({ thread: { ...thread, id: Number(thread.id), mediaData: thread.mediaData ?? null, mediaType: thread.mediaType ?? null, replies: thread.replies.map((reply: any) => ({ ...reply, id: Number(reply.id) })) } }, { headers: { 'Cache-Control': 'no-store' } })
   }
 
   if (params.get('view') === 'poll') {
@@ -183,7 +183,7 @@ export async function GET(request: Request) {
   `)
 
   const result = await pool.query(`
-    SELECT m.id, m.text, m.created_at AS time,
+    SELECT m.id, m.text, m.media_data AS "mediaData", m.media_type AS "mediaType", m.created_at AS time,
       (SELECT COUNT(*) FROM thread_votes WHERE message_id = m.id) AS upvotes,
       COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type, 'upvotes', (SELECT COUNT(*) FROM reply_votes rv WHERE rv.response_id = r.id)) ORDER BY r.created_at ASC, r.id ASC)
       FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
@@ -199,6 +199,8 @@ export async function GET(request: Request) {
     responses: result.rows.map((r) => ({
       id: Number(r.id),
       text: r.text,
+      mediaData: r.mediaData ?? null,
+      mediaType: r.mediaType ?? null,
       time: r.time,
       author: 'Anonymous',
       upvotes: Number(r.upvotes),
@@ -252,11 +254,18 @@ export async function POST(request: Request) {
 
   if (action === 'message') {
     const text = clean(body.text, MAX_MESSAGE)
-    if (!text) return NextResponse.json({ error: 'Message cannot be empty.' }, { status: 400 })
     const senderName = clean(body.senderName, 80) || null
+    const mediaCandidate = clean(body.mediaData, 2200000)
+    const mediaType = body.mediaType === 'image' ? 'image' : body.mediaType === 'audio' ? 'audio' : null
+    if (!text && !mediaCandidate) return NextResponse.json({ error: 'Message cannot be empty.' }, { status: 400 })
+    if (mediaCandidate) {
+      const prefix = mediaType === 'image' ? /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/ : /^data:audio\/(webm|ogg|mp4|mpeg|wav);base64,[A-Za-z0-9+/=]+$/
+      if (!mediaType || !prefix.test(mediaCandidate)) return NextResponse.json({ error: 'Invalid attachment.' }, { status: 400 })
+      if (mediaCandidate.length > 2100000) return NextResponse.json({ error: 'Attachment is too large.' }, { status: 400 })
+    }
     const result = await pool.query(
-      `INSERT INTO messages (text, sender_name) VALUES ($1, $2) RETURNING id`,
-      [text, senderName]
+      `INSERT INTO messages (text, sender_name, media_data, media_type) VALUES ($1, $2, $3, $4) RETURNING id`,
+      [text, senderName, mediaCandidate || null, mediaCandidate ? mediaType : null]
     )
     return NextResponse.json({ ok: true, id: Number(result.rows[0].id) })
   }
