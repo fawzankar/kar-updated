@@ -1328,45 +1328,45 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
   .poll-image-upload > img { margin-left:0; }
 }
 
-/* Thread performance: keep scrolling on the compositor and avoid expensive blur/paint work for every card. */
-.public-thread-list { contain: layout style; }
-.public-thread {
-  content-visibility: auto;
-  contain: layout paint style;
-  contain-intrinsic-size: 0 250px;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  transition: border-color .18s ease, background-color .18s ease;
-}
-.public-thread:hover { transform: none; }
-.public-replies > div { contain: layout paint; }
-.public-thread-foot button { transition: color .16s ease, background-color .16s ease, border-color .16s ease; }
-.saved-thread-button { color: var(--primary) !important; }
-.identity-controls { align-items: center; flex-wrap: wrap; }
-.identity-note { flex-basis: 100%; color: var(--muted-foreground); font-size: 9px; line-height: 1.5; }
-.remember-name { font-size: 9px !important; }
-@media (max-width: 640px) {
-  .public-thread { contain-intrinsic-size: 0 220px; }
-  .public-thread-foot { align-items: flex-start; flex-direction: column; }
-  .public-thread-foot > div { width: 100%; flex-wrap: wrap; }
-}
+/* Smooth conversation rebuild: keep interaction on compositor-friendly properties. */
+.chat-board-heading { align-items: center; gap: 16px; }
+.chat-board-tools { display: flex; align-items: center; justify-content: flex-end; gap: 7px; min-width: 0; }
+.chat-board-tools > input { width: min(260px, 42vw); height: 34px; padding: 0 11px; color: var(--foreground); background: rgba(0,0,0,.16); border: 1px solid rgba(var(--signal-rgb),.24); border-radius: 9px; outline: none; font: 700 10px var(--font-sans-custom), monospace; letter-spacing: .04em; transition: border-color .16s ease, box-shadow .16s ease; }
+.chat-board-tools > input:focus { border-color: var(--signal); box-shadow: 0 0 0 3px rgba(var(--signal-rgb),.08); }
+.chat-board-tools > button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 10px; color: var(--muted-foreground); background: rgba(var(--signal-rgb),.035); border: 1px solid rgba(var(--signal-rgb),.18); border-radius: 9px; font: 700 8px var(--font-sans-custom), monospace; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; transition: transform .16s ease, background-color .16s ease, border-color .16s ease, color .16s ease; }
+.chat-board-tools > button:hover, .chat-board-tools > button.active { color: var(--signal-text); background: rgba(var(--signal-rgb),.1); border-color: rgba(var(--signal-rgb),.48); }
+.chat-board-tools > button:hover { transform: translateY(-1px); }
+.chat-board-tools > span { white-space: nowrap; }
 
-.chat-board-controls { display: flex; align-items: center; gap: 12px; }
-.saved-filter {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 8px 11px;
-  background: rgba(20,16,35,.35);
-  color: var(--muted-foreground);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: color .16s ease, border-color .16s ease, background-color .16s ease;
+.public-thread { position: relative; overflow: hidden; contain: layout paint; transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease; }
+.public-thread::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 2px; background: var(--signal); transform: scaleY(0); transform-origin: center; transition: transform .18s ease; pointer-events: none; }
+.public-thread:hover { transform: none !important; box-shadow: 0 12px 32px rgba(0,0,0,.16) !important; }
+.public-thread:hover::before { transform: scaleY(.72); }
+.thread-main-message { padding: 2px 0; }
+.public-replies { border: 1px solid rgba(var(--signal-rgb),.13); border-radius: 12px; padding: 9px; background: rgba(var(--signal-rgb),.018); }
+.replies-label { display: flex; justify-content: space-between; gap: 10px; padding: 2px 4px 7px; color: var(--muted-foreground); font: 700 7px var(--font-sans-custom), monospace; letter-spacing: .12em; text-transform: uppercase; }
+.public-reply { position: relative; padding: 12px 12px 10px 15px !important; border: 0 !important; border-radius: 9px !important; background: transparent !important; }
+.public-reply + .public-reply { border-top: 1px solid rgba(var(--signal-rgb),.09) !important; }
+.public-reply::before { content: ''; position: absolute; left: 5px; top: 17px; bottom: 12px; width: 1px; background: rgba(var(--signal-rgb),.2); }
+.public-reply-head { display: flex; align-items: center; gap: 8px; }
+.public-reply-head span { margin-left: auto; color: var(--muted-foreground); font-size: 8px; }
+.public-reply p { margin-top: 8px; }
+.public-reply-actions { display: flex; justify-content: flex-start; margin-top: 8px; }
+.reply-upvote, .bubble-upvote { display: inline-flex; align-items: center; gap: 5px; min-height: 27px; padding: 0 8px; color: var(--muted-foreground); background: rgba(var(--signal-rgb),.025); border: 1px solid rgba(var(--signal-rgb),.16); border-radius: 999px; font: 700 8px var(--font-sans-custom), monospace; cursor: pointer; transition: transform .15s ease, color .15s ease, border-color .15s ease, background-color .15s ease; }
+.reply-upvote:hover, .reply-upvote.voted, .bubble-upvote:hover, .bubble-upvote.voted { color: var(--signal-text); background: rgba(var(--signal-rgb),.1); border-color: rgba(var(--signal-rgb),.48); transform: translateY(-1px); }
+.reply-upvote.voted svg, .bubble-upvote.voted svg { fill: currentColor; }
+.bubble-actions { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.bubble-actions .bubble-delete { margin-top: 0; }
+
+@media (max-width: 640px) {
+  .chat-board-heading { align-items: flex-start; }
+  .chat-board-tools { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .chat-board-tools > input { flex: 1 1 180px; width: auto; }
+  .chat-board-tools > span { margin-left: auto; }
+  .public-thread:hover { box-shadow: none !important; }
+  .public-replies { padding: 6px; }
+  .public-reply { padding-left: 13px !important; }
 }
-.saved-filter:hover, .saved-filter.active { color: var(--primary); border-color: rgba(205,75,255,.42); background: rgba(205,75,255,.06); }
-@media (max-width: 640px) { .chat-board-controls { width: 100%; justify-content: space-between; } }
+@media (prefers-reduced-motion: reduce) {
+  .public-thread, .public-thread::before, .chat-board-tools > button, .reply-upvote, .bubble-upvote { transition: none !important; }
+}

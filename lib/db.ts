@@ -47,6 +47,12 @@ export function ensureSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       PRIMARY KEY (message_id, voter_key)
     );
+    CREATE TABLE IF NOT EXISTS reply_votes (
+      response_id BIGINT NOT NULL REFERENCES responses(id) ON DELETE CASCADE,
+      voter_key TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (response_id, voter_key)
+    );
     CREATE TABLE IF NOT EXISTS polls (
       id BIGSERIAL PRIMARY KEY,
       question TEXT NOT NULL,
@@ -81,6 +87,7 @@ export function ensureSchema() {
     CREATE INDEX IF NOT EXISTS polls_created_idx ON polls(created_at DESC);
     CREATE INDEX IF NOT EXISTS poll_votes_poll_idx ON poll_votes(poll_id);
     CREATE INDEX IF NOT EXISTS thread_votes_message_idx ON thread_votes(message_id);
+    CREATE INDEX IF NOT EXISTS reply_votes_response_idx ON reply_votes(response_id);
   `).then(() => undefined)
 
   globalThis.__fowzanSchemaPromise = setup.catch((error) => {

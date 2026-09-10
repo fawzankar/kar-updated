@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, Check, ChevronRight, Inbox, LockKeyhole, LogOut,
   Bell, BellRing, Download, Film, ImageIcon, Mail, MessageCircle, PenLine, RefreshCw, Send, Share2, Sparkles,
-  Star, ThumbsUp, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot, BarChart3, Plus
+  Star, ThumbsUp, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot, BarChart3, Plus, Search
 } from 'lucide-react'
 
-type ThreadReply = { id: number; text: string; time: string; author: string; mediaUrl?: string | null; mediaType?: 'image' | 'gif' | null }
+type ThreadReply = { id: number; text: string; time: string; author: string; upvotes?: number; mediaUrl?: string | null; mediaType?: 'image' | 'gif' | null }
 type Thought = { id: number; text: string; time: string; unread?: boolean; kept?: boolean; senderName?: string | null; upvotes?: number; replies: ThreadReply[] }
 type PublicResponse = { id: number; text: string; time: string; author: string; upvotes?: number; replies: ThreadReply[] }
 type PollOption = { text: string; imageData?: string | null }
@@ -79,13 +79,10 @@ export default function Page() {
   const [replyText, setReplyText] = useState('')
   const [replyName, setReplyName] = useState('')
   const [replyReveal, setReplyReveal] = useState(false)
-  const [rememberName, setRememberName] = useState(false)
   const [ownerReplies, setOwnerReplies] = useState<Record<number, string>>({})
   const [ownerMediaUrls, setOwnerMediaUrls] = useState<Record<number, string>>({})
   const [ownerMediaModes, setOwnerMediaModes] = useState<Record<number, 'image' | 'gif' | null>>({})
   const [votedThreadIds, setVotedThreadIds] = useState<Set<number>>(new Set())
-  const [savedThreadIds, setSavedThreadIds] = useState<Set<number>>(new Set())
-  const [showSavedThreads, setShowSavedThreads] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
@@ -94,18 +91,26 @@ export default function Page() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [threadQuery, setThreadQuery] = useState('')
+  const [publicSearchOpen, setPublicSearchOpen] = useState(false)
+  const [publicSearch, setPublicSearch] = useState('')
+  const [votedReplyIds, setVotedReplyIds] = useState<Set<number>>(new Set())
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const replyInputRef = useRef<HTMLInputElement>(null)
   const knownThreadIds = useRef(new Set<number>())
   const inboxInitialized = useRef(false)
   const voterKey = useRef<string | null>(null)
 
+  const visibleResponses = useMemo(() => {
+    const query = publicSearch.trim().toLowerCase()
+    if (!query) return responses
+    return responses.filter((item) => item.text.toLowerCase().includes(query) || item.author.toLowerCase().includes(query) || item.replies.some((reply) => reply.text.toLowerCase().includes(query) || reply.author.toLowerCase().includes(query)))
+  }, [responses, publicSearch])
+
   const visibleThoughts = useMemo(() => thoughts.filter((item) => {
     if (showKeeps && !item.kept) return false
     const query = threadQuery.trim().toLowerCase()
     return !query || item.text.toLowerCase().includes(query) || item.senderName?.toLowerCase().includes(query)
   }), [showKeeps, thoughts, threadQuery])
-  const visibleResponses = useMemo(() => showSavedThreads ? responses.filter((item) => savedThreadIds.has(item.id)) : responses, [responses, savedThreadIds, showSavedThreads])
   const unreadCount = thoughts.filter((item) => item.unread).length
   const waitingCount = thoughts.filter((item) => item.replies.length === 0).length
   const replyCount = thoughts.reduce((sum, item) => sum + item.replies.length, 0)
@@ -155,16 +160,9 @@ export default function Page() {
     try {
       const saved = JSON.parse(localStorage.getItem('fowzan-upvoted-threads') ?? '[]')
       if (Array.isArray(saved)) setVotedThreadIds(new Set(saved.filter((id) => Number.isSafeInteger(id))))
+      const replySaved = JSON.parse(localStorage.getItem('fowzan-upvoted-replies') ?? '[]')
+      if (Array.isArray(replySaved)) setVotedReplyIds(new Set(replySaved.filter((id) => Number.isSafeInteger(id))))
     } catch { /* A missing or malformed local preference should never affect the inbox. */ }
-  }, [])
-
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('fowzan-saved-threads') ?? '[]')
-      if (Array.isArray(saved)) setSavedThreadIds(new Set(saved.filter((id) => Number.isSafeInteger(id))))
-      const remembered = localStorage.getItem('fowzan-display-name')
-      if (remembered) { setSenderName(remembered.slice(0, 80)); setReplyName(remembered.slice(0, 80)); setRememberName(true) }
-    } catch { /* Local preferences are optional. */ }
   }, [])
 
   useEffect(() => {
@@ -206,13 +204,10 @@ export default function Page() {
     const text = thought.trim(); if (!text || sending) return
     setSending(true); setError('')
     try {
-      const displayName = revealName ? senderName.trim() : ''
-      if (rememberName && displayName) localStorage.setItem('fowzan-display-name', displayName)
-      if (!rememberName) localStorage.removeItem('fowzan-display-name')
-      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'message', text, senderName: displayName || null }) })
+      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'message', text, senderName: revealName ? senderName.trim() : null }) })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error ?? 'Could not send your message.')
-      setThought(''); setSenderName(rememberName ? displayName : ''); setRevealName(false); setSent(true)
+      setThought(''); setSenderName(''); setRevealName(false); setSent(true)
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not send your message.') }
     finally { setSending(false) }
   }
@@ -220,10 +215,7 @@ export default function Page() {
   async function submitReply(id: number) {
     const text = replyText.trim(); if (!text) return
     try {
-      const displayName = replyReveal ? replyName.trim() : ''
-      if (rememberName && displayName) localStorage.setItem('fowzan-display-name', displayName)
-      if (!rememberName) localStorage.removeItem('fowzan-display-name')
-      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'public-reply', messageId: id, text, senderName: displayName || null }) })
+      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'public-reply', messageId: id, text, senderName: replyReveal ? replyName.trim() : null }) })
       const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error ?? 'Could not post your reply.')
       setReplyText(''); setReplyName(''); setReplyReveal(false); setReplyingTo(null); await loadPublic()
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not post your reply.') }
@@ -339,16 +331,6 @@ export default function Page() {
     } catch { setCopied(false) }
   }
 
-  function toggleSavedThread(id: number) {
-    setSavedThreadIds((current) => {
-      const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      try { localStorage.setItem('fowzan-saved-threads', JSON.stringify([...next])) } catch { /* Ignore storage failures. */ }
-      return next
-    })
-  }
-
   async function shareThread(item: Thought | PublicResponse) {
     const url = `${window.location.origin}/thread/${item.id}`
     try {
@@ -396,6 +378,23 @@ export default function Page() {
         return next
       })
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not update the upvote.') }
+  }
+
+  async function toggleReplyUpvote(replyId: number) {
+    try {
+      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'toggle-reply-upvote', responseId: replyId, voterKey: getVoterKey() }) })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error ?? 'Could not update the reply upvote.')
+      setResponses((current) => current.map((thread) => ({ ...thread, replies: thread.replies.map((reply) => reply.id === replyId ? { ...reply, upvotes: data.upvotes } : reply) })))
+      setThoughts((current) => current.map((thread) => ({ ...thread, replies: thread.replies.map((reply) => reply.id === replyId ? { ...reply, upvotes: data.upvotes } : reply) })))
+      setSelected((current) => current ? { ...current, replies: current.replies.map((reply) => reply.id === replyId ? { ...reply, upvotes: data.upvotes } : reply) } : current)
+      setVotedReplyIds((current) => {
+        const next = new Set(current)
+        if (data.voted) next.add(replyId); else next.delete(replyId)
+        localStorage.setItem('fowzan-upvoted-replies', JSON.stringify([...next]))
+        return next
+      })
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not update the reply upvote.') }
   }
 
   async function unlock(event: React.FormEvent) {
@@ -503,7 +502,7 @@ export default function Page() {
             <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {selected.upvotes ?? 0} votes · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => shareThread(selected)} title="Share this thread" aria-label="Share this thread">{copied ? <Check size={15} /> : <Share2 size={15} />}</button><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><Trash2 size={14} /> {deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</button></div></div>
             <div className="conversation-scroll">
               <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div><p>{selected.text}</p></article>
-              {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author === 'Fowzan' ? 'Fowzan' : reply.author}</span><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`} title="Remove only this reply" aria-label="Remove only this reply"><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'remove reply'}</button></article>)}
+              {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author === 'Fowzan' ? 'Fowzan' : reply.author}</span><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="bubble-actions"><button className={`bubble-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={11} /> {reply.upvotes ?? 0}</button><button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`} title="Remove only this reply" aria-label="Remove only this reply"><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'remove reply'}</button></div></article>)}
             </div>
             <div className="reply-dock"><div className="reply-composer"><input ref={replyInputRef} value={ownerReplies[selected.id] ?? ''} onChange={(e) => { const value = e.target.value; setOwnerReplies((c) => ({ ...c, [selected.id]: value })); localStorage.setItem(`fowzan-draft-${selected.id}`, value) }} placeholder="Write a reply as Fowzan…" maxLength={1000} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitOwnerReply(selected.id) } }} /><button onClick={() => submitOwnerReply(selected.id)} disabled={(!ownerReplies[selected.id]?.trim() && !ownerMediaUrls[selected.id]?.trim()) || replySending === selected.id}>{replySending === selected.id ? <Loader2 size={17} className="spin" /> : <Send size={16} />}</button></div><div className="media-reply-tools"><button className={ownerMediaModes[selected.id] === 'image' ? 'active' : ''} onClick={() => setOwnerMediaModes((current) => ({ ...current, [selected.id]: current[selected.id] === 'image' ? null : 'image' }))}><ImageIcon size={13} /> image</button><button className={ownerMediaModes[selected.id] === 'gif' ? 'active' : ''} onClick={() => setOwnerMediaModes((current) => ({ ...current, [selected.id]: current[selected.id] === 'gif' ? null : 'gif' }))}><Film size={13} /> GIF</button>{ownerMediaModes[selected.id] && <input value={ownerMediaUrls[selected.id] ?? ''} onChange={(event) => setOwnerMediaUrls((current) => ({ ...current, [selected.id]: event.target.value }))} placeholder={`Paste a ${ownerMediaModes[selected.id]} URL…`} inputMode="url" />}</div><div className="composer-foot"><span>{ownerReplies[selected.id] || ownerMediaUrls[selected.id] ? 'Draft saved on this device · Enter to send' : 'R reply · S save · J/K browse · Esc close'}</span><span>{(ownerReplies[selected.id] ?? '').length}/1000</span></div></div>
           </div>}
@@ -529,7 +528,7 @@ export default function Page() {
 
       <section id="leave-message" className="composer-section page-width"><div className="section-intro"><div className="eyebrow"><PenLine size={13} /> MESSAGE FOWZAN</div><h2>WHAT DO YOU<br /><span>WANT TO SEND?</span></h2></div>
         <div className="message-composer"><div className="composer-label"><span className="pulse-dot" /> YOUR ANONYMOUS MESSAGE</div><textarea value={thought} onChange={(e) => setThought(e.target.value)} placeholder="Send Fowzan a thought, question, or message..." rows={5} maxLength={500} /><div className="composer-meta"><span>{thought.length}/500</span><span>your name is hidden</span></div></div>
-        <div className="identity-controls"><label><input type="checkbox" checked={revealName} onChange={(e) => setRevealName(e.target.checked)} /><span className="switch" /> include my name</label>{revealName && <><input value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="display name" maxLength={80} aria-label="Display name" /><label className="remember-name"><input type="checkbox" checked={rememberName} onChange={(e) => setRememberName(e.target.checked)} /> remember on this device</label><small className="identity-note">Your display name is plain text only — HTML, scripts, and formatting are not executed.</small></>}</div>
+        <div className="identity-controls"><label><input type="checkbox" checked={revealName} onChange={(e) => setRevealName(e.target.checked)} /><span className="switch" /> include my name</label>{revealName && <input value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="display name" maxLength={80} />}</div>
         <button className="primary-button send-button" onClick={submitThought} disabled={!thought.trim() || sending}>{sending ? <><Loader2 size={16} className="spin" /> sending…</> : <>Send to Fowzan <Send size={16} /></>}</button>
       </section>
 
@@ -537,7 +536,7 @@ export default function Page() {
 
       {error && <div className="error-banner page-width">{error}</div>}
 
-      <section className="public-threads page-width"><div className="chat-board-section threads-board-section"><div className="chat-board-heading"><div><div className="eyebrow"><MessageCircle size={13} /> CHAT BOARD</div><h3>Open conversations.</h3></div><div className="chat-board-controls"><button className={showSavedThreads ? 'saved-filter active' : 'saved-filter'} onClick={() => setShowSavedThreads((current) => !current)}><Star size={13} fill={showSavedThreads ? 'currentColor' : 'none'} /> {showSavedThreads ? 'show all' : 'saved'} </button><span>{visibleResponses.length} live</span></div></div><div className="threads-heading"><div><div className="eyebrow"><MessageCircle size={13} /> FOWZAN&apos;S REPLIES</div><h2>REPLY BOARD.</h2><p>Messages Fowzan chooses to answer appear here — and you can keep the conversation going.</p><small className="thread-contribute-hint">Have something to add? Join the thread and contribute your own reply.</small></div><span>{responses.length} live</span></div></div>
+      <section className="public-threads page-width"><div className="chat-board-section threads-board-section"><div className="chat-board-heading"><div><div className="eyebrow"><MessageCircle size={13} /> CHAT BOARD</div><h3>Open conversations.</h3></div><div className="chat-board-tools">{publicSearchOpen && <input autoFocus value={publicSearch} onChange={(e) => setPublicSearch(e.target.value)} placeholder="search conversations…" aria-label="Search conversations" />}{publicSearch && <button onClick={() => setPublicSearch('')} aria-label="Clear search"><X size={13} /></button>}<button className={publicSearchOpen ? 'active' : ''} onClick={() => { setPublicSearchOpen((value) => !value); if (publicSearchOpen) setPublicSearch('') }} aria-label="Search conversations" title="Search conversations"><Search size={15} /> search</button><span>{visibleResponses.length} live</span></div></div><div className="threads-heading"><div><div className="eyebrow"><MessageCircle size={13} /> FOWZAN&apos;S REPLIES</div><h2>REPLY BOARD.</h2><p>Messages Fowzan chooses to answer appear here — and you can keep the conversation going.</p><small className="thread-contribute-hint">Have something to add? Join the thread and contribute your own reply.</small></div><span>{responses.length} live</span></div></div>
         {polls.length > 0 && (
           <div className="public-poll-list">
             {polls.map((poll) => (
@@ -583,8 +582,7 @@ export default function Page() {
             ))}
           </div>
         )}
-        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><h3>{response.text}</h3>{response.replies.length > 0 && <div className="public-replies">{response.replies.map((reply) => <div key={reply.id}><div><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}</div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareThread(response)}><Share2 size={14} /> share</button><button className={savedThreadIds.has(response.id) ? 'saved-thread-button' : ''} onClick={() => toggleSavedThread(response.id)} aria-pressed={savedThreadIds.has(response.id)}><Star size={14} fill={savedThreadIds.has(response.id) ? 'currentColor' : 'none'} /> {savedThreadIds.has(response.id) ? 'saved' : 'save'}</button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join thread</button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <><input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} /><label className="remember-name"><input type="checkbox" checked={rememberName} onChange={(e) => setRememberName(e.target.checked)} /> remember on this device</label></>}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><MessageCircle size={20} /><strong>{showSavedThreads ? 'No saved threads yet.' : 'Fowzan has not replied yet.'}</strong><span>{showSavedThreads ? 'Save a conversation and it will stay here on this device.' : 'Come back soon to see messages Fowzan chooses to answer.'}</span></div>}</div>}
-        </section>
+        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><div className="thread-main-message"><h3>{response.text}</h3></div>{response.replies.length > 0 && <div className="public-replies"><div className="replies-label"><span>CONVERSATION</span><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span></div>{response.replies.map((reply) => <div className="public-reply" key={reply.id}><div className="public-reply-head"><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="public-reply-actions"><button className={`reply-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={12} /> {reply.upvotes ?? 0}</button></div></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'} · {response.upvotes ?? 0} thread votes</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareThread(response)}><Share2 size={14} /> share</button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)}><MessageCircle size={14} /> join thread</button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()}><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><Search size={20} /><strong>{publicSearch ? 'No conversations found.' : 'Fowzan has not replied yet.'}</strong><span>{publicSearch ? 'Try another word or search the replies too.' : 'Come back soon to see messages Fowzan chooses to answer.'}</span></div>}</div>}</section>
 
       {sent && <div className="modal-backdrop" onClick={() => setSent(false)}><article className="success-modal" onClick={(e) => e.stopPropagation()}><div className="success-icon"><Check size={21} /></div><div className="eyebrow">message delivered</div><h2>That was sent.</h2><p>Your message is safely in Fowzan's inbox. Leave another whenever you feel like it.</p><button className="primary-button" onClick={() => setSent(false)}>Send another <ChevronRight size={17} /></button></article></div>}
     </main>

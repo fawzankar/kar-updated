@@ -73,7 +73,7 @@ export async function GET(request: Request) {
     if (!id) return NextResponse.json({ error: 'Invalid thread.' }, { status: 400 })
     const result = await pool.query(`
       SELECT m.id, m.text, m.sender_name AS "senderName", m.created_at AS time,
-        COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type) ORDER BY r.created_at ASC, r.id ASC)
+        COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type, 'upvotes', (SELECT COUNT(*) FROM reply_votes rv WHERE rv.response_id = r.id)) ORDER BY r.created_at ASC, r.id ASC)
         FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
       FROM messages m
       LEFT JOIN responses r ON r.message_id = m.id
@@ -120,7 +120,8 @@ export async function GET(request: Request) {
       WHERE p.deleted_at IS NULL GROUP BY p.id ORDER BY p.created_at DESC
     `)
     const replies = await pool.query(`
-      SELECT id, message_id, text, author, media_url AS "mediaUrl", media_type AS "mediaType", created_at AS time
+      SELECT id, message_id, text, author, media_url AS "mediaUrl", media_type AS "mediaType", created_at AS time,
+        (SELECT COUNT(*) FROM reply_votes WHERE response_id = responses.id) AS upvotes
       FROM responses
       WHERE message_id IS NOT NULL
       ORDER BY created_at ASC, id ASC
@@ -150,6 +151,7 @@ export async function GET(request: Request) {
         author: r.author || 'Fowzan',
         mediaUrl: r.mediaUrl,
         mediaType: r.mediaType,
+        upvotes: Number(r.upvotes ?? 0),
       })
     }
 
@@ -183,7 +185,7 @@ export async function GET(request: Request) {
   const result = await pool.query(`
     SELECT m.id, m.text, m.created_at AS time,
       (SELECT COUNT(*) FROM thread_votes WHERE message_id = m.id) AS upvotes,
-      COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type) ORDER BY r.created_at ASC, r.id ASC)
+      COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type, 'upvotes', (SELECT COUNT(*) FROM reply_votes rv WHERE rv.response_id = r.id)) ORDER BY r.created_at ASC, r.id ASC)
       FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
     FROM messages m
     LEFT JOIN responses r ON r.message_id = m.id
@@ -216,7 +218,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}))
   const action = clean(body.action, 40)
 
-  if (action === 'message' || action === 'public-reply' || action === 'toggle-upvote' || action === 'vote-poll') {
+  if (action === 'message' || action === 'public-reply' || action === 'toggle-upvote' || action === 'toggle-reply-upvote' || action === 'vote-poll') {
     const limitKey = action === 'message' ? 'message' : action === 'public-reply' ? 'reply' : 'vote'
     if (!(await rateLimit(request, limitKey))) {
       return NextResponse.json({ error: 'Too many submissions. Please wait a minute and try again.' }, { status: 429 })
@@ -284,6 +286,20 @@ export async function POST(request: Request) {
     if (!exists.rows[0]) return NextResponse.json({ error: 'Message not found.' }, { status: 404 })
     await pool.query(`INSERT INTO responses (message_id, text, author, media_url, media_type) VALUES ($1, $2, 'Fowzan', $3, $4)`, [messageId, text, mediaUrl, mediaUrl ? mediaType || 'image' : null])
     return NextResponse.json({ ok: true })
+  }
+
+  if (action === 'toggle-reply-upvote') {
+    const responseId = asId(body.responseId)
+    const voterKey = clean(body.voterKey, 128)
+    if (!responseId || voterKey.length < 16) return NextResponse.json({ error: 'Invalid reply vote.' }, { status: 400 })
+    const exists = await pool.query(`SELECT r.id FROM responses r JOIN messages m ON m.id = r.message_id WHERE r.id = $1 AND m.deleted_at IS NULL`, [responseId])
+    if (!exists.rows[0]) return NextResponse.json({ error: 'Reply not found.' }, { status: 404 })
+    const current = await pool.query(`SELECT 1 FROM reply_votes WHERE response_id = $1 AND voter_key = $2`, [responseId, voterKey])
+    const voted = !current.rows[0]
+    if (voted) await pool.query(`INSERT INTO reply_votes (response_id, voter_key) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [responseId, voterKey])
+    else await pool.query(`DELETE FROM reply_votes WHERE response_id = $1 AND voter_key = $2`, [responseId, voterKey])
+    const count = await pool.query(`SELECT COUNT(*) AS upvotes FROM reply_votes WHERE response_id = $1`, [responseId])
+    return NextResponse.json({ ok: true, voted, upvotes: Number(count.rows[0].upvotes) })
   }
 
   if (action === 'toggle-upvote') {
