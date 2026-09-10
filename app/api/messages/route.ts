@@ -31,7 +31,12 @@ function asId(value: unknown) {
 
 function cleanOptions(value: unknown) {
   if (!Array.isArray(value)) return []
-  return value.map((item) => clean(item, 120)).filter(Boolean).slice(0, 8)
+  return value.map((item) => {
+    if (typeof item === 'string') return { text: clean(item, 120), imageData: null }
+    const text = clean((item as any)?.text, 120)
+    const imageData = cleanImageData((item as any)?.imageData)
+    return { text, imageData }
+  }).filter((item) => item.text).slice(0, 8)
 }
 
 function cleanImageData(value: unknown) {
@@ -43,7 +48,7 @@ function cleanImageData(value: unknown) {
 
 async function deletePoll(pollId: number) {
   const result = await pool.query(
-    `UPDATE polls SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
+    `DELETE FROM polls WHERE id = $1 RETURNING id`,
     [pollId]
   )
   return Boolean(result.rows[0])
@@ -222,9 +227,10 @@ export async function POST(request: Request) {
     if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const question = clean(body.question, 240)
     const options = cleanOptions(body.options)
-    const imageData = cleanImageData(body.imageData)
     if (!question || options.length < 2) return NextResponse.json({ error: 'Add a question and at least two options.' }, { status: 400 })
-    const result = await pool.query(`INSERT INTO polls (question, options, image_data) VALUES ($1, $2::jsonb, $3) RETURNING id`, [question, JSON.stringify(options), imageData])
+    const totalImageBytes = options.reduce((sum, option) => sum + (option.imageData ? option.imageData.length : 0), 0)
+    if (totalImageBytes > 4000000) return NextResponse.json({ error: 'Please keep the combined poll images under 4 MB.' }, { status: 400 })
+    const result = await pool.query(`INSERT INTO polls (question, options) VALUES ($1, $2::jsonb) RETURNING id`, [question, JSON.stringify(options)])
     return NextResponse.json({ ok: true, id: Number(result.rows[0].id) })
   }
 

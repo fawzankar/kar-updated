@@ -10,7 +10,8 @@ import {
 type ThreadReply = { id: number; text: string; time: string; author: string; mediaUrl?: string | null; mediaType?: 'image' | 'gif' | null }
 type Thought = { id: number; text: string; time: string; unread?: boolean; kept?: boolean; senderName?: string | null; upvotes?: number; replies: ThreadReply[] }
 type PublicResponse = { id: number; text: string; time: string; author: string; upvotes?: number; replies: ThreadReply[] }
-type Poll = { id: number; question: string; options: string[]; counts: number[]; totalVotes: number; time: string; imageData?: string | null }
+type PollOption = { text: string; imageData?: string | null }
+type Poll = { id: number; question: string; options: PollOption[]; counts: number[]; totalVotes: number; time: string; imageData?: string | null }
 
 const prompts = [
   'What are you really into these days?',
@@ -31,6 +32,17 @@ const matrixStreams = [
   'Ֆաուզան', 'ფაუზან', 'فَوْزَان', 'ファウザーン',
   'FAWZAN', 'FOWZAN', 'Fawzan', 'fawzan'
 ]
+
+function normalizePolls(value: unknown): Poll[] {
+  if (!Array.isArray(value)) return []
+  return value.map((poll: any) => ({
+    ...poll,
+    id: Number(poll.id),
+    options: Array.isArray(poll.options) ? poll.options.map((option: any) => typeof option === 'string' ? { text: option, imageData: null } : { text: String(option?.text ?? ''), imageData: option?.imageData ?? null }) : [],
+    counts: Array.isArray(poll.counts) ? poll.counts.map(Number) : [],
+    totalVotes: Number(poll.totalVotes ?? 0),
+  }))
+}
 
 function formatTime(value: string) {
   const date = new Date(value)
@@ -61,10 +73,8 @@ export default function Page() {
   const [polls, setPolls] = useState<Poll[]>([])
   const [votedPolls, setVotedPolls] = useState<Record<number, number>>({})
   const [pollQuestion, setPollQuestion] = useState('')
-  const [pollOptions, setPollOptions] = useState(['', ''])
+  const [pollOptions, setPollOptions] = useState<PollOption[]>([{ text: '' }, { text: '' }])
   const [pollCreating, setPollCreating] = useState(false)
-  const [pollImageData, setPollImageData] = useState<string | null>(null)
-  const [pollImageName, setPollImageName] = useState('')
   const [replyingTo, setReplyingTo] = useState<number | null>(null)
   const [replyText, setReplyText] = useState('')
   const [replyName, setReplyName] = useState('')
@@ -102,7 +112,7 @@ export default function Page() {
       if (!response.ok) throw new Error('Could not load public conversations.')
       const data = await response.json()
       setResponses(data.responses ?? [])
-      setPolls(data.polls ?? [])
+      setPolls(normalizePolls(data.polls))
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not load the page.') }
     finally { setLoading(false) }
   }
@@ -123,6 +133,7 @@ export default function Page() {
       inboxInitialized.current = true
       setThoughts(nextMessages)
       setResponses(data.responses ?? [])
+      setPolls(normalizePolls(data.polls))
       setSelected((current) => current ? nextMessages.find((item) => item.id === current.id) ?? null : null)
       setLastUpdated(new Date())
       setError('')
@@ -251,14 +262,14 @@ export default function Page() {
 
   async function createPoll() {
     const question = pollQuestion.trim()
-    const options = pollOptions.map((item) => item.trim()).filter(Boolean)
+    const options = pollOptions.map((item) => ({ text: item.text.trim(), imageData: item.imageData ?? null })).filter((item) => item.text)
     if (!question || options.length < 2 || pollCreating) return
     setPollCreating(true); setError('')
     try {
-      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create-poll', question, options, imageData: pollImageData }) })
+      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create-poll', question, options }) })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error ?? 'Could not create the poll.')
-      setPollQuestion(''); setPollOptions(['', '']); setPollImageData(null); setPollImageName(''); await loadOwner(true)
+      setPollQuestion(''); setPollOptions([{ text: '' }, { text: '' }]); await loadOwner(true)
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not create the poll.') }
     finally { setPollCreating(false) }
   }
@@ -285,6 +296,7 @@ export default function Page() {
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error ?? 'Could not delete the poll.')
       setPolls((current) => current.filter((item) => item.id !== poll.id))
+      await loadOwner(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not delete the poll.')
     } finally {
@@ -422,21 +434,25 @@ export default function Page() {
       <section className="poll-admin-card page-width">
         <div className="poll-admin-head"><div><div className="eyebrow"><BarChart3 size={13} /> wall poll</div><h2>Ask everyone.</h2><p>Create an anonymous poll that appears on the public wall.</p></div></div>
         <input className="poll-question-input" value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} placeholder="What do you want to ask?" maxLength={240} />
-        <label className="poll-image-upload">
-          <span className="poll-image-upload-copy"><ImageIcon size={15} /><b>{pollImageName ? 'image ready' : 'add an image'}</b><small>{pollImageName || 'optional · shown between the question and options'}</small></span>
-          <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (!file) return
-            if (file.size > 2.5 * 1024 * 1024) { setError('Poll images must be 2.5 MB or smaller.'); e.currentTarget.value = ''; return }
-            const reader = new FileReader()
-            reader.onload = () => { if (typeof reader.result === 'string') { setPollImageData(reader.result); setPollImageName(file.name); setError('') } }
-            reader.readAsDataURL(file)
-          }} />
-          {pollImageData && <img src={pollImageData} alt="Poll preview" />}
-          {pollImageData && <button type="button" className="poll-image-remove" onClick={(e) => { e.preventDefault(); setPollImageData(null); setPollImageName('') }}><X size={13} /> remove</button>}
-        </label>
-        <div className="poll-option-editor">{pollOptions.map((option, index) => <div className="poll-option-row" key={index}><span>{index + 1}</span><input value={option} onChange={(e) => setPollOptions((current) => current.map((item, i) => i === index ? e.target.value : item))} placeholder={`Option ${index + 1}`} maxLength={120} />{pollOptions.length > 2 && <button type="button" onClick={() => setPollOptions((current) => current.filter((_, i) => i !== index))}><X size={14} /></button>}</div>)}</div>
-        <div className="poll-admin-actions"><button className="ghost-button" type="button" onClick={() => setPollOptions((current) => current.length < 8 ? [...current, ''] : current)} disabled={pollOptions.length >= 8}><Plus size={14} /> add option</button><button className="primary-button" type="button" onClick={createPoll} disabled={!pollQuestion.trim() || pollOptions.filter(Boolean).length < 2 || pollCreating}>{pollCreating ? 'publishing…' : <>Publish poll <ChevronRight size={16} /></>}</button></div>
+        <p className="poll-option-help">Each option can have its own image + text. They appear as two columns on the wall.</p>
+        <div className="poll-option-editor">{pollOptions.map((option, index) => <div className="poll-option-row" key={index}>
+          <span>{index + 1}</span>
+          <label className="poll-option-image-upload" title={`Add image for option ${index + 1}`}>
+            {option.imageData ? <img src={option.imageData} alt="Option preview" /> : <ImageIcon size={18} />}
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              if (file.size > 1.2 * 1024 * 1024) { setError('Each poll option image must be 1.2 MB or smaller.'); e.currentTarget.value = ''; return }
+              const reader = new FileReader()
+              reader.onload = () => { if (typeof reader.result === 'string') { setPollOptions((current) => current.map((item, i) => i === index ? { ...item, imageData: reader.result as string } : item)); setError('') } }
+              reader.readAsDataURL(file)
+            }} />
+          </label>
+          <input value={option.text} onChange={(e) => setPollOptions((current) => current.map((item, i) => i === index ? { ...item, text: e.target.value } : item))} placeholder={`Option ${index + 1} text`} maxLength={120} />
+          {option.imageData && <button type="button" className="poll-option-image-remove" onClick={() => setPollOptions((current) => current.map((item, i) => i === index ? { ...item, imageData: null } : item))} aria-label={`Remove image from option ${index + 1}`}><X size={14} /></button>}
+          {pollOptions.length > 2 && <button type="button" onClick={() => setPollOptions((current) => current.filter((_, i) => i !== index))} aria-label={`Remove option ${index + 1}`}><X size={14} /></button>}
+        </div>)}</div>
+        <div className="poll-admin-actions"><button className="ghost-button" type="button" onClick={() => setPollOptions((current) => current.length < 8 ? [...current, { text: '' }] : current)} disabled={pollOptions.length >= 8}><Plus size={14} /> add option</button><button className="primary-button" type="button" onClick={createPoll} disabled={!pollQuestion.trim() || pollOptions.filter((item) => item.text.trim()).length < 2 || pollCreating}>{pollCreating ? 'publishing…' : <>Publish poll <ChevronRight size={16} /></>}</button></div>
       </section>
 
       <section className="admin-polls page-width"><div className="queue-head"><div><div className="eyebrow"><BarChart3 size={13} /> live polls</div><h2>On the wall.</h2></div><span>{polls.length} live</span></div>{polls.length > 0 && <div className="poll-admin-list">{polls.map((poll) => <div className="poll-admin-mini" key={poll.id}><strong>{poll.question}</strong><span>{poll.totalVotes} anonymous {poll.totalVotes === 1 ? 'vote' : 'votes'}</span><div className="poll-admin-mini-actions"><button className="ghost-button" onClick={() => sharePoll(poll)}><Share2 size={13} /> share</button><button className="ghost-button poll-delete-button" onClick={() => deletePoll(poll)} disabled={deleteBusy === `poll-${poll.id}`}><Trash2 size={13} /> {deleteBusy === `poll-${poll.id}` ? 'deleting' : 'delete'}</button></div></div>)}</div>}</section>
@@ -519,7 +535,7 @@ export default function Page() {
                         onClick={() => votePoll(poll, index)}
                         disabled={voted}
                       >
-                        <span className="poll-option-label">{option}</span>
+                        <span className="poll-option-content">{option.imageData && <img src={option.imageData} alt="" loading="lazy" />}<span className="poll-option-label">{option.text}</span></span>
                         {voted && (
                           <>
                             <i style={{ width: `${pct}%` }} />
