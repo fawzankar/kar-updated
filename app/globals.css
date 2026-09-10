@@ -1370,3 +1370,55 @@ body { font-family: var(--font-sans-custom), ui-monospace, monospace; background
 @media (prefers-reduced-motion: reduce) {
   .public-thread, .public-thread::before, .chat-board-tools > button, .reply-upvote, .bubble-upvote { transition: none !important; }
 }
+
+/* Performance pass: keep the visual language, but move expensive effects off the hot path. */
+html { scroll-behavior: auto; }
+body { text-rendering: optimizeSpeed; }
+
+/* Large fixed blur/grain layers are expensive during scrolling and input. */
+.app-page::before { opacity: .22; mask-image: none; }
+.ambient-orb { filter: none !important; opacity: .28; animation: none !important; }
+.cyber-bg { pointer-events: none; contain: strict; }
+.cyber-bg i { filter: none !important; animation-duration: 20s; }
+.space-stars span, .asteroid-field i { will-change: auto; }
+.space-stars span { animation-duration: 7s !important; box-shadow: none !important; }
+.asteroid-field i { filter: none !important; animation-duration: 28s !important; }
+
+/* Avoid compositor-heavy backdrop blurs on frequently repainted surfaces. */
+.private-button, .ghost-button, .refresh-button, .secondary-button,
+.message-composer, .public-thread, .thread-browser, .conversation-card,
+.conversation-empty, .modal-backdrop { backdrop-filter: none !important; }
+.private-button, .ghost-button, .refresh-button, .secondary-button { background: rgba(8,12,9,.96); }
+.message-composer, .public-thread, .thread-browser, .conversation-card, .conversation-empty { background: rgba(5,9,6,.96); }
+.modal-backdrop { background: rgba(2,4,2,.92); }
+
+/* Isolate long lists so updates to inputs/buttons don't invalidate the whole page layout. */
+.public-thread-list, .public-poll-list, .queue-grid, .thread-list { contain: layout paint style; }
+.public-thread, .public-poll, .queue-item, .thread-item { content-visibility: auto; contain-intrinsic-size: auto 220px; }
+.public-thread { contain: layout paint style; }
+
+/* Hover stays tactile, but only animates cheap properties. */
+.public-thread, .thread-item, .queue-item, .prompt-grid button,
+.primary-button, .secondary-button, .private-button, .ghost-button,
+.refresh-button, .icon-action, .share-square, .reply-upvote, .bubble-upvote,
+.chat-board-tools > button { transition: transform .14s ease, border-color .14s ease, background-color .14s ease, color .14s ease; }
+.public-thread:hover, .queue-item:hover, .prompt-grid button:hover { transform: none !important; box-shadow: none !important; }
+.primary-button:hover, .secondary-button:hover, .private-button:hover, .ghost-button:hover,
+.refresh-button:hover, .icon-action:hover, .share-square:hover { transform: translateY(-1px) !important; box-shadow: none !important; }
+
+/* Keep scrolling on the compositor and prevent accidental horizontal paint. */
+.app-page, .public-threads, .public-thread-list { overflow-x: clip; }
+.thread-list, .conversation-scroll { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+/* Mobile gets a deliberately lighter background workload. */
+@media (max-width: 900px) {
+  .space-stars span:nth-child(2n),
+  .asteroid-field i,
+  .cyber-bg b:nth-of-type(n+5) { display: none; }
+  .ambient-orb { display: none; }
+  .app-page::before { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
