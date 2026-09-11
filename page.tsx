@@ -64,7 +64,6 @@ export default function Page() {
   const [thoughts, setThoughts] = useState<Thought[]>([])
   const [selected, setSelected] = useState<Thought | null>(null)
   const [showKeeps, setShowKeeps] = useState(false)
-  const [shareCard, setShareCard] = useState<Thought | null>(null)
   const [responses, setResponses] = useState<PublicResponse[]>(emptyResponses)
   const [replyingTo, setReplyingTo] = useState<number | null>(null)
   const [replyText, setReplyText] = useState('')
@@ -265,6 +264,150 @@ export default function Page() {
     }
   }
 
+  async function shareStory(item: Thought) {
+    if (typeof window === 'undefined') return
+
+    const width = 1080
+    const height = 1920
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const roundedRect = (x: number, y: number, w: number, h: number, r: number) => {
+      const radius = Math.min(r, w / 2, h / 2)
+      ctx.beginPath()
+      ctx.moveTo(x + radius, y)
+      ctx.arcTo(x + w, y, x + w, y + h, radius)
+      ctx.arcTo(x + w, y + h, x, y + h, radius)
+      ctx.arcTo(x, y + h, x, y, radius)
+      ctx.arcTo(x, y, x + w, y, radius)
+      ctx.closePath()
+    }
+
+    const wrapText = (text: string, maxWidth: number, font: string) => {
+      ctx.font = font
+      const words = text.trim().split(/\s+/)
+      const lines: string[] = []
+      let line = ''
+      for (const word of words) {
+        const next = line ? `${line} ${word}` : word
+        if (ctx.measureText(next).width <= maxWidth) line = next
+        else {
+          if (line) lines.push(line)
+          line = word
+        }
+      }
+      if (line) lines.push(line)
+      return lines
+    }
+
+    // Deliberately independent of the site's Gamer/Minimal theme: story cards should feel like social stationery.
+    const bg = ctx.createLinearGradient(0, 0, width, height)
+    bg.addColorStop(0, '#f5f0e8')
+    bg.addColorStop(0.52, '#ebe3d6')
+    bg.addColorStop(1, '#ddd1c2')
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, width, height)
+
+    const glow = ctx.createRadialGradient(850, 260, 40, 850, 260, 700)
+    glow.addColorStop(0, 'rgba(255,255,255,0.72)')
+    glow.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = glow
+    ctx.fillRect(0, 0, width, height)
+
+    ctx.fillStyle = '#171512'
+    ctx.font = '600 30px Arial, sans-serif'
+    ctx.letterSpacing = '4px'
+    ctx.fillText('VIVE LA RÉSISTANCE', 84, 116)
+    ctx.letterSpacing = '0px'
+
+    ctx.fillStyle = '#6d655b'
+    ctx.font = '500 22px Arial, sans-serif'
+    ctx.fillText("FOWZAN'S INBOX", 84, 160)
+
+    ctx.strokeStyle = 'rgba(23,21,18,0.16)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(84, 204)
+    ctx.lineTo(996, 204)
+    ctx.stroke()
+
+    const cardX = 84
+    const cardY = 470
+    const cardW = 912
+    const cardPad = 82
+    const questionFont = '500 58px Georgia, serif'
+    const questionLines = wrapText(item.text, cardW - cardPad * 2, questionFont)
+    const lineHeight = 78
+    const cardH = Math.max(470, questionLines.length * lineHeight + 220)
+
+    ctx.save()
+    ctx.shadowColor = 'rgba(44,36,28,0.14)'
+    ctx.shadowBlur = 34
+    ctx.shadowOffsetY = 18
+    roundedRect(cardX, cardY, cardW, cardH, 38)
+    ctx.fillStyle = '#fbf8f3'
+    ctx.fill()
+    ctx.restore()
+
+    ctx.fillStyle = '#8b8175'
+    ctx.font = '600 20px Arial, sans-serif'
+    ctx.letterSpacing = '3px'
+    ctx.fillText('ANONYMOUS QUESTION', cardX + cardPad, cardY + 78)
+    ctx.letterSpacing = '0px'
+
+    ctx.fillStyle = '#191715'
+    ctx.font = questionFont
+    questionLines.forEach((line, index) => ctx.fillText(line, cardX + cardPad, cardY + 170 + index * lineHeight))
+
+    ctx.fillStyle = '#9a9186'
+    ctx.font = '400 19px Arial, sans-serif'
+    ctx.fillText('fowzan.dev', cardX + cardPad, cardY + cardH - 66)
+
+    ctx.fillStyle = '#2d2925'
+    ctx.font = '400 25px Georgia, serif'
+    ctx.textAlign = 'center'
+    ctx.fillText('ask me anything.', width / 2, 1370)
+    ctx.textAlign = 'left'
+
+    ctx.fillStyle = '#766d63'
+    ctx.font = '400 20px Arial, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText('shared from Fowzan\'s Inbox', width / 2, 1800)
+    ctx.textAlign = 'left'
+
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1))
+    if (!blob) return
+
+    const file = new File([blob], 'fowzans-inbox-story.png', { type: 'image/png' })
+    const shareData: ShareData = {
+      files: [file],
+      title: "Fowzan's Inbox",
+      text: 'Vive la Résistance'
+    }
+
+    try {
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share(shareData)
+        return
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+    }
+
+    const downloadUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = 'fowzans-inbox-story.png'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(downloadUrl)
+    try { await navigator.clipboard?.writeText('Vive la Résistance') } catch {}
+  }
+
   async function unlock(event: React.FormEvent) {
     event.preventDefault()
     setLoginError('')
@@ -305,8 +448,8 @@ export default function Page() {
 
   if (view === 'private' && !ownerUnlocked) return (
     <main className="funky-page min-h-screen px-5 py-6 text-foreground sm:px-8">
-      <button className="back-button" onClick={() => setView('public')} aria-label="Back to public page">
-        <ArrowLeft size={16} /> back to public page
+      <button className="back-button" onClick={() => setView('public')} aria-label="Back to public page" title="Back">
+        <ArrowLeft size={16} /><span className="back-label">back to public page</span>
       </button>
       <section className="mx-auto flex min-h-[82vh] max-w-md flex-col justify-center">
         <div className="secret-sticker"><ShieldCheck size={14} /> private inbox</div>
@@ -325,7 +468,7 @@ export default function Page() {
   if (view === 'private') return (
     <main className="funky-page min-h-screen px-4 py-5 text-foreground sm:px-6">
       <header className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-        <button className="back-button" onClick={() => setView('public')}><ArrowLeft size={16} /> back to signal</button>
+        <button className="back-button" onClick={() => setView('public')} aria-label="Back to signal" title="Back"><ArrowLeft size={16} /><span className="back-label">back to signal</span></button>
         <div className="flex items-center gap-2">
           <button className="keep-filter" onClick={() => setShowKeeps(!showKeeps)}><Star size={15} fill={showKeeps ? 'currentColor' : 'none'} /> {showKeeps ? 'all threads' : 'saved signals'}</button>
           <button className="keep-filter" onClick={logout}><LogOut size={15} /> exit inbox</button>
@@ -369,7 +512,10 @@ export default function Page() {
               <div className="thread-panel">
                 <div className="thread-panel-header">
                   <div className="min-w-0"><div className="section-kicker"><span className="h-2 w-2 rounded-full bg-punch" /> signal</div><h2 className="mt-2 truncate font-serif text-2xl sm:text-3xl">{selected.senderName || 'Anonymous'}</h2><p className="mt-1 text-xs text-muted-foreground">{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {formatTime(selected.time)}</p></div>
-                  <button className="small-action" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><X size={14} /> {deleteBusy === `thread-${selected.id}` ? 'deleting…' : 'remove signal'}</button>
+                  <div className="thread-header-actions">
+                    <button className="story-share-action" onClick={() => shareStory(selected)} aria-label="Share this question to Instagram Story or WhatsApp Status" title="Share as story"><Share2 size={15} /> <span>story</span></button>
+                    <button className="small-action" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`}><X size={14} /> {deleteBusy === `thread-${selected.id}` ? 'deleting…' : 'remove signal'}</button>
+                  </div>
                 </div>
 
                 <div className="thread-scroll">

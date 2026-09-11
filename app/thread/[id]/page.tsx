@@ -17,8 +17,14 @@ export default function SharedThreadPage() {
   const { id } = useParams<{ id: string }>()
   const [thread, setThread] = useState<Thread | null>(null)
   const [error, setError] = useState('')
+  const [theme, setTheme] = useState('purple')
+  const [mode, setMode] = useState<'gamer' | 'professional'>('gamer')
 
   useEffect(() => {
+    const savedTheme = localStorage.getItem('fowzan-theme')
+    const savedMode = localStorage.getItem('fowzan-experience')
+    if (savedTheme) setTheme(savedTheme)
+    if (savedMode === 'gamer' || savedMode === 'professional') setMode(savedMode)
     fetch(`/api/messages?view=thread&id=${encodeURIComponent(id)}`, { cache: 'no-store' })
       .then(async (response) => {
         const data = await response.json()
@@ -34,7 +40,7 @@ export default function SharedThreadPage() {
     else await navigator.clipboard.writeText(url)
   }
 
-  return <main className="shared-thread-page">
+  return <main className="shared-thread-page" data-theme={theme} data-mode={mode}>
     <div className="shared-thread-grid" aria-hidden="true" />
     <section className="shared-thread-shell">
       <Link href="/" className="shared-thread-back"><ArrowLeft size={15} /> Fowzan&apos;s Inbox</Link>

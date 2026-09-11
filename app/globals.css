@@ -5290,3 +5290,146 @@ html, body { max-width:100%; overflow-x:hidden; }
 .story-share-note { display:flex; flex-wrap:wrap; gap:5px; margin-top:9px; }
 .story-share-note span { padding:4px 7px; border:1px solid var(--border); border-radius:999px; color:var(--muted-foreground); font-size:7px; }
 @media (max-width:640px) { .share-choice-backdrop { padding:12px; } .share-choice,.story-composer { width:min(100%,360px); } .story-mini-preview { width:132px; } }
+
+/* Final share/link + shared-thread theme fixes */
+.shared-thread-page[data-mode='professional'] {
+  --shared-bg: #f6f1e9;
+  --shared-ink: #211e1b;
+  --shared-muted: #756d64;
+  --shared-accent: #6d5dfc;
+  --shared-card: rgba(255,253,249,.94);
+  --shared-border: rgba(35,30,25,.12);
+  color: var(--shared-ink);
+  background: var(--shared-bg);
+  font-family: var(--font-sans-custom), Arial, sans-serif;
+}
+.shared-thread-page[data-mode='professional'][data-theme='rose'] { --shared-accent:#b45c7e; }
+.shared-thread-page[data-mode='professional'][data-theme='blue'] { --shared-accent:#3d79a8; }
+.shared-thread-page[data-mode='professional'][data-theme='purple'] { --shared-accent:#6d5dfc; }
+.shared-thread-page[data-mode='professional'][data-theme='mono'] { --shared-accent:#292724; --shared-bg:#f0eee9; }
+.shared-thread-page[data-mode='gamer'] {
+  --shared-bg: #050806;
+  --shared-ink: #eff8f1;
+  --shared-muted: #8ca18f;
+  --shared-accent: #b7ff36;
+  --shared-card: rgba(10,17,12,.94);
+  --shared-border: rgba(183,255,54,.24);
+}
+.shared-thread-page .shared-thread-grid { background: radial-gradient(circle at 50% 0, color-mix(in srgb,var(--shared-accent) 12%,transparent), transparent 36rem), linear-gradient(color-mix(in srgb,var(--shared-accent) 5%,transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb,var(--shared-accent) 5%,transparent) 1px, transparent 1px); }
+.shared-thread-page .shared-thread-back { color:var(--shared-accent); }
+.shared-thread-page .shared-thread-card, .shared-thread-page .shared-thread-loading { color:var(--shared-ink); border-color:var(--shared-border); background:var(--shared-card); }
+.shared-thread-page .shared-thread-kicker, .shared-thread-page .shared-thread-kicker button { color:var(--shared-accent); }
+.shared-thread-page .shared-thread-kicker > span { background:var(--shared-accent); box-shadow:0 0 16px var(--shared-accent); }
+.shared-thread-page .shared-thread-kicker button { background:color-mix(in srgb,var(--shared-accent) 6%,transparent); border-color:var(--shared-border); }
+.shared-thread-page .shared-thread-card > p, .shared-thread-page .shared-thread-date { color:var(--shared-muted); }
+.shared-thread-page .shared-message { border-color:var(--shared-border); background:color-mix(in srgb,var(--shared-card) 88%,transparent); color:var(--shared-ink); }
+.shared-thread-page .shared-message b { color:var(--shared-accent); }
+.shared-thread-page .shared-message p { color:var(--shared-ink); }
+
+/* Story cards use the selected app theme, never a hard-coded green. */
+.story-mini-preview { color: var(--foreground); background: var(--surface); border-color: var(--border); }
+
+@media (max-width:640px) {
+  .shared-thread-shell { width:min(100% - 24px,760px); }
+  .shared-thread-card { padding:20px; }
+}
+
+/* Polished one-tap story sharing fallback */
+.share-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 1200;
+  transform: translateX(-50%);
+  width: min(calc(100% - 28px), 520px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  color: var(--foreground);
+  box-shadow: 0 18px 60px rgba(0,0,0,.28);
+  backdrop-filter: blur(16px);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.share-toast button { margin-left:auto; flex:0 0 auto; width:28px; height:28px; display:grid; place-items:center; border:1px solid var(--border); border-radius:8px; background:transparent; color:var(--muted-foreground); }
+
+.notification-prompt-backdrop {
+  position: fixed; inset: 0; z-index: 1100; display: grid; place-items: center; padding: 18px;
+  background: rgba(0,0,0,.48); backdrop-filter: blur(12px);
+}
+.notification-prompt {
+  width: min(100%, 460px); display: grid; gap: 14px; padding: 24px; border: 1px solid var(--border);
+  border-radius: 22px; background: var(--surface); color: var(--foreground); box-shadow: 0 30px 90px rgba(0,0,0,.38);
+}
+.notification-prompt-icon { width: 44px; height: 44px; display:grid; place-items:center; border-radius: 14px; background: color-mix(in srgb,var(--primary) 12%,transparent); color: var(--primary); }
+.notification-prompt h2 { margin: 5px 0 7px; font-size: 25px; letter-spacing: -.04em; }
+.notification-prompt p { margin: 0; color: var(--muted-foreground); font-size: 12px; line-height: 1.55; }
+.notification-prompt-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
+@media (max-width:640px) { .notification-prompt { padding:20px; } .notification-prompt-actions { flex-direction:column-reverse; } .notification-prompt-actions button { width:100%; justify-content:center; } }
+
+/* Shared threads inherit the exact Gamer colour selected on the main app. */
+.shared-thread-page[data-mode='gamer'][data-theme='purple'] { --shared-bg:#100b18; --shared-ink:#fbf7ff; --shared-muted:#b8a9c8; --shared-accent:#c77dff; --shared-card:rgba(27,18,39,.95); --shared-border:rgba(199,125,255,.28); }
+.shared-thread-page[data-mode='gamer'][data-theme='red'] { --shared-bg:#16090d; --shared-ink:#fff6f7; --shared-muted:#c9abb1; --shared-accent:#ff526f; --shared-card:rgba(36,16,22,.95); --shared-border:rgba(255,82,111,.28); }
+.shared-thread-page[data-mode='gamer'][data-theme='green'] { --shared-bg:#07130d; --shared-ink:#f3fff7; --shared-muted:#a9c4b3; --shared-accent:#72e3a6; --shared-card:rgba(16,32,24,.95); --shared-border:rgba(114,227,166,.27); }
+.shared-thread-page[data-mode='gamer'][data-theme='blue'] { --shared-bg:#08121c; --shared-ink:#f3fbff; --shared-muted:#a9bfcd; --shared-accent:#61d5ff; --shared-card:rgba(16,30,43,.95); --shared-border:rgba(97,213,255,.28); }
+.shared-thread-page[data-mode='gamer'][data-theme='rose'] { --shared-bg:#170b13; --shared-ink:#fff7fb; --shared-muted:#cdb0c0; --shared-accent:#ff9ed1; --shared-card:rgba(38,19,30,.95); --shared-border:rgba(255,158,209,.28); }
+.shared-thread-page[data-mode='gamer'][data-theme='white'] { --shared-bg:#eeeae2; --shared-ink:#181715; --shared-muted:#77716a; --shared-accent:#252321; --shared-card:rgba(255,253,248,.96); --shared-border:rgba(37,35,33,.15); }
+
+/* ============================================================
+   FINAL MINIMAL PRIVATE HEADER POLISH
+   ============================================================ */
+.app-page[data-mode='professional'] .admin-topbar {
+  background: color-mix(in srgb, var(--editorial-paper) 92%, transparent) !important;
+  border-color: var(--editorial-line) !important;
+  box-shadow: 0 18px 55px rgba(45,34,23,.07) !important;
+}
+.app-page[data-mode='professional'] .admin-topbar .brand.wordmark {
+  color: var(--editorial-ink) !important;
+  letter-spacing: .11em !important;
+}
+.app-page[data-mode='professional'] .admin-topbar .top-actions .ghost-button {
+  color: var(--editorial-ink) !important;
+  background: var(--editorial-paper) !important;
+  border-color: var(--editorial-line) !important;
+}
+.app-page[data-mode='professional'] .admin-topbar .top-actions .ghost-button:hover {
+  color: var(--editorial-accent) !important;
+  border-color: var(--editorial-accent) !important;
+  background: var(--editorial-accent-soft) !important;
+}
+.app-page[data-mode='professional'] .admin-inbox-eyebrow,
+.app-page[data-mode='professional'] .admin-inbox-eyebrow svg {
+  color: var(--editorial-accent) !important;
+}
+
+/* Story-share UI uses the same selected mode/accent instead of a legacy green default. */
+.app-page[data-mode='professional'] .share-choice,
+.app-page[data-mode='professional'] .story-composer,
+.app-page[data-mode='professional'] .share-toast {
+  background: var(--editorial-paper) !important;
+  color: var(--editorial-ink) !important;
+  border-color: var(--editorial-line) !important;
+}
+.app-page[data-mode='professional'] .story-mini-preview {
+  background: linear-gradient(155deg, var(--editorial-paper), var(--editorial-accent-soft)) !important;
+  border-color: var(--editorial-line) !important;
+}
+
+/* Minimal owner header: appearance + colour controls match the public header. */
+.app-page[data-mode='professional'] .admin-topbar .admin-appearance-button,
+.app-page[data-mode='professional'] .admin-topbar .admin-theme-button {
+  color: var(--editorial-ink) !important;
+}
+.app-page[data-mode='professional'] .admin-topbar .admin-appearance-button svg,
+.app-page[data-mode='professional'] .admin-topbar .admin-theme-button svg {
+  color: var(--editorial-accent) !important;
+}
+.app-page[data-mode='professional'] .admin-topbar .admin-appearance-button:hover,
+.app-page[data-mode='professional'] .admin-topbar .admin-theme-button:hover {
+  background: var(--editorial-accent-soft) !important;
+  border-color: var(--editorial-accent) !important;
+}

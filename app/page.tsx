@@ -111,9 +111,7 @@ export default function Page() {
   const [publicSearch, setPublicSearch] = useState('')
   const [votedReplyIds, setVotedReplyIds] = useState<Set<number>>(new Set())
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
-  const [shareCard, setShareCard] = useState<Thought | PublicResponse | null>(null)
-  const [shareMenu, setShareMenu] = useState<Thought | PublicResponse | null>(null)
-  const [shareCaption, setShareCaption] = useState('')
+  const [notificationPromptOpen, setNotificationPromptOpen] = useState(false)
   const [shareBusy, setShareBusy] = useState(false)
   const [shareError, setShareError] = useState('')
   const replyInputRef = useRef<HTMLInputElement>(null)
@@ -129,7 +127,7 @@ export default function Page() {
       document.documentElement.dataset.fowzanMode = savedExperience
     }
     const validSavedTheme = savedExperience === 'professional' && savedTheme === 'red' ? 'blue' : savedTheme
-    if (validSavedTheme && ['white','green','purple','red','blue','rose','amber','slate'].includes(validSavedTheme)) {
+    if (validSavedTheme && ['white','green','purple','red','blue','rose','amber','slate','mono'].includes(validSavedTheme)) {
       setTheme(validSavedTheme)
       document.documentElement.dataset.fowzanTheme = validSavedTheme
       if (savedExperience === 'professional' && savedTheme === 'red') localStorage.setItem('fowzan-theme', 'blue')
@@ -584,17 +582,12 @@ export default function Page() {
     } catch { setCopied(false) }
   }
 
-  function openShareOptions(item: Thought | PublicResponse) {
-    setShareMenu(item)
-    setShareError('')
-  }
 
   async function shareThreadLink(item: Thought | PublicResponse) {
-    setShareMenu(null)
     const url = `${window.location.origin}/thread/${item.id}`
     try {
       if (navigator.share) {
-        await navigator.share({ title: "A thread from Fowzan's Inbox", text: item.text || 'Open this conversation.', url })
+        await navigator.share({ title: "A thread from Fowzan's Inbox", url })
       } else {
         await navigator.clipboard.writeText(url)
         setCopied(true)
@@ -606,177 +599,221 @@ export default function Page() {
     }
   }
 
-  function openShareCard(item: Thought | PublicResponse) {
-    setShareMenu(null)
-    setShareCard(item)
-    setShareCaption('')
-    setShareError('')
-  }
 
-  async function buildShareImage(item: Thought | PublicResponse) {
+  function buildShareImageDataUrl(item: Thought | PublicResponse, kind: 'thread' | 'home' = 'thread') {
     const canvas = document.createElement('canvas')
     canvas.width = 1080
     canvas.height = 1920
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('Could not create share image.')
 
-    const gamer = experience === 'gamer'
-    const accent = gamer ? '#b7ff36' : '#6d5dfc'
-    const accentSoft = gamer ? 'rgba(183,255,54,.16)' : 'rgba(109,93,252,.16)'
-    const bg = gamer ? '#050806' : '#111116'
-    const card = gamer ? '#0a110c' : '#19191f'
-    const muted = gamer ? '#8ca18f' : '#9d9aa7'
-    const ink = '#f7f4eb'
-    const thread = item.replies ?? []
+    // Read the persisted appearance at the exact moment of sharing. This prevents
+    // a stale React state/default from ever turning a selected theme into green.
+    const savedMode = localStorage.getItem('fowzan-experience')
+    const savedTheme = localStorage.getItem('fowzan-theme')
+    const activeMode = savedMode === 'professional' || savedMode === 'gamer' ? savedMode : experience
+    const allowedThemes = activeMode === 'professional' ? ['rose', 'blue', 'purple', 'mono'] : ['purple', 'red', 'green', 'rose', 'blue', 'white']
+    const activeTheme = savedTheme && allowedThemes.includes(savedTheme) ? savedTheme : (activeMode === 'professional' ? 'blue' : theme)
+    const isGamer = activeMode === 'gamer'
 
+    type StoryPalette = { bg1: string; bg2: string; panel: string; panel2: string; ink: string; muted: string; accent: string; accent2: string; line: string; shadow: string }
+    const palettes: Record<string, StoryPalette> = {
+      purple: { bg1: '#11091b', bg2: '#241035', panel: '#fffaff', panel2: '#f4e9f8', ink: '#211626', muted: '#75627f', accent: '#a65de0', accent2: '#6f3ba0', line: 'rgba(166,93,224,.24)', shadow: 'rgba(25,8,38,.28)' },
+      red: { bg1: '#18080d', bg2: '#45121c', panel: '#fffafa', panel2: '#f8e8eb', ink: '#26151a', muted: '#80656b', accent: '#e64b69', accent2: '#a82e49', line: 'rgba(230,75,105,.25)', shadow: 'rgba(38,5,13,.3)' },
+      green: { bg1: '#06130d', bg2: '#123c2a', panel: '#f8fff9', panel2: '#e7f5ec', ink: '#142019', muted: '#60786a', accent: '#35b879', accent2: '#16794c', line: 'rgba(53,184,121,.27)', shadow: 'rgba(2,22,12,.3)' },
+      blue: { bg1: '#07131f', bg2: '#123b57', panel: '#f8fcff', panel2: '#e7f1f7', ink: '#14232e', muted: '#607582', accent: '#3b86b2', accent2: '#255d80', line: 'rgba(59,134,178,.25)', shadow: 'rgba(4,20,32,.28)' },
+      rose: { bg1: '#190b13', bg2: '#4a2034', panel: '#fffafd', panel2: '#f7e8ef', ink: '#2b1722', muted: '#806571', accent: '#d76591', accent2: '#9f3e68', line: 'rgba(215,101,145,.25)', shadow: 'rgba(35,7,19,.28)' },
+      white: { bg1: '#dcd7ce', bg2: '#f7f4ed', panel: '#ffffff', panel2: '#f2eee7', ink: '#171614', muted: '#77726b', accent: '#22201d', accent2: '#555049', line: 'rgba(30,28,25,.17)', shadow: 'rgba(40,35,28,.18)' },
+      mono: { bg1: '#dedbd4', bg2: '#f8f7f3', panel: '#ffffff', panel2: '#f0eee9', ink: '#171615', muted: '#716e69', accent: '#292725', accent2: '#55514c', line: 'rgba(30,28,25,.16)', shadow: 'rgba(40,35,28,.17)' },
+    }
+    const colors = palettes[activeTheme] ?? palettes.blue
+
+    // True edge-to-edge 9:16 story canvas. The composition is intentionally
+    // inspired by anonymous-message apps: strong centre card, separate reply card,
+    // tiny branding, generous breathing room and theme-specific atmosphere.
+    const bg = ctx.createLinearGradient(0, 0, 1080, 1920)
+    bg.addColorStop(0, colors.bg1)
+    bg.addColorStop(.48, colors.bg2)
+    bg.addColorStop(1, colors.bg1)
     ctx.fillStyle = bg
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillRect(0, 0, 1080, 1920)
 
-    // Soft editorial glow / gamer aura, kept behind the content.
-    const glow = ctx.createRadialGradient(540, 250, 30, 540, 250, 900)
-    glow.addColorStop(0, accentSoft)
-    glow.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.fillStyle = glow
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    const glow = (x: number, y: number, radius: number, color: string) => {
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
+      gradient.addColorStop(0, color)
+      gradient.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, 1080, 1920)
+    }
+    glow(170, 250, 520, colors.line)
+    glow(930, 1470, 700, colors.line)
 
-    // Fine frame for a polished story-card look.
-    ctx.strokeStyle = gamer ? 'rgba(183,255,54,.22)' : 'rgba(255,255,255,.12)'
+    // Subtle decorative rings / grain-like geometry.
+    ctx.strokeStyle = colors.line
     ctx.lineWidth = 2
-    ctx.strokeRect(34, 34, canvas.width - 68, canvas.height - 68)
+    ctx.beginPath(); ctx.arc(930, 255, 135, 0, Math.PI * 2); ctx.stroke()
+    ctx.beginPath(); ctx.arc(930, 255, 170, 0, Math.PI * 2); ctx.stroke()
+    ctx.beginPath(); ctx.arc(930, 255, 205, 0, Math.PI * 2); ctx.stroke()
+    ctx.beginPath(); ctx.arc(145, 1680, 185, 0, Math.PI * 2); ctx.stroke()
 
-    ctx.fillStyle = accent
-    ctx.font = '800 30px Arial'
-    ctx.fillText('Vive la Résistance', 72, 100)
-    ctx.fillStyle = muted
-    ctx.font = '600 18px Arial'
-    ctx.fillText("FOWZAN'S INBOX  ·  ANONYMOUS MESSAGE", 72, 138)
-
-    const wrap = (text: string, maxWidth: number, font: string) => {
+    const rounded = (x: number, y: number, w: number, h: number, fill: string, stroke: string, radius: number, shadow = false) => {
+      ctx.save()
+      if (shadow) { ctx.shadowColor = colors.shadow; ctx.shadowBlur = 34; ctx.shadowOffsetY = 16 }
+      ctx.fillStyle = fill
+      ctx.strokeStyle = stroke
+      ctx.lineWidth = 2
+      ctx.beginPath(); ctx.roundRect(x, y, w, h, radius); ctx.fill(); ctx.stroke(); ctx.restore()
+    }
+    const wrap = (text: string, maxWidth: number, font: string, maxLines: number) => {
       ctx.font = font
-      const words = text.trim().split(/\s+/)
+      const words = text.trim().split(/\s+/).filter(Boolean)
       const lines: string[] = []
       let line = ''
       for (const word of words) {
         const test = line ? `${line} ${word}` : word
         if (ctx.measureText(test).width > maxWidth && line) {
-          lines.push(line)
-          line = word
+          lines.push(line); line = word
+          if (lines.length === maxLines - 1) break
         } else line = test
       }
-      if (line) lines.push(line)
+      if (line && lines.length < maxLines) lines.push(line)
+      const original = words.join(' ')
+      const shown = lines.join(' ')
+      if (shown.length < original.length && lines.length) lines[lines.length - 1] = lines[lines.length - 1].replace(/[.…]*$/, '') + '…'
       return lines
     }
-
-    const roundBox = (x: number, top: number, w: number, h: number, fill: string, stroke: string, radius = 30) => {
-      ctx.fillStyle = fill
-      ctx.strokeStyle = stroke
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      ctx.roundRect(x, top, w, h, radius)
-      ctx.fill()
-      ctx.stroke()
+    const drawCenteredLines = (lines: string[], firstBaseline: number, lineHeight: number, font: string, color: string) => {
+      ctx.save(); ctx.textAlign = 'center'; ctx.font = font; ctx.fillStyle = color
+      lines.forEach((line, index) => ctx.fillText(line, 540, firstBaseline + index * lineHeight))
+      ctx.restore()
     }
 
-    let y = 210
-    const question = item.text || 'Anonymous message'
-    const questionLines = wrap(question, 850, '800 48px Arial').slice(0, 6)
-    const qHeight = Math.max(230, 105 + questionLines.length * 62)
-    roundBox(60, y, 960, qHeight, card, gamer ? 'rgba(183,255,54,.28)' : 'rgba(255,255,255,.13)')
+    // Clean brand header — no slogan, no "Vive la Résistance".
+    ctx.textAlign = 'center'
+    ctx.fillStyle = colors.panel
+    ctx.beginPath(); ctx.arc(540, 148, 29, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = colors.accent
+    ctx.font = '800 20px Arial'
+    ctx.fillText('F', 540, 155)
+    ctx.fillStyle = colors.panel
+    ctx.font = '800 18px Arial'
+    ctx.letterSpacing = '3px'
+    ctx.fillText("FOWZAN'S INBOX", 540, 224)
+    ctx.font = '600 12px Arial'
+    ctx.fillStyle = colors.muted
+    ctx.letterSpacing = '2px'
+    ctx.fillText(kind === 'home' ? 'ANONYMOUS MESSAGES' : 'ANONYMOUS MESSAGE', 540, 252)
+    ctx.letterSpacing = '0px'
 
-    ctx.fillStyle = accent
-    ctx.font = '800 16px Arial'
-    ctx.fillText('QUESTION', 100, y + 50)
-    ctx.fillStyle = ink
-    ctx.font = '800 48px Arial'
-    questionLines.forEach((line, i) => ctx.fillText(line, 100, y + 112 + i * 62))
-    y += qHeight + 34
+    if (kind === 'home') {
+      rounded(70, 570, 940, 760, colors.panel, colors.line, 52, true)
+      ctx.textAlign = 'center'; ctx.fillStyle = colors.accent; ctx.font = '800 14px Arial'; ctx.letterSpacing = '2px'; ctx.fillText('LEAVE SOMETHING ANONYMOUS', 540, 670); ctx.letterSpacing = '0px'
+      ctx.fillStyle = colors.ink; ctx.font = isGamer ? '800 66px Arial' : '500 70px Georgia'; ctx.fillText('Say what you want.', 540, 820)
+      ctx.fillStyle = colors.muted; ctx.font = isGamer ? '500 27px Arial' : '400 29px Georgia'
+      drawCenteredLines(wrap('Ask a question, leave a thought, or just say what you want to say.', 760, isGamer ? '500 27px Arial' : '400 29px Georgia', 4), 925, 46, isGamer ? '500 27px Arial' : '400 29px Georgia', colors.muted)
+      ctx.fillStyle = colors.accent; ctx.font = '800 13px Arial'; ctx.letterSpacing = '1.5px'; ctx.fillText('YOUR NAME STAYS HIDDEN', 540, 1140); ctx.letterSpacing = '0px'
+    } else {
+      const question = item.text?.trim() || 'Anonymous message'
+      const reply = item.replies?.find((entry) => entry.text?.trim()) ?? item.replies?.[0]
+      const qFont = isGamer ? '800 48px Arial' : '500 50px Georgia'
+      const aFont = isGamer ? '500 34px Arial' : '400 35px Georgia'
+      const qLines = wrap(question, 770, qFont, 7)
+      const aLines = reply ? wrap(reply.text?.trim() || 'A reply to this message.', 690, aFont, 5) : []
 
-    // Replies are displayed as a clean conversation, preserving the thread context.
-    for (const reply of thread.slice(0, 10)) {
-      const label = reply.author || 'Anonymous'
-      const lines = wrap(reply.text || 'Media reply', 790, '500 30px Arial').slice(0, 4)
-      const h = Math.max(112, 72 + lines.length * 42)
-      if (y + h > 1540) break
-      roundBox(92, y, 896, h, 'rgba(255,255,255,.035)', gamer ? 'rgba(183,255,54,.13)' : 'rgba(255,255,255,.08)', 24)
-      ctx.fillStyle = reply.author === 'Fowzan' ? accent : muted
-      ctx.font = '800 15px Arial'
-      ctx.fillText(label.toUpperCase(), 126, y + 34)
-      ctx.fillStyle = ink
-      ctx.font = '500 30px Arial'
-      lines.forEach((line, i) => ctx.fillText(line, 126, y + 76 + i * 42))
-      y += h + 16
+      const qH = Math.max(390, 220 + qLines.length * 68)
+      const aH = reply ? Math.max(285, 170 + aLines.length * 52) : 245
+      const totalH = qH + 44 + aH
+      const groupTop = Math.max(430, Math.min(610, 1030 - totalH / 2))
+
+      // Question: large, unmistakably separate NGL/Tellonym-style message card.
+      rounded(58, groupTop, 964, qH, colors.panel, colors.line, 52, true)
+      ctx.textAlign = 'center'
+      ctx.fillStyle = colors.accent; ctx.font = '800 14px Arial'; ctx.letterSpacing = '2px'; ctx.fillText('ANONYMOUS QUESTION', 540, groupTop + 74); ctx.letterSpacing = '0px'
+      drawCenteredLines(qLines, groupTop + 170, 68, qFont, colors.ink)
+
+      // Reply: a smaller, visually different card beneath the question.
+      const answerTop = groupTop + qH + 44
+      rounded(112, answerTop, 856, aH, colors.panel2, colors.line, 40, true)
+      ctx.textAlign = 'center'
+      ctx.fillStyle = colors.accent; ctx.font = '800 13px Arial'; ctx.letterSpacing = '2px'; ctx.fillText((reply?.author || 'FOWZAN').toUpperCase(), 540, answerTop + 58); ctx.letterSpacing = '0px'
+      if (reply) drawCenteredLines(aLines, answerTop + 125, 52, aFont, colors.ink)
+      else { ctx.fillStyle = colors.muted; ctx.font = '400 27px Georgia'; ctx.fillText('No reply yet.', 540, answerTop + 135) }
     }
 
-    if (shareCaption.trim()) {
-      const captionLines = wrap(shareCaption.trim(), 790, '500 25px Arial').slice(0, 4)
-      const top = Math.min(y + 8, 1570)
-      const h = 72 + captionLines.length * 35
-      roundBox(92, top, 896, h, 'rgba(255,255,255,.025)', gamer ? 'rgba(183,255,54,.15)' : 'rgba(255,255,255,.08)', 24)
-      ctx.fillStyle = muted
-      ctx.font = '800 14px Arial'
-      ctx.fillText('YOUR CAPTION', 126, top + 32)
-      ctx.fillStyle = ink
-      ctx.font = '500 25px Arial'
-      captionLines.forEach((line, i) => ctx.fillText(line, 126, top + 67 + i * 35))
-    }
-
-    ctx.fillStyle = muted
-    ctx.font = '600 17px Arial'
-    ctx.fillText("fowzan's inbox", 72, 1840)
-    ctx.textAlign = 'right'
-    ctx.fillText(`${thread.length} ${thread.length === 1 ? 'reply' : 'replies'} · fowzans-inbox`, 1008, 1840)
-    ctx.textAlign = 'left'
-
-    return new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Could not export image.')), 'image/png', .96))
+    // Footer stays deliberately small, like NGL/Tellonym branding rather than a giant UI footer.
+    ctx.textAlign = 'center'
+    ctx.fillStyle = colors.panel
+    ctx.font = '700 14px Arial'
+    ctx.fillText('fowzans-inbox', 540, 1745)
+    ctx.fillStyle = colors.muted
+    ctx.font = '500 12px Arial'
+    ctx.fillText(kind === 'home' ? 'send an anonymous message' : 'shared anonymously', 540, 1772)
+    return canvas.toDataURL('image/png')
   }
 
-  async function shareThread(item: Thought | PublicResponse) {
-    openShareOptions(item)
-  }
-
-  async function shareCardNow() {
-    if (!shareCard || shareBusy) return
+  async function shareStoryImage(item: Thought | PublicResponse, kind: 'thread' | 'home' = 'thread') {
+    if (shareBusy) return
     setShareBusy(true)
     setShareError('')
     try {
-      const blob = await buildShareImage(shareCard)
-      const file = new File([blob], `fowzan-story-${shareCard.id}.png`, { type: 'image/png' })
-      const url = `${window.location.origin}/thread/${shareCard.id}`
-      const caption = shareCaption.trim()
+      // Everything before navigator.share is synchronous, preserving the browser's user gesture.
+      const dataUrl = buildShareImageDataUrl(item, kind)
+      const file = dataUrlToFile(dataUrl, kind === 'home' ? 'fowzans-inbox-story.png' : `fowzan-story-${item.id}.png`)
       const canShareFile = typeof navigator.share === 'function' && (
-        typeof navigator.canShare !== 'function' || navigator.canShare({ files: [file] })
+        typeof navigator.canShare !== 'function' || (() => { try { return navigator.canShare({ files: [file] }) } catch { return false } })()
       )
-
-      // Web Share Level 2 is the browser-supported route for handing the generated
-      // image to installed apps such as Instagram and WhatsApp. The OS decides which
-      // apps appear in the share sheet; a website cannot force a specific app/story target.
       if (canShareFile) {
-        await navigator.share({
-          title: "Vive la Résistance · Fowzan's Inbox",
-          files: [file],
-        })
-        setCopied(true)
-        window.setTimeout(() => setCopied(false), 1800)
+        await navigator.share({ title: "Fowzan's Inbox", files: [file] })
         return
       }
-
-      // Best-effort fallback for browsers without image-file sharing.
-      const downloadUrl = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = file.name
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000)
-      try { await navigator.clipboard.writeText(`${caption ? `${caption}\n\n` : ''}${url}`) } catch {}
-      setShareError('Your browser cannot send images directly to apps. The story image was saved — open Instagram Stories or WhatsApp Status and add the image.')
+      downloadStoryFile(file)
+      setShareError('Your story image is saved. Open Instagram Stories or WhatsApp Status and choose the saved image.')
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
-      setShareError('Sharing was blocked by the browser. Try the share button again, or save the story image and add it to Instagram Stories / WhatsApp Status.')
+      try {
+        const dataUrl = buildShareImageDataUrl(item, kind)
+        downloadStoryFile(dataUrlToFile(dataUrl, kind === 'home' ? 'fowzans-inbox-story.png' : `fowzan-story-${item.id}.png`))
+      } catch {}
+      setShareError('Chrome blocked the share sheet, so the finished 9:16 story was saved instead. You can add it directly in Instagram or WhatsApp.')
     } finally {
       setShareBusy(false)
     }
+  }
+
+  async function shareHomeStory() {
+    await shareStoryImage({ id: 0, text: 'Leave Fowzan an anonymous message.', senderName: null, time: new Date().toISOString(), kept: false, replies: [], upvotes: 0 }, 'home')
+  }
+
+  async function shareThread(item: Thought | PublicResponse) {
+    // Thread sharing is link-only: never attach the question text to the share payload.
+    const url = `${window.location.origin}/thread/${item.id}`
+    try {
+      if (navigator.share) await navigator.share({ title: "A thread from Fowzan's Inbox", url })
+      else { await navigator.clipboard.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      try { await navigator.clipboard.writeText(url) } catch {}
+    }
+  }
+
+  function dataUrlToFile(dataUrl: string, filename: string) {
+    const [header, base64] = dataUrl.split(',')
+    const mime = header.match(/data:(.*?);base64/)?.[1] ?? 'image/png'
+    const bytes = atob(base64)
+    const buffer = new Uint8Array(bytes.length)
+    for (let i = 0; i < bytes.length; i++) buffer[i] = bytes.charCodeAt(i)
+    return new File([buffer], filename, { type: mime })
+  }
+
+  function downloadStoryFile(file: File) {
+    const url = URL.createObjectURL(file)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = file.name
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   function downloadInbox() {
@@ -788,12 +825,16 @@ export default function Page() {
     URL.revokeObjectURL(url)
   }
 
-  async function toggleNotifications() {
+  async function requestNotificationPermission() {
     if (!('Notification' in window)) { setError('This browser does not support notifications.'); return }
-    if (Notification.permission === 'denied') { setError('Notifications are blocked in your browser settings.'); return }
+    if (Notification.permission === 'denied') { setError('Notifications are blocked in Chrome. Allow them for this site in the address-bar/site settings, then try again.'); return }
     const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission()
     setNotificationsEnabled(permission === 'granted')
-    if (permission !== 'granted') setError('Notification permission was not granted.')
+    if (permission !== 'granted') setError('Notification permission was not granted. You can enable it from the bell button anytime.')
+  }
+
+  async function toggleNotifications() {
+    await requestNotificationPermission()
   }
 
   function getVoterKey() {
@@ -843,7 +884,7 @@ export default function Page() {
       const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) })
       const type = response.headers.get('content-type') ?? ''; const data = type.includes('application/json') ? await response.json() : { error: await response.text() }
       if (!response.ok) throw new Error(data.error ?? 'Invalid password.')
-      setOwnerUnlocked(true); setPassword(''); void loadOwner()
+      setOwnerUnlocked(true); setPassword(''); void loadOwner(); if ('Notification' in window && Notification.permission === 'default') setNotificationPromptOpen(true)
     } catch (err) { setLoginError(err instanceof Error ? err.message : 'Unable to sign in.') }
   }
 
@@ -882,7 +923,12 @@ export default function Page() {
       <div className="ambient-orb orb-a" /><div className="ambient-orb orb-c" />
       <header className="topbar admin-topbar">
         <button className="brand wordmark" onClick={() => setView('public')}><Mail size={16} /> FOWZAN&apos;S INBOX</button>
-        <div className="top-actions"><button className="ghost-button" onClick={() => setShowKeeps(!showKeeps)} aria-label={showKeeps ? 'Show all threads' : 'Show keepsakes'} title={showKeeps ? 'Show all threads' : 'Show keepsakes'}><Star size={14} fill={showKeeps ? 'currentColor' : 'none'} /><span className="action-label">{showKeeps ? 'all threads' : 'keepsakes'}</span></button><button className="ghost-button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={14} /><span className="action-label">sign out</span></button></div>
+        <div className="top-actions">
+          <button className="ghost-button admin-appearance-button" onClick={() => setAppearanceOpen(true)} aria-label="Change appearance" title="Change appearance">{experience === 'gamer' ? <Gamepad2 size={14} /> : <PenLine size={14} />}<span className="action-label">{experience === 'professional' ? 'minimal' : 'gamer'}</span></button>
+          <button className="ghost-button admin-theme-button" onClick={() => { const colors = experience === 'gamer' ? ['purple','red','green','rose','blue','white'] : ['rose','blue','purple','mono']; const index = colors.indexOf(theme); const next = colors[(index + 1) % colors.length] as typeof theme; handleAppearanceChange(experience || 'professional', next) }} aria-label={`Change color theme. Current color: ${theme}`} title={`Change color theme: ${theme}`}><Palette size={14} /><span className="action-label">{theme}</span></button>
+          <button className="ghost-button" onClick={() => setShowKeeps(!showKeeps)} aria-label={showKeeps ? 'Show all threads' : 'Show keepsakes'} title={showKeeps ? 'Show all threads' : 'Show keepsakes'}><Star size={14} fill={showKeeps ? 'currentColor' : 'none'} /><span className="action-label">{showKeeps ? 'all threads' : 'keepsakes'}</span></button>
+          <button className="ghost-button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={14} /><span className="action-label">sign out</span></button>
+        </div>
       </header>
 
       <section className="admin-hero page-width">
@@ -939,7 +985,7 @@ export default function Page() {
 
         <section className="conversation-shell">
           {!selected ? <div className="conversation-empty"><div className="empty-icon"><MessageCircle size={23} /></div><h2>Choose a conversation</h2><p>Select a message from the left to open its thread.</p></div> : <div className="conversation-card">
-            <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {selected.upvotes ?? 0} votes · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => shareThread(selected)} title="Share this thread" aria-label="Share this thread">{copied ? <Check size={15} /> : <Share2 size={15} />}</button><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`} aria-label="Delete thread" title="Delete thread"><Trash2 size={14} /> <span className="action-label">{deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</span></button></div></div>
+            <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {selected.upvotes ?? 0} votes · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => shareThread(selected)} title="Share thread link" aria-label="Share thread link">{copied ? <Check size={15} /> : <Share2 size={15} />}</button><button className="icon-action" onClick={() => shareStoryImage(selected)} title="Create and share story" aria-label="Create and share story">{shareBusy ? <Loader2 size={15} className="spin" /> : <ImageIcon size={15} />}</button><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`} aria-label="Delete thread" title="Delete thread"><Trash2 size={14} /> <span className="action-label">{deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</span></button></div></div>
             <div className="conversation-scroll">
               <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div>{selected.mediaData && (selected.mediaType === "image" ? <img className="message-media-image" src={selected.mediaData} alt="Attachment" /> : <><audio className="message-media-audio" controls preload="metadata" src={selected.mediaData} />{selected.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{selected.mediaTranscript}</div>}</>)}{selected.text && <p>{selected.text}</p>}</article>
               {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author === 'Fowzan' ? 'Fowzan' : reply.author}</span><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="bubble-actions"><button className={`bubble-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={11} /> {reply.upvotes ?? 0}</button><button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`} title="Remove only this reply" aria-label="Remove only this reply"><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'remove reply'}</button></div></article>)}
@@ -950,6 +996,7 @@ export default function Page() {
       </section>
 
       <section className="queue-section page-width"><div className="queue-head"><div><div className="eyebrow"><PenLine size={13} /> quick reply queue</div><h2>Threads waiting on you.</h2></div><span>{waitingCount} waiting</span></div><div className="queue-grid">{thoughts.filter((item) => item.replies.length === 0).map((item) => <button key={item.id} className="queue-item" onClick={() => openThought(item)}><span>{item.senderName || 'Anonymous'}</span><p>{item.text}</p><b><MessageCircle size={13} /> <span className="action-label">reply</span><ChevronRight size={13} /></b></button>)}{waitingCount === 0 && <div className="queue-clear"><Check size={17} /> You're all caught up.</div>}</div></section>
+      {notificationPromptOpen && <div className="notification-prompt-backdrop" role="dialog" aria-modal="true" aria-label="Enable inbox notifications"><div className="notification-prompt"><div className="notification-prompt-icon"><BellRing size={20} /></div><div><span className="eyebrow">OWNER ALERTS</span><h2>Never miss a message.</h2><p>Allow browser notifications and Fowzan&apos;s Inbox can alert you when new messages arrive while the inbox is open.</p></div><div className="notification-prompt-actions"><button className="secondary-button" onClick={() => setNotificationPromptOpen(false)}>not now</button><button className="primary-button" onClick={async () => { await requestNotificationPermission(); setNotificationPromptOpen(false) }}>Allow notifications <BellRing size={15} /></button></div></div></div>}
     </main>
   )
 
@@ -960,10 +1007,9 @@ export default function Page() {
       <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><button className="appearance-button" onClick={() => setAppearanceOpen(true)} aria-label={experience === "gamer" ? "Gamer mode" : experience === "professional" ? "Minimal mode" : "Choose appearance"} title={experience === "gamer" ? "Gamer mode" : experience === "professional" ? "Minimal mode" : "Choose appearance"}>{experience === "gamer" ? <Gamepad2 size={17} /> : experience === "professional" ? <PenLine size={17} /> : <SlidersHorizontal size={17} />}<span>{experience === "professional" ? "Minimal" : experience ? "Gamer" : "Appearance"}</span></button>{experience && <button className="theme-picker" type="button" title={`Color: ${theme}. Tap to change`} aria-label={`Change color theme. Current color: ${theme}`} onClick={() => { const colors = experience === "gamer" ? ["purple","red","green","rose","blue","white"] : ["rose","blue","purple","mono"]; const index = colors.indexOf(theme); const next = colors[(index + 1) % colors.length] as typeof theme; handleAppearanceChange(experience, next) }}><Palette size={22} /><span className="sr-only">Change color</span></button>}<button className="private-button" onClick={() => setView('private')} aria-label="Open private inbox" title="Private inbox"><LockKeyhole size={15} /><span>private inbox</span></button></div></header>
 
       <section className="public-hero page-width">
-        <div className="hero-badge"><span /> Vive la Résistance</div>
         <h1>SEND<br />FOWZAN<br /><em className="hero-message-line">A<span className="hero-message-gap">&nbsp;</span>MESSAGE</em></h1>
         <p className="hero-lead">Say whatever you want to say. Ask a question, leave a thought, or just check in. Your name stays hidden unless you choose to add it.</p>
-        <div className="hero-actions"><a href="#leave-message" className="primary-button"><PenLine size={16} /><span>send a message</span><ChevronRight size={17} /></a><a href="#chat-board" className="secondary-button chat-board-hero-button" aria-label="Visit Reply Board" title="Visit Reply Board"><MessageCircle size={16} /><span>Visit Reply Board</span><ChevronRight size={17} /></a><button className="secondary-button" onClick={sharePage} aria-label={copied ? 'Link copied' : "Share Fowzan's inbox"} title={copied ? 'Link copied' : "Share Fowzan's inbox"}>{copied ? <Check size={15} /> : <Share2 size={15} />}<span>{copied ? 'link copied' : "share Fowzan's inbox"}</span></button></div>
+        <div className="hero-actions"><a href="#leave-message" className="primary-button"><PenLine size={16} /><span>send a message</span><ChevronRight size={17} /></a><a href="#chat-board" className="secondary-button chat-board-hero-button" aria-label="Visit Reply Board" title="Visit Reply Board"><MessageCircle size={16} /><span>Visit Reply Board</span><ChevronRight size={17} /></a><button className="secondary-button" onClick={shareHomeStory} aria-label="Share Fowzan's inbox" title="Share Fowzan's inbox"><Share2 size={15} /><span>share Fowzan's inbox</span></button></div>
       </section>
 
       <section id="leave-message" className="composer-section page-width"><div className="section-intro"><div className="eyebrow"><PenLine size={13} /> MESSAGE FOWZAN</div><h2>WHAT DO YOU<br /><span>WANT TO SEND?</span></h2></div>
@@ -1022,7 +1068,7 @@ export default function Page() {
             ))}
           </div>
         )}
-        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><div className="thread-main-message">{response.mediaData && (response.mediaType === "image" ? <img className="message-media-image" src={response.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="message-media-audio" controls preload="metadata" src={response.mediaData} />{response.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{response.mediaTranscript}</div>}</>)}{response.text && <h3>{response.text}</h3>}</div>{response.replies.length > 0 && <div className="public-replies"><div className="replies-label"><span>CONVERSATION</span><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span></div>{response.replies.map((reply) => <div className="public-reply" key={reply.id}><div className="public-reply-head"><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="public-reply-actions"><button className={`reply-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={12} /> {reply.upvotes ?? 0}</button></div></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'} · {response.upvotes ?? 0} thread votes</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareThread(response)} aria-label="Share thread" title="Share thread"><Share2 size={14} /> <span className="action-label">share</span></button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)} aria-label="Join thread" title="Join thread"><MessageCircle size={14} /> <span className="action-label">join thread</span></button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()} aria-label="Send reply" title="Send reply"><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><Search size={20} /><strong>{publicSearch ? 'No conversations found.' : 'Fowzan has not replied yet.'}</strong><span>{publicSearch ? 'Try another word or search the replies too.' : 'Come back soon to see messages Fowzan chooses to answer.'}</span></div>}</div>}</section>
+        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><div className="thread-main-message">{response.mediaData && (response.mediaType === "image" ? <img className="message-media-image" src={response.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="message-media-audio" controls preload="metadata" src={response.mediaData} />{response.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{response.mediaTranscript}</div>}</>)}{response.text && <h3>{response.text}</h3>}</div>{response.replies.length > 0 && <div className="public-replies"><div className="replies-label"><span>CONVERSATION</span><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span></div>{response.replies.map((reply) => <div className="public-reply" key={reply.id}><div className="public-reply-head"><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="public-reply-actions"><button className={`reply-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={12} /> {reply.upvotes ?? 0}</button></div></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'} · {response.upvotes ?? 0} thread votes</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareThreadLink(response)} aria-label="Share thread" title="Share thread"><Share2 size={14} /> <span className="action-label">share</span></button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)} aria-label="Join thread" title="Join thread"><MessageCircle size={14} /> <span className="action-label">join thread</span></button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()} aria-label="Send reply" title="Send reply"><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><Search size={20} /><strong>{publicSearch ? 'No conversations found.' : 'Fowzan has not replied yet.'}</strong><span>{publicSearch ? 'Try another word or search the replies too.' : 'Come back soon to see messages Fowzan chooses to answer.'}</span></div>}</div>}</section>
 
       <footer className="site-footer page-width">
         <div className="site-footer-brand">FOWZAN&apos;S INBOX</div>
@@ -1030,8 +1076,7 @@ export default function Page() {
         <div className="site-footer-meta"><span>ANONYMOUS BY DEFAULT</span><span>© {new Date().getFullYear()} FOWZAN</span></div>
       </footer>
       {(showOnboarding || appearanceOpen) && <div className="appearance-overlay" role="dialog" aria-modal="true" aria-label="Choose appearance"><div className="appearance-modal"><button className="appearance-close" onClick={() => { if (!showOnboarding) setAppearanceOpen(false) }} aria-label="Close"><X size={17} /></button><div className="eyebrow"><Sparkles size={13} /> CHOOSE YOUR MODE</div><h2>{showOnboarding ? "Make it yours." : "Appearance"}</h2><p>{showOnboarding ? "Pick the vibe and color you want. We'll remember it when you come back." : "Switch between the two looks whenever you want."}</p><div className="experience-grid"><button className={`experience-card ${experience === 'gamer' ? 'active' : ''}`} onClick={() => { const nextTheme = ['purple','red','green','rose','blue','white'].includes(theme) ? theme : 'purple'; setExperience('gamer'); setTheme(nextTheme as typeof theme) }}><div className="experience-preview gamer-preview"><span>0101</span><i /><b>FOWZAN</b></div><strong>🎮 Gamer</strong><small>Matrix rain · cyber · neon</small></button><button className={`experience-card ${experience === 'professional' ? 'active' : ''}`} onClick={() => { const nextTheme = ['rose','blue','purple','mono'].includes(theme) ? theme : 'blue'; setExperience('professional'); setTheme(nextTheme as typeof theme) }}><div className="experience-preview professional-preview"><span>F</span><b>FOWZAN&apos;S INBOX</b></div><strong><PenLine size={15} strokeWidth={2} /> Minimal</strong><small>Elegant · focused · refined</small></button></div><div className="accent-heading">Choose a color</div><div className="accent-grid">{(experience === 'gamer' ? ['purple','red','green','rose','blue','white'] : ['rose','blue','purple','mono']).map((accent) => <button key={accent} className={`accent-choice ${theme === accent ? 'active' : ''} accent-${accent}`} onClick={() => setTheme(accent as typeof theme)} aria-label={`${accent} accent`}><span /></button>)}</div><div className="appearance-actions"><button className="primary-button" disabled={!experience} onClick={() => { if (!experience) return; chooseAppearance(experience, theme); setShowOnboarding(false); setAppearanceOpen(false) }}>{showOnboarding ? "Continue" : "Save appearance"}<ChevronRight size={16} /></button></div></div></div>}
-      {shareMenu && <div className="share-choice-backdrop" onClick={() => setShareMenu(null)}><div className="share-choice" role="dialog" aria-modal="true" aria-label="Share options" onClick={(e) => e.stopPropagation()}><div className="share-choice-head"><div><span className="eyebrow"><Share2 size={12} /> SHARE</span><strong>How do you want to share it?</strong></div><button onClick={() => setShareMenu(null)} aria-label="Close"><X size={15} /></button></div><button className="share-choice-item" onClick={() => shareThreadLink(shareMenu)}><span className="share-choice-icon"><Share2 size={17} /></span><span><b>Share thread</b><small>Share the conversation link.</small></span><ChevronRight size={15} /></button><button className="share-choice-item story-choice" onClick={() => openShareCard(shareMenu)}><span className="share-choice-icon"><ImageIcon size={17} /></span><span><b>Share to Story</b><small>Create a 9:16 story card for Instagram / WhatsApp.</small></span><ChevronRight size={15} /></button></div></div>}
-      {shareCard && <div className="share-choice-backdrop" onClick={() => !shareBusy && setShareCard(null)}><article className="story-composer" role="dialog" aria-modal="true" aria-label="Create story" onClick={(e) => e.stopPropagation()}><div className="share-choice-head"><div><span className="eyebrow"><ImageIcon size={12} /> STORY</span><strong>Ready to share.</strong></div><button onClick={() => setShareCard(null)} aria-label="Close" disabled={shareBusy}><X size={15} /></button></div><div className="story-mini-preview"><div className="story-mini-kicker">Vive la Résistance</div><div className="story-mini-question">{shareCard.text || 'Anonymous message'}</div>{shareCard.replies.length > 0 && <div className="story-mini-reply">{shareCard.replies[0].author}: {shareCard.replies[0].text || 'Media reply'}</div>}<div className="story-mini-brand">FOWZAN&apos;S INBOX</div></div><label className="share-caption-label">caption<input value={shareCaption} onChange={(e) => setShareCaption(e.target.value)} placeholder="Add a caption…" maxLength={180} /></label>{shareError && <div className="share-error" role="status">{shareError}</div>}<div className="story-share-note"><span>9:16</span><span>Instagram Stories</span><span>WhatsApp Status</span></div><div className="share-composer-actions"><button className="secondary-button" onClick={() => setShareCard(null)} disabled={shareBusy}>cancel</button><button className="primary-button" onClick={shareCardNow} disabled={shareBusy}>{shareBusy ? <Loader2 size={15} className="spin" /> : <Share2 size={15} />}<span>{shareBusy ? 'creating…' : 'Share Story'}</span></button></div></article></div>}
+      {shareError && <div className="share-toast" role="status">{shareError}<button onClick={() => setShareError('')} aria-label="Dismiss notification"><X size={14} /></button></div>}
     </main>
   )
 }

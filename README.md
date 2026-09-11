@@ -139,3 +139,8 @@ That's what open source is for.
 Thanks for checking out the project.
 
 **— Fowzan Kar**
+
+
+## Story sharing
+
+The private/admin inbox includes a Story sharing option for questions and answered threads. It creates a 9:16 image and uses the phone browser's native image-sharing sheet when supported. Instagram and WhatsApp decide which destinations they expose; a normal website cannot force a specific app's Story/Status composer.
