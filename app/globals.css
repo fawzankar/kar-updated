@@ -5510,3 +5510,137 @@ html, body { max-width:100%; overflow-x:hidden; }
 .app-page[data-mode='professional'] .hero-actions .secondary-button:last-child {
   display: inline-flex !important;
 }
+
+/* Final polish: calmer, more cinematic Matrix background without the scrambling wall-of-text effect. */
+.app-page[data-mode='gamer'] .cyber-bg {
+  opacity: .78 !important;
+  background:
+    radial-gradient(circle at 16% 18%, rgba(var(--signal-rgb), .13), transparent 28%),
+    radial-gradient(circle at 82% 62%, rgba(var(--flare-rgb), .10), transparent 32%),
+    linear-gradient(180deg, rgba(2,8,7,.96) 0%, rgba(2,12,10,.82) 48%, rgba(1,6,8,.98) 100%) !important;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 8%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 8%, #000 88%, transparent 100%);
+}
+.app-page[data-mode='gamer'] .cyber-bg::after {
+  opacity: .16 !important;
+  background:
+    linear-gradient(115deg, transparent 0 18%, rgba(var(--signal-rgb),.08) 18.1% 18.25%, transparent 18.35% 100%),
+    repeating-linear-gradient(0deg, transparent 0 72px, rgba(var(--signal-rgb),.035) 73px 74px) !important;
+}
+.app-page[data-mode='gamer'] .cyber-bg b {
+  font-size: 11px !important;
+  letter-spacing: .12em !important;
+  line-height: 1.28 !important;
+  opacity: .34 !important;
+  filter: blur(.05px) !important;
+  text-shadow: 0 0 7px rgba(var(--signal-rgb), .65), 0 0 18px rgba(var(--signal-rgb), .18) !important;
+  animation-duration: 17s !important;
+}
+.app-page[data-mode='gamer'] .cyber-bg b:nth-of-type(3n) { opacity: .48 !important; }
+.app-page[data-mode='gamer'] .cyber-bg b:nth-of-type(5n) { opacity: .20 !important; }
+.app-page[data-mode='gamer'] .cyber-bg b span { height: 1.22em !important; }
+.app-page[data-mode='gamer'] .cyber-bg b span:first-child { color: #effff6 !important; text-shadow: 0 0 8px #effff6, 0 0 20px var(--signal) !important; }
+.app-page[data-mode='gamer'] .space-stars { opacity: .34 !important; }
+.app-page[data-mode='gamer'] .asteroid-field { opacity: .16 !important; }
+.app-page[data-mode='gamer'] .particle-field { opacity: .28 !important; }
+
+/* Professional composer: editorial, airy, intentionally different from Gamer. */
+.app-page[data-mode='professional'] .message-composer {
+  border-radius: 28px !important;
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--border)) !important;
+  background: linear-gradient(145deg, rgba(255,255,255,.94), rgba(247,244,238,.78)) !important;
+  box-shadow: 0 24px 70px rgba(31,25,20,.08) !important;
+  padding: clamp(22px, 4vw, 42px) !important;
+}
+.app-page[data-mode='professional'] .message-composer .eyebrow {
+  letter-spacing: .18em !important;
+  font-size: 10px !important;
+}
+.app-page[data-mode='professional'] .message-composer textarea {
+  min-height: 190px !important;
+  border: 0 !important;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 28px 4px !important;
+  font-family: var(--font-serif-custom), Georgia, serif !important;
+  font-size: clamp(1.35rem, 2.6vw, 2rem) !important;
+  line-height: 1.45 !important;
+  letter-spacing: -.02em !important;
+}
+.app-page[data-mode='professional'] .message-composer textarea::placeholder { color: color-mix(in srgb, var(--foreground) 42%, transparent) !important; }
+.app-page[data-mode='professional'] .send-button {
+  width: auto !important;
+  min-width: 190px !important;
+  align-self: flex-end !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+.app-page[data-mode='professional'] .composer-media-tools { border-top: 0 !important; }
+.app-page[data-mode='professional'] .media-tool { border-radius: 999px !important; background: rgba(255,255,255,.62) !important; }
+
+/* Share chooser should feel native to both appearances. */
+.app-page[data-mode='professional'] .share-choice { border-radius: 24px !important; background: #fbfaf7 !important; box-shadow: 0 28px 90px rgba(40,32,24,.16) !important; }
+.app-page[data-mode='professional'] .share-choice-item { background: rgba(255,255,255,.72) !important; border-radius: 16px !important; }
+.app-page[data-mode='gamer'] .share-choice { background: linear-gradient(145deg, rgba(5,12,15,.98), rgba(9,18,24,.98)) !important; box-shadow: 0 28px 90px rgba(0,0,0,.6), 0 0 40px rgba(var(--signal-rgb),.08) !important; }
+
+/* Performance + visual stability: keep the background atmospheric, not a DOM-heavy animation wall. */
+.app-page[data-mode='gamer'] .cyber-bg,
+.app-page[data-mode='gamer'] .particle-field { contain: strict; }
+.app-page[data-mode='gamer'] .cyber-bg b { will-change: transform; }
+.app-page[data-mode='gamer'] .cyber-bg i,
+.app-page[data-mode='gamer'] .space-stars span,
+.app-page[data-mode='gamer'] .asteroid-field i { will-change: transform, opacity; }
+.app-page[data-mode='gamer'] .cyber-bg,
+.app-page[data-mode='gamer'] .ambient-orb { pointer-events:none; }
+@media (max-width: 800px) {
+  .app-page[data-mode='gamer'] .cyber-bg { opacity:.62 !important; }
+  .app-page[data-mode='gamer'] .cyber-bg b { opacity:.27 !important; font-size:9px !important; }
+  .app-page[data-mode='gamer'] .cyber-bg b:nth-of-type(3n) { opacity:.36 !important; }
+  .app-page[data-mode='gamer'] .particle-field { display:none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-page[data-mode='gamer'] .cyber-bg b,
+  .app-page[data-mode='gamer'] .cyber-bg i,
+  .app-page[data-mode='gamer'] .space-stars span,
+  .app-page[data-mode='gamer'] .asteroid-field i { animation:none !important; }
+}
+
+/* Minimal/Professional reply board: an editorial conversation layout rather than a clone of the composer. */
+.app-page[data-mode='professional'] .public-thread {
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: clamp(22px, 4vw, 36px) 0 !important;
+}
+.app-page[data-mode='professional'] .public-thread:last-child { border-bottom: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent) !important; }
+.app-page[data-mode='professional'] .public-thread .thread-main-message h3 {
+  max-width: 780px !important;
+  font-family: var(--font-serif-custom), Georgia, serif !important;
+  font-size: clamp(1.45rem, 3vw, 2.2rem) !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -.025em !important;
+}
+.app-page[data-mode='professional'] .public-replies {
+  margin-top: 24px !important;
+  margin-left: clamp(12px, 5vw, 68px) !important;
+  border-left: 1px solid color-mix(in srgb, var(--primary) 24%, transparent) !important;
+  padding-left: clamp(16px, 3vw, 28px) !important;
+}
+.app-page[data-mode='professional'] .public-reply {
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent) !important;
+  padding: 16px 0 !important;
+}
+.app-page[data-mode='professional'] .public-thread-foot { margin-top: 20px !important; }
+
+/* Avoid expensive off-screen rendering on long public pages while keeping content accessible. */
+.public-page .prompt-section,
+.public-page .public-threads,
+.public-page .site-footer { content-visibility:auto; contain-intrinsic-size: 420px; }
