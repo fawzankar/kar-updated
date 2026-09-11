@@ -627,10 +627,10 @@ export default function Page() {
       mono: { bg1: '#dedbd4', bg2: '#f8f7f3', panel: '#ffffff', panel2: '#f0eee9', ink: '#171615', muted: '#716e69', accent: '#292725', accent2: '#55514c', line: 'rgba(30,28,25,.16)', shadow: 'rgba(40,35,28,.17)' },
     }
     const colors = palettes[activeTheme] ?? palettes.blue
+    const inboxUrl = window.location.origin
 
-    // True edge-to-edge 9:16 story canvas. The composition is intentionally
-    // inspired by anonymous-message apps: strong centre card, separate reply card,
-    // tiny branding, generous breathing room and theme-specific atmosphere.
+    // True edge-to-edge 9:16 story canvas. Minimal is editorial; Gamer is a
+    // proper gaming-art treatment with neon geometry, HUD framing and a controller motif.
     const bg = ctx.createLinearGradient(0, 0, 1080, 1920)
     bg.addColorStop(0, colors.bg1)
     bg.addColorStop(.48, colors.bg2)
@@ -647,6 +647,36 @@ export default function Page() {
     }
     glow(170, 250, 520, colors.line)
     glow(930, 1470, 700, colors.line)
+
+    if (isGamer) {
+      // Gaming-art background: perspective grid, scanlines, shards and neon HUD corners.
+      ctx.save()
+      ctx.globalAlpha = 0.18
+      ctx.strokeStyle = colors.accent
+      ctx.lineWidth = 2
+      for (let y = 760; y < 1780; y += 78) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1080, y); ctx.stroke()
+      }
+      for (let x = -540; x <= 1620; x += 120) {
+        ctx.beginPath(); ctx.moveTo(540, 690); ctx.lineTo(x, 1900); ctx.stroke()
+      }
+      ctx.globalAlpha = 0.12
+      for (let y = 120; y < 700; y += 8) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1080, y); ctx.stroke()
+      }
+      ctx.restore()
+      ctx.save()
+      ctx.strokeStyle = colors.accent
+      ctx.lineWidth = 5
+      const corners = [[46,54,170,54,46,178],[1034,54,910,54,1034,178],[46,1866,170,1866,46,1742],[1034,1866,910,1866,1034,1742]]
+      corners.forEach(([x1,y1,x2,y2,x3,y3]) => { ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.moveTo(x1,y1); ctx.lineTo(x3,y3); ctx.stroke() })
+      ctx.restore()
+      // Controller silhouette at the bottom as a restrained gaming signature.
+      ctx.save(); ctx.translate(540, 1635); ctx.strokeStyle = colors.accent; ctx.fillStyle = colors.accent; ctx.lineWidth = 7
+      ctx.beginPath(); ctx.moveTo(-150,55); ctx.bezierCurveTo(-185,35,-175,-55,-120,-72); ctx.bezierCurveTo(-70,-88,-40,-58,0,-58); ctx.bezierCurveTo(40,-58,70,-88,120,-72); ctx.bezierCurveTo(175,-55,185,35,150,55); ctx.bezierCurveTo(122,70,105,20,78,0); ctx.lineTo(-78,0); ctx.bezierCurveTo(-105,20,-122,70,-150,55); ctx.stroke()
+      ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-100,-22); ctx.lineTo(-100,18); ctx.moveTo(-120,-2); ctx.lineTo(-80,-2); ctx.stroke()
+      ctx.beginPath(); ctx.arc(95,-4,9,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(120,18,9,0,Math.PI*2); ctx.stroke(); ctx.restore()
+    }
 
     // Subtle decorative rings / grain-like geometry.
     ctx.strokeStyle = colors.line
@@ -688,30 +718,57 @@ export default function Page() {
       ctx.restore()
     }
 
-    // Clean brand header — no slogan, no "Vive la Résistance".
+    // Clean brand header — no slogan. Gamer gets a compact HUD-style identity.
     ctx.textAlign = 'center'
-    ctx.fillStyle = colors.panel
-    ctx.beginPath(); ctx.arc(540, 148, 29, 0, Math.PI * 2); ctx.fill()
-    ctx.fillStyle = colors.accent
-    ctx.font = '800 20px Arial'
-    ctx.fillText('F', 540, 155)
-    ctx.fillStyle = colors.panel
-    ctx.font = '800 18px Arial'
-    ctx.letterSpacing = '3px'
-    ctx.fillText("FOWZAN'S INBOX", 540, 224)
+    if (isGamer) {
+      ctx.fillStyle = colors.accent
+      ctx.font = '800 13px Arial'
+      ctx.letterSpacing = '3px'
+      ctx.fillText('FOWZAN // INBOX', 540, 128)
+      ctx.font = '800 42px Arial'
+      ctx.letterSpacing = '0px'
+      ctx.fillText('▰', 540, 190)
+      ctx.fillStyle = colors.ink
+      ctx.font = '800 19px Arial'
+      ctx.letterSpacing = '4px'
+      ctx.fillText("FOWZAN'S INBOX", 540, 236)
+      ctx.letterSpacing = '0px'
+    } else {
+      ctx.fillStyle = colors.panel
+      ctx.beginPath(); ctx.arc(540, 148, 29, 0, Math.PI * 2); ctx.fill()
+      ctx.fillStyle = colors.accent
+      ctx.font = '800 20px Arial'
+      ctx.fillText('F', 540, 155)
+      ctx.fillStyle = colors.ink
+      ctx.font = '800 18px Arial'
+      ctx.letterSpacing = '3px'
+      ctx.fillText("FOWZAN'S INBOX", 540, 224)
+      ctx.letterSpacing = '0px'
+    }
     ctx.font = '600 12px Arial'
     ctx.fillStyle = colors.muted
     ctx.letterSpacing = '2px'
-    ctx.fillText(kind === 'home' ? 'ANONYMOUS MESSAGES' : 'ANONYMOUS MESSAGE', 540, 252)
+    ctx.fillText(kind === 'home' ? (isGamer ? 'ANONYMOUS // DROP A MESSAGE' : 'ANONYMOUS MESSAGES') : (isGamer ? 'ANONYMOUS // INCOMING MESSAGE' : 'ANONYMOUS MESSAGE'), 540, isGamer ? 268 : 252)
     ctx.letterSpacing = '0px'
 
     if (kind === 'home') {
-      rounded(70, 570, 940, 760, colors.panel, colors.line, 52, true)
-      ctx.textAlign = 'center'; ctx.fillStyle = colors.accent; ctx.font = '800 14px Arial'; ctx.letterSpacing = '2px'; ctx.fillText('LEAVE SOMETHING ANONYMOUS', 540, 670); ctx.letterSpacing = '0px'
-      ctx.fillStyle = colors.ink; ctx.font = isGamer ? '800 66px Arial' : '500 70px Georgia'; ctx.fillText('Say what you want.', 540, 820)
-      ctx.fillStyle = colors.muted; ctx.font = isGamer ? '500 27px Arial' : '400 29px Georgia'
-      drawCenteredLines(wrap('Ask a question, leave a thought, or just say what you want to say.', 760, isGamer ? '500 27px Arial' : '400 29px Georgia', 4), 925, 46, isGamer ? '500 27px Arial' : '400 29px Georgia', colors.muted)
-      ctx.fillStyle = colors.accent; ctx.font = '800 13px Arial'; ctx.letterSpacing = '1.5px'; ctx.fillText('YOUR NAME STAYS HIDDEN', 540, 1140); ctx.letterSpacing = '0px'
+      const top = 535
+      if (isGamer) {
+        rounded(56, top, 968, 810, 'rgba(8,8,18,.88)', colors.accent, 34, true)
+        ctx.textAlign = 'left'; ctx.fillStyle = colors.accent; ctx.font = '800 14px Arial'; ctx.letterSpacing = '2px'; ctx.fillText('PLAYER INVITE // 001', 100, top + 76); ctx.letterSpacing = '0px'
+        ctx.fillStyle = colors.ink; ctx.font = '900 68px Arial'; ctx.fillText('DROP A', 100, top + 190); ctx.fillText('MESSAGE.', 100, top + 266)
+        ctx.fillStyle = colors.muted; ctx.font = '500 28px Arial'; drawCenteredLines(wrap('Ask anything. Say anything. Your name stays hidden.', 790, '500 28px Arial', 3), top + 370, 46, '500 28px Arial', colors.muted)
+        rounded(100, top + 505, 880, 150, 'rgba(255,255,255,.035)', colors.line, 22, false)
+        ctx.textAlign = 'left'; ctx.fillStyle = colors.accent; ctx.font = '800 12px Arial'; ctx.fillText('INBOX LINK', 132, top + 554)
+        ctx.fillStyle = colors.ink; ctx.font = '600 23px Arial'; ctx.fillText(inboxUrl.replace(/^https?:\/\//, ''), 132, top + 605)
+      } else {
+        rounded(70, top, 940, 810, colors.panel, colors.line, 52, true)
+        ctx.textAlign = 'center'; ctx.fillStyle = colors.accent; ctx.font = '800 14px Arial'; ctx.letterSpacing = '2px'; ctx.fillText('LEAVE SOMETHING ANONYMOUS', 540, top + 100); ctx.letterSpacing = '0px'
+        ctx.fillStyle = colors.ink; ctx.font = '500 70px Georgia'; ctx.fillText('Say what you want.', 540, top + 250)
+        drawCenteredLines(wrap('Ask a question, leave a thought, or just say what you want to say.', 760, '400 29px Georgia', 4), top + 360, 46, '400 29px Georgia', colors.muted)
+        ctx.fillStyle = colors.accent; ctx.font = '800 13px Arial'; ctx.letterSpacing = '1.5px'; ctx.fillText('YOUR NAME STAYS HIDDEN', 540, top + 575); ctx.letterSpacing = '0px'
+        ctx.fillStyle = colors.muted; ctx.font = '500 20px Arial'; ctx.fillText(inboxUrl.replace(/^https?:\/\//, ''), 540, top + 690)
+      }
     } else {
       const question = item.text?.trim() || 'Anonymous message'
       const reply = item.replies?.find((entry) => entry.text?.trim()) ?? item.replies?.[0]
@@ -742,12 +799,12 @@ export default function Page() {
 
     // Footer stays deliberately small, like NGL/Tellonym branding rather than a giant UI footer.
     ctx.textAlign = 'center'
-    ctx.fillStyle = colors.panel
-    ctx.font = '700 14px Arial'
-    ctx.fillText('fowzans-inbox', 540, 1745)
+    ctx.fillStyle = colors.ink
+    ctx.font = isGamer ? '800 14px Arial' : '700 14px Arial'
+    ctx.fillText('fowzans-inbox', 540, 1785)
     ctx.fillStyle = colors.muted
     ctx.font = '500 12px Arial'
-    ctx.fillText(kind === 'home' ? 'send an anonymous message' : 'shared anonymously', 540, 1772)
+    ctx.fillText(kind === 'home' ? inboxUrl.replace(/^https?:\/\//, '') : 'shared anonymously', 540, 1812)
     return canvas.toDataURL('image/png')
   }
 
@@ -777,6 +834,17 @@ export default function Page() {
       setShareError('Chrome blocked the share sheet, so the finished 9:16 story was saved instead. You can add it directly in Instagram or WhatsApp.')
     } finally {
       setShareBusy(false)
+    }
+  }
+
+  async function copyInboxLink() {
+    const url = window.location.origin
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setShareError('Could not copy the inbox link. Please copy the address from your browser.')
     }
   }
 
@@ -985,7 +1053,7 @@ export default function Page() {
 
         <section className="conversation-shell">
           {!selected ? <div className="conversation-empty"><div className="empty-icon"><MessageCircle size={23} /></div><h2>Choose a conversation</h2><p>Select a message from the left to open its thread.</p></div> : <div className="conversation-card">
-            <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {selected.upvotes ?? 0} votes · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => shareThread(selected)} title="Share thread link" aria-label="Share thread link">{copied ? <Check size={15} /> : <Share2 size={15} />}</button><button className="icon-action" onClick={() => shareStoryImage(selected)} title="Create and share story" aria-label="Create and share story">{shareBusy ? <Loader2 size={15} className="spin" /> : <ImageIcon size={15} />}</button><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`} aria-label="Delete thread" title="Delete thread"><Trash2 size={14} /> <span className="action-label">{deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</span></button></div></div>
+            <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {selected.upvotes ?? 0} votes · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => shareThread(selected)} title="Share chat link" aria-label="Share chat link">{copied ? <Check size={15} /> : <Share2 size={15} />}</button><button className="icon-action share-chat-action" onClick={() => shareStoryImage(selected)} title="Share chat design" aria-label="Share chat design">{shareBusy ? <Loader2 size={15} className="spin" /> : <MessageCircle size={15} />}</button><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`} aria-label="Delete thread" title="Delete thread"><Trash2 size={14} /> <span className="action-label">{deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</span></button></div></div>
             <div className="conversation-scroll">
               <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div>{selected.mediaData && (selected.mediaType === "image" ? <img className="message-media-image" src={selected.mediaData} alt="Attachment" /> : <><audio className="message-media-audio" controls preload="metadata" src={selected.mediaData} />{selected.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{selected.mediaTranscript}</div>}</>)}{selected.text && <p>{selected.text}</p>}</article>
               {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author === 'Fowzan' ? 'Fowzan' : reply.author}</span><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="bubble-actions"><button className={`bubble-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={11} /> {reply.upvotes ?? 0}</button><button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`} title="Remove only this reply" aria-label="Remove only this reply"><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'remove reply'}</button></div></article>)}
@@ -1009,7 +1077,7 @@ export default function Page() {
       <section className="public-hero page-width">
         <h1>SEND<br />FOWZAN<br /><em className="hero-message-line">A<span className="hero-message-gap">&nbsp;</span>MESSAGE</em></h1>
         <p className="hero-lead">Say whatever you want to say. Ask a question, leave a thought, or just check in. Your name stays hidden unless you choose to add it.</p>
-        <div className="hero-actions"><a href="#leave-message" className="primary-button"><PenLine size={16} /><span>send a message</span><ChevronRight size={17} /></a><a href="#chat-board" className="secondary-button chat-board-hero-button" aria-label="Visit Reply Board" title="Visit Reply Board"><MessageCircle size={16} /><span>Visit Reply Board</span><ChevronRight size={17} /></a><button className="secondary-button" onClick={shareHomeStory} aria-label="Share Fowzan's inbox" title="Share Fowzan's inbox"><Share2 size={15} /><span>share Fowzan's inbox</span></button></div>
+        <div className="hero-actions"><a href="#leave-message" className="primary-button"><PenLine size={16} /><span>send a message</span><ChevronRight size={17} /></a><a href="#chat-board" className="secondary-button chat-board-hero-button" aria-label="Visit Reply Board" title="Visit Reply Board"><MessageCircle size={16} /><span>Visit Reply Board</span><ChevronRight size={17} /></a><button className="secondary-button" onClick={shareHomeStory} aria-label="Share Fowzan's inbox design" title="Share Fowzan's inbox design"><ImageIcon size={15} /><span>share design</span></button><button className="secondary-button" onClick={copyInboxLink} aria-label="Copy inbox link" title="Copy inbox link">{copied ? <Check size={15} /> : <Share2 size={15} />}<span>{copied ? 'link copied' : 'copy inbox link'}</span></button></div>
       </section>
 
       <section id="leave-message" className="composer-section page-width"><div className="section-intro"><div className="eyebrow"><PenLine size={13} /> MESSAGE FOWZAN</div><h2>WHAT DO YOU<br /><span>WANT TO SEND?</span></h2></div>

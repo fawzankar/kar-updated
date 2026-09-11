@@ -5433,3 +5433,22 @@ html, body { max-width:100%; overflow-x:hidden; }
   background: var(--editorial-accent-soft) !important;
   border-color: var(--editorial-accent) !important;
 }
+
+/* ============================================================
+   SHARE / PRIVATE HEADER FINAL POLISH
+   ============================================================ */
+.share-chat-action { color: var(--primary) !important; }
+.share-chat-action:hover { border-color: var(--primary) !important; background: color-mix(in srgb, var(--primary) 9%, transparent) !important; }
+.hero-actions { flex-wrap: wrap; }
+.hero-actions .secondary-button { min-width: 0; }
+
+/* Minimal owner header: readable labels on desktop, clean icon controls on mobile. */
+.app-page[data-mode='professional'] .admin-topbar .action-label { text-transform: lowercase; }
+.app-page[data-mode='professional'] .admin-topbar .brand.wordmark { font-family: var(--font-serif-custom); font-weight: 500; }
+.app-page[data-mode='professional'] .conversation-actions .share-chat-action { color: var(--editorial-accent) !important; }
+
+@media (max-width: 760px) {
+  .hero-actions { display:grid !important; grid-template-columns: 1fr 1fr !important; }
+  .hero-actions > * { width:100%; justify-content:center; }
+  .hero-actions > .primary-button { grid-column: span 2; }
+}
