@@ -32,7 +32,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className="bg-background" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var e=localStorage.getItem('fowzan-experience'),t=localStorage.getItem('fowzan-theme');if(e==='gamer'||e==='professional')document.documentElement.dataset.fowzanMode=e;if(t)document.documentElement.dataset.fowzanTheme=t}catch(_){}})()` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var d=document.documentElement,e=localStorage.getItem('fowzan-experience'),t=localStorage.getItem('fowzan-theme');var valid=['white','green','purple','red','blue','rose','amber','slate','mono'];if(e==='gamer'||e==='professional'){d.dataset.fowzanMode=e;}if(e==='professional'&&t==='red'){t='blue';localStorage.setItem('fowzan-theme','blue');}if(valid.indexOf(t)>=0){d.dataset.fowzanTheme=t;}if(e==='professional'&&t==='blue'){d.style.setProperty('--bootstrap-bg','#f3f7fa');}else if(e==='professional'&&t==='rose'){d.style.setProperty('--bootstrap-bg','#fbf4f5');}else if(e==='professional'&&t==='purple'){d.style.setProperty('--bootstrap-bg','#f7f4fa');}else if(e==='professional'&&t==='mono'){d.style.setProperty('--bootstrap-bg','#f4f4f2');}else if(e==='gamer'){d.style.setProperty('--bootstrap-bg','#030403');}else{d.style.setProperty('--bootstrap-bg','#060807');}d.style.colorScheme=e==='professional'?'light':'dark';}catch(_){}})()` }} />
       </head>
       <body className={`${spaceMono.variable} ${pressStart.variable} antialiased`}>
         {children}

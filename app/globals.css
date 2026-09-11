@@ -5644,3 +5644,113 @@ html, body { max-width:100%; overflow-x:hidden; }
 .public-page .prompt-section,
 .public-page .public-threads,
 .public-page .site-footer { content-visibility:auto; contain-intrinsic-size: 420px; }
+
+/* FINAL ATMOSPHERE + MOBILE + BOOTSTRAP STABILITY PASS */
+html { background: var(--bootstrap-bg, #060807); }
+body { background: var(--bootstrap-bg, #060807); }
+html[data-fowzan-mode='professional'] .app-page { background: var(--bootstrap-bg, #f4f4f2) !important; }
+html[data-fowzan-mode='gamer'] .app-page { background: var(--bootstrap-bg, #030403) !important; }
+
+/* The inline bootstrap script sets these before React paints, so there is no old-purple flash. */
+html[data-fowzan-mode='professional'][data-fowzan-theme='blue'] { --background:#f3f7fa; --foreground:#15202a; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='rose'] { --background:#fbf4f5; --foreground:#24181b; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='purple'] { --background:#f7f4fa; --foreground:#211a27; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='mono'] { --background:#f4f4f2; --foreground:#151515; }
+
+.message-sent-toast {
+  position: fixed; z-index: 30; left: 50%; bottom: 26px; transform: translateX(-50%);
+  width: min(520px, calc(100% - 28px)); display: flex; align-items: center; gap: 12px;
+  padding: 13px 14px; border: 1px solid color-mix(in srgb, var(--primary) 42%, var(--border));
+  border-radius: 16px; background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow: 0 18px 55px rgba(0,0,0,.28), 0 0 26px color-mix(in srgb, var(--primary) 12%, transparent);
+  animation: message-sent-in .28s ease both;
+}
+.message-sent-icon { width: 34px; height: 34px; flex: 0 0 34px; display:flex; align-items:center; justify-content:center; border-radius: 50%; background: var(--primary); color: var(--primary-foreground); }
+.message-sent-toast > span:nth-child(2) { min-width:0; display:flex; flex-direction:column; gap:3px; }
+.message-sent-toast b { font-size:12px; letter-spacing:.01em; }
+.message-sent-toast small { color:var(--muted-foreground); font-size:10px; line-height:1.45; }
+.message-sent-toast > button { margin-left:auto; border:0; background:transparent; color:var(--muted-foreground); padding:6px; display:flex; }
+@keyframes message-sent-in { from { opacity:0; transform:translate(-50%, 12px) scale(.98); } to { opacity:1; transform:translate(-50%, 0) scale(1); } }
+
+/* More visible cinematic Gamer motion: glowing particles, twinkling stars and drifting asteroids. */
+.app-page[data-mode='gamer'] .particle-field { display:block !important; opacity:.72 !important; }
+.app-page[data-mode='gamer'] .particle-field i {
+  width:3px !important; height:3px !important; border-radius:50% !important;
+  background:var(--signal) !important; opacity:.55 !important;
+  box-shadow:0 0 6px 1px rgba(var(--signal-rgb),.55), 0 0 16px 3px rgba(var(--signal-rgb),.16) !important;
+  animation: gamer-particle-float 8s ease-in-out infinite alternate !important;
+}
+.app-page[data-mode='gamer'] .particle-field i:nth-child(4n) { background:var(--flare) !important; box-shadow:0 0 7px 1px rgba(var(--flare-rgb),.58), 0 0 18px 3px rgba(var(--flare-rgb),.16) !important; }
+.app-page[data-mode='gamer'] .particle-field i:nth-child(3n) { width:2px !important; height:2px !important; animation-duration:11s !important; }
+.app-page[data-mode='gamer'] .particle-field i:nth-child(5n) { width:4px !important; height:4px !important; animation-duration:13s !important; }
+@keyframes gamer-particle-float { 0% { transform:translate3d(0,8px,0) scale(.7); opacity:.12; } 45% { opacity:.62; } 100% { transform:translate3d(24px,-52px,0) scale(1.35); opacity:.45; } }
+.app-page[data-mode='gamer'] .space-stars { opacity:.56 !important; }
+.app-page[data-mode='gamer'] .space-stars span { box-shadow:0 0 7px rgba(255,255,255,.75) !important; animation: gamer-star-twinkle 5.5s ease-in-out infinite !important; }
+@keyframes gamer-star-twinkle { 0%,100% { transform:translate3d(0,0,0) scale(.65); opacity:.12; } 50% { transform:translate3d(4px,-7px,0) scale(1.45); opacity:.68; } }
+.app-page[data-mode='gamer'] .asteroid-field { opacity:.38 !important; }
+.app-page[data-mode='gamer'] .asteroid-field i { filter:drop-shadow(0 0 6px rgba(var(--signal-rgb),.5)) !important; animation: gamer-asteroid-drift 25s linear infinite !important; }
+@keyframes gamer-asteroid-drift { 0% { transform:translate3d(-16vw,8vh,0) rotate(-35deg) scale(.8); opacity:0; } 12% { opacity:.28; } 52% { opacity:.5; } 100% { transform:translate3d(124vw,-18vh,0) rotate(330deg) scale(1.12); opacity:0; } }
+@media (max-width:800px) {
+  .app-page[data-mode='gamer'] .particle-field { opacity:.52 !important; }
+  .app-page[data-mode='gamer'] .particle-field i:nth-child(n+21) { display:none !important; }
+  .app-page[data-mode='gamer'] .space-stars span:nth-child(3n) { display:none; }
+  .app-page[data-mode='gamer'] .asteroid-field i:nth-child(2n) { display:none; }
+}
+
+/* Keep the wordmark compact on phones in both experiences. */
+@media (max-width:640px) {
+  .public-topbar .brand.wordmark, .admin-topbar .brand.wordmark { max-width:150px !important; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:8px !important; letter-spacing:.025em !important; gap:6px !important; }
+  .public-topbar .brand.wordmark svg, .admin-topbar .brand.wordmark svg { width:13px !important; height:13px !important; flex:0 0 13px; }
+  .public-topbar .topbar-controls, .admin-topbar .top-actions { gap:5px !important; }
+  .public-topbar .appearance-button, .public-topbar .private-button { padding:8px !important; min-width:34px; justify-content:center; }
+  .public-topbar .theme-picker { width:34px !important; height:34px !important; }
+}
+@media (max-width:390px) {
+  .public-topbar .brand.wordmark, .admin-topbar .brand.wordmark { max-width:128px !important; font-size:7px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-sent-toast, .app-page[data-mode='gamer'] .particle-field i, .app-page[data-mode='gamer'] .space-stars span, .app-page[data-mode='gamer'] .asteroid-field i { animation:none !important; }
+}
+
+/* FINAL ATMOSPHERE + MOBILE + BOOTSTRAP STABILITY PASS */
+html { background: var(--bootstrap-bg, #060807); }
+body { background: var(--bootstrap-bg, #060807); }
+html[data-fowzan-mode='professional'] .app-page { background: var(--bootstrap-bg, #f4f4f2) !important; }
+html[data-fowzan-mode='gamer'] .app-page { background: var(--bootstrap-bg, #030403) !important; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='blue'] { --background:#f3f7fa; --foreground:#15202a; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='rose'] { --background:#fbf4f5; --foreground:#24181b; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='purple'] { --background:#f7f4fa; --foreground:#211a27; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='mono'] { --background:#f4f4f2; --foreground:#151515; }
+
+.message-sent-toast { position:fixed; z-index:30; left:50%; bottom:26px; transform:translateX(-50%); width:min(520px,calc(100% - 28px)); display:flex; align-items:center; gap:12px; padding:13px 14px; border:1px solid color-mix(in srgb,var(--primary) 42%,var(--border)); border-radius:16px; background:color-mix(in srgb,var(--card) 94%,transparent); box-shadow:0 18px 55px rgba(0,0,0,.28),0 0 26px color-mix(in srgb,var(--primary) 12%,transparent); animation:message-sent-in .28s ease both; }
+.message-sent-icon { width:34px; height:34px; flex:0 0 34px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--primary); color:var(--primary-foreground); }
+.message-sent-toast > span:nth-child(2) { min-width:0; display:flex; flex-direction:column; gap:3px; }
+.message-sent-toast b { font-size:12px; letter-spacing:.01em; }
+.message-sent-toast small { color:var(--muted-foreground); font-size:10px; line-height:1.45; }
+.message-sent-toast > button { margin-left:auto; border:0; background:transparent; color:var(--muted-foreground); padding:6px; display:flex; }
+@keyframes message-sent-in { from { opacity:0; transform:translate(-50%,12px) scale(.98); } to { opacity:1; transform:translate(-50%,0) scale(1); } }
+
+.app-page[data-mode='gamer'] .particle-field { display:block !important; opacity:.72 !important; }
+.app-page[data-mode='gamer'] .particle-field i { width:3px !important; height:3px !important; border-radius:50% !important; background:var(--signal) !important; opacity:.55 !important; box-shadow:0 0 6px 1px rgba(var(--signal-rgb),.55),0 0 16px 3px rgba(var(--signal-rgb),.16) !important; animation:gamer-particle-float 8s ease-in-out infinite alternate !important; }
+.app-page[data-mode='gamer'] .particle-field i:nth-child(4n) { background:var(--flare) !important; box-shadow:0 0 7px 1px rgba(var(--flare-rgb),.58),0 0 18px 3px rgba(var(--flare-rgb),.16) !important; }
+.app-page[data-mode='gamer'] .particle-field i:nth-child(3n) { width:2px !important; height:2px !important; animation-duration:11s !important; }
+.app-page[data-mode='gamer'] .particle-field i:nth-child(5n) { width:4px !important; height:4px !important; animation-duration:13s !important; }
+@keyframes gamer-particle-float { 0% { transform:translate3d(0,8px,0) scale(.7); opacity:.12; } 45% { opacity:.62; } 100% { transform:translate3d(24px,-52px,0) scale(1.35); opacity:.45; } }
+.app-page[data-mode='gamer'] .space-stars { opacity:.56 !important; }
+.app-page[data-mode='gamer'] .space-stars span { box-shadow:0 0 7px rgba(255,255,255,.75) !important; animation:gamer-star-twinkle 5.5s ease-in-out infinite !important; }
+@keyframes gamer-star-twinkle { 0%,100% { transform:translate3d(0,0,0) scale(.65); opacity:.12; } 50% { transform:translate3d(4px,-7px,0) scale(1.45); opacity:.68; } }
+.app-page[data-mode='gamer'] .asteroid-field { opacity:.38 !important; }
+.app-page[data-mode='gamer'] .asteroid-field i { filter:drop-shadow(0 0 6px rgba(var(--signal-rgb),.5)) !important; animation:gamer-asteroid-drift 25s linear infinite !important; }
+@keyframes gamer-asteroid-drift { 0% { transform:translate3d(-16vw,8vh,0) rotate(-35deg) scale(.8); opacity:0; } 12% { opacity:.28; } 52% { opacity:.5; } 100% { transform:translate3d(124vw,-18vh,0) rotate(330deg) scale(1.12); opacity:0; } }
+@media (max-width:800px) { .app-page[data-mode='gamer'] .particle-field { opacity:.52 !important; } .app-page[data-mode='gamer'] .particle-field i:nth-child(n+21) { display:none !important; } .app-page[data-mode='gamer'] .space-stars span:nth-child(3n) { display:none; } .app-page[data-mode='gamer'] .asteroid-field i:nth-child(2n) { display:none; } }
+
+@media (max-width:640px) {
+  .public-topbar .brand.wordmark { max-width:150px; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:8px !important; letter-spacing:.025em !important; gap:6px !important; }
+  .public-topbar .brand.wordmark svg { width:13px !important; height:13px !important; flex:0 0 13px; }
+  .public-topbar .topbar-controls { gap:5px !important; }
+  .public-topbar .appearance-button, .public-topbar .private-button { padding:8px !important; min-width:34px; justify-content:center; }
+  .public-topbar .theme-picker { width:34px !important; height:34px !important; }
+}
+@media (max-width:390px) { .public-topbar .brand.wordmark { max-width:128px; font-size:7px !important; } }
+@media (prefers-reduced-motion:reduce) { .message-sent-toast,.app-page[data-mode='gamer'] .particle-field i,.app-page[data-mode='gamer'] .space-stars span,.app-page[data-mode='gamer'] .asteroid-field i { animation:none !important; } }

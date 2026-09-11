@@ -385,8 +385,14 @@ export default function Page() {
       const data = await response.json()
       const nextMessages: Thought[] = data.messages ?? []
       const incoming = nextMessages.filter((item) => !knownThreadIds.current.has(item.id))
-      if (inboxInitialized.current && incoming.length && notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification("Fowzan's Inbox", { body: `${incoming.length} new ${incoming.length === 1 ? 'message' : 'messages'} waiting for you.` })
+      if (inboxInitialized.current && incoming.length && 'Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification("Fowzan's Inbox", {
+            body: `${incoming.length} new ${incoming.length === 1 ? 'message' : 'messages'} waiting for you.`,
+            tag: 'fowzan-inbox-new-message',
+            icon: '/icon.png',
+          })
+        } catch { /* Notification failures should never interrupt inbox refresh. */ }
       }
       knownThreadIds.current = new Set(nextMessages.map((item) => item.id))
       inboxInitialized.current = true
@@ -426,10 +432,17 @@ export default function Page() {
 
   useEffect(() => {
     if (view !== 'private' || !ownerUnlocked) return
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === 'visible') loadOwner(true)
-    }, 30000)
-    return () => window.clearInterval(timer)
+    const refreshIfVisible = () => {
+      if (document.visibilityState === 'visible') void loadOwner(true)
+    }
+    const timer = window.setInterval(refreshIfVisible, 12000)
+    document.addEventListener('visibilitychange', refreshIfVisible)
+    window.addEventListener('focus', refreshIfVisible)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', refreshIfVisible)
+      window.removeEventListener('focus', refreshIfVisible)
+    }
   }, [view, ownerUnlocked])
 
   useEffect(() => {
@@ -452,9 +465,15 @@ export default function Page() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [view, ownerUnlocked, selected, visibleThoughts])
 
+  useEffect(() => {
+    if (!sent) return
+    const timer = window.setTimeout(() => setSent(false), 5500)
+    return () => window.clearTimeout(timer)
+  }, [sent])
+
   async function submitThought() {
     const text = thought.trim(); if ((!text && !mediaData) || sending) return
-    setSending(true); setError('')
+    setSending(true); setError(''); setSent(false)
     try {
       const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'message', text, senderName: revealName ? senderName.trim() : null, mediaData, mediaType, mediaTranscript: mediaType === 'audio' ? mediaTranscript : null }) })
       const data = await response.json().catch(() => ({}))
@@ -866,12 +885,18 @@ export default function Page() {
   }
 
   async function requestNotificationPermission() {
-    if (!('Notification' in window)) { setError('This browser does not support notifications.'); return }
-    if (Notification.permission === 'denied') { setError('Notifications are blocked in Chrome. Allow them for this site in the address-bar/site settings, then try again.'); return }
+    if (!('Notification' in window)) { setNotificationsEnabled(false); setError('This browser does not support notifications.'); return }
+    if (Notification.permission === 'denied') { setNotificationsEnabled(false); setError('Notifications are blocked for this site. Click the lock/site-settings icon in Chrome, allow Notifications, then reload the inbox.'); return }
     const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission()
     setNotificationsEnabled(permission === 'granted')
     if (permission !== 'granted') setError('Notification permission was not granted. You can enable it from the bell button anytime.')
   }
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationsEnabled(Notification.permission === 'granted')
+    }
+  }, [ownerUnlocked])
 
   async function toggleNotifications() {
     await requestNotificationPermission()
@@ -1058,8 +1083,8 @@ export default function Page() {
 
   return (
     <main className="app-page public-page" data-theme={theme} data-mode={experience}>
-      <div className="cyber-bg" aria-hidden="true"><i /><i /><i /><div className="space-stars">{Array.from({ length: 18 }, (_, index) => <span key={index} style={{ top: `${(index * 47) % 100}%`, left: `${(index * 73 + 11) % 100}%`, animationDelay: `${-(index % 17) * 0.42}s`, animationDuration: `${4.5 + (index % 7) * 0.8}s` }} />)}</div><div className="asteroid-field">{Array.from({ length: 3 }, (_, index) => <i key={index} style={{ top: `${(index * 31 + 8) % 94}%`, left: `${(index * 61 - 12) % 112 - 4}%`, animationDelay: `${-(index % 9) * 1.15}s`, animationDuration: `${18 + (index % 6) * 2.1}s`, transform: `scale(${0.7 + (index % 5) * 0.22}) rotate(${(index * 23) % 360}deg)` }} />)}</div>{Array.from({ length: 22 }, (_, index) => matrixStreams[index % matrixStreams.length]).map((stream, index) => <b key={index} style={{ left: `${(index * 4.31 + 2) % 96}%`, animationDelay: `${-((index * 0.71) % 12)}s`, opacity: `${0.22 + (index % 5) * 0.045}` }}>{Array.from(stream).map((char, charIndex) => <span key={charIndex}>{char}</span>)}</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" />
-      <div className="particle-field" aria-hidden="true">{Array.from({ length: 20 }, (_, index) => <i key={index} style={{ top: `${(index * 37 + 7) % 96}%`, left: `${(index * 61 + 13) % 98}%`, animationDelay: `${-((index * 0.47) % 13)}s`, animationDuration: `${7 + (index % 7) * 1.1}s`, transform: `scale(${0.65 + (index % 5) * 0.22})` }} />)}</div>
+      <div className="cyber-bg" aria-hidden="true"><i /><i /><i /><div className="space-stars">{Array.from({ length: 24 }, (_, index) => <span key={index} style={{ top: `${(index * 47) % 100}%`, left: `${(index * 73 + 11) % 100}%`, animationDelay: `${-(index % 17) * 0.42}s`, animationDuration: `${4.5 + (index % 7) * 0.8}s` }} />)}</div><div className="asteroid-field">{Array.from({ length: 5 }, (_, index) => <i key={index} style={{ top: `${(index * 31 + 8) % 94}%`, left: `${(index * 61 - 12) % 112 - 4}%`, animationDelay: `${-(index % 9) * 1.15}s`, animationDuration: `${18 + (index % 6) * 2.1}s`, transform: `scale(${0.7 + (index % 5) * 0.22}) rotate(${(index * 23) % 360}deg)` }} />)}</div>{Array.from({ length: 22 }, (_, index) => matrixStreams[index % matrixStreams.length]).map((stream, index) => <b key={index} style={{ left: `${(index * 4.31 + 2) % 96}%`, animationDelay: `${-((index * 0.71) % 12)}s`, opacity: `${0.22 + (index % 5) * 0.045}` }}>{Array.from(stream).map((char, charIndex) => <span key={charIndex}>{char}</span>)}</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" />
+      <div className="particle-field" aria-hidden="true">{Array.from({ length: 28 }, (_, index) => <i key={index} style={{ top: `${(index * 37 + 7) % 96}%`, left: `${(index * 61 + 13) % 98}%`, animationDelay: `${-((index * 0.47) % 13)}s`, animationDuration: `${7 + (index % 7) * 1.1}s`, transform: `scale(${0.65 + (index % 5) * 0.22})` }} />)}</div>
       <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><button className="appearance-button" onClick={() => setAppearanceOpen(true)} aria-label={experience === "gamer" ? "Gamer mode" : experience === "professional" ? "Minimal mode" : "Choose appearance"} title={experience === "gamer" ? "Gamer mode" : experience === "professional" ? "Minimal mode" : "Choose appearance"}>{experience === "gamer" ? <Gamepad2 size={17} /> : experience === "professional" ? <PenLine size={17} /> : <SlidersHorizontal size={17} />}<span>{experience === "professional" ? "Minimal" : experience ? "Gamer" : "Appearance"}</span></button>{experience && <button className="theme-picker" type="button" title={`Color: ${theme}. Tap to change`} aria-label={`Change color theme. Current color: ${theme}`} onClick={() => { const colors = experience === "gamer" ? ["purple","red","green","rose","blue","white"] : ["rose","blue","purple","mono"]; const index = colors.indexOf(theme); const next = colors[(index + 1) % colors.length] as typeof theme; handleAppearanceChange(experience, next) }}><Palette size={22} /><span className="sr-only">Change color</span></button>}<button className="private-button" onClick={() => setView('private')} aria-label="Open private inbox" title="Private inbox"><LockKeyhole size={15} /><span>private inbox</span></button></div></header>
 
       <section className="public-hero page-width">
@@ -1077,6 +1102,13 @@ export default function Page() {
       <section className="prompt-section page-width"><div className="section-intro compact"><div className="eyebrow"><Sparkles size={13} /> NOT SURE WHAT TO ASK?</div><h2>START HERE.</h2></div><div className="prompt-grid">{prompts.map((prompt, index) => <button key={prompt} onClick={() => { setThought(prompt); document.getElementById('leave-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}><span>0{index + 1}</span>{prompt}<ChevronRight size={14} /></button>)}</div></section>
 
       {error && <div className="error-banner page-width">{error}</div>}
+      {sent && (
+        <div className="message-sent-toast" role="status" aria-live="polite">
+          <span className="message-sent-icon"><Check size={17} strokeWidth={2.5} /></span>
+          <span><b>Message sent.</b><small>Fowzan has your message. Thanks for reaching out.</small></span>
+          <button type="button" onClick={() => setSent(false)} aria-label="Dismiss message sent confirmation"><X size={15} /></button>
+        </div>
+      )}
 
       <section id="chat-board" className="public-threads page-width"><div className="chat-board-section threads-board-section"><div className="chat-board-heading"><div><div className="eyebrow"><MessageCircle size={13} /> CHAT BOARD</div><h3>Open conversations.</h3></div><div className="chat-board-tools">{publicSearchOpen && <input autoFocus value={publicSearch} onChange={(e) => setPublicSearch(e.target.value)} placeholder="search conversations…" aria-label="Search conversations" />}{publicSearch && <button onClick={() => setPublicSearch('')} aria-label="Clear search"><X size={13} /></button>}<button className={publicSearchOpen ? 'active' : ''} onClick={() => { setPublicSearchOpen((value) => !value); if (publicSearchOpen) setPublicSearch('') }} aria-label="Search conversations" title="Search conversations"><Search size={15} /> search</button><span>{visibleResponses.length} live</span></div></div><div className="threads-heading"><div><div className="eyebrow"><MessageCircle size={13} /> FOWZAN&apos;S REPLIES</div><h2>REPLY BOARD.</h2><p>Messages Fowzan chooses to answer appear here — and you can keep the conversation going.</p><small className="thread-contribute-hint">Have something to add? Join the thread and contribute your own reply.</small></div><span>{responses.length} live</span></div></div>
         {polls.length > 0 && (
