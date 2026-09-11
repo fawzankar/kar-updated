@@ -154,12 +154,27 @@ export default function Page() {
     }
   }, [experience, theme])
 
+  function applyAppearance(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme, persist = false) {
+    // Change the document-level theme first, then React state. The temporary
+    // switching flag disables visual interpolation so the old and new
+    // appearance can never blend together. It is deliberately not a cloak.
+    const root = document.documentElement
+    root.dataset.fowzanMode = nextExperience
+    root.dataset.fowzanTheme = nextTheme
+    root.dataset.themeSwitching = 'true'
+    setExperience(nextExperience)
+    setTheme(nextTheme)
+    if (persist) {
+      localStorage.setItem('fowzan-experience', nextExperience)
+      localStorage.setItem('fowzan-theme', nextTheme)
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      delete root.dataset.themeSwitching
+    }))
+  }
+
   function chooseAppearance(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme) {
-    setExperience(nextExperience); setTheme(nextTheme)
-    document.documentElement.dataset.fowzanMode = nextExperience
-    document.documentElement.dataset.fowzanTheme = nextTheme
-    localStorage.setItem('fowzan-experience', nextExperience)
-    localStorage.setItem('fowzan-theme', nextTheme)
+    applyAppearance(nextExperience, nextTheme, true)
   }
 
   function handleAppearanceChange(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme) {
@@ -1175,7 +1190,7 @@ export default function Page() {
         <div className="site-footer-note">A quiet place for honest messages.</div>
         <div className="site-footer-meta"><span>ANONYMOUS BY DEFAULT</span><span>© {new Date().getFullYear()} FOWZAN</span></div>
       </footer>
-      {(showOnboarding || appearanceOpen) && <div className="appearance-overlay" role="dialog" aria-modal="true" aria-label="Choose appearance"><div className="appearance-modal"><button className="appearance-close" onClick={() => { if (!showOnboarding) setAppearanceOpen(false) }} aria-label="Close"><X size={17} /></button><div className="eyebrow"><Sparkles size={13} /> CHOOSE YOUR MODE</div><h2>{showOnboarding ? "Make it yours." : "Appearance"}</h2><p>{showOnboarding ? "Pick the vibe and color you want. We'll remember it when you come back." : "Switch between the two looks whenever you want."}</p><div className="experience-grid"><button className={`experience-card ${experience === 'gamer' ? 'active' : ''}`} onClick={() => { const nextTheme = ['purple','red','green','rose','blue','white'].includes(theme) ? theme : 'purple'; setExperience('gamer'); setTheme(nextTheme as typeof theme) }}><div className="experience-preview gamer-preview"><span>0101</span><i /><b>FOWZAN</b></div><strong>🎮 Gamer</strong><small>Matrix rain · cyber · neon</small></button><button className={`experience-card ${experience === 'professional' ? 'active' : ''}`} onClick={() => { const nextTheme = ['rose','blue','purple','mono'].includes(theme) ? theme : 'blue'; setExperience('professional'); setTheme(nextTheme as typeof theme) }}><div className="experience-preview professional-preview"><span>F</span><b>FOWZAN&apos;S INBOX</b></div><strong><PenLine size={15} strokeWidth={2} /> Minimal</strong><small>Elegant · focused · refined</small></button></div><div className="accent-heading">Choose a color</div><div className="accent-grid">{(experience === 'gamer' ? ['purple','red','green','rose','blue','white'] : ['rose','blue','purple','mono']).map((accent) => <button key={accent} className={`accent-choice ${theme === accent ? 'active' : ''} accent-${accent}`} onClick={() => setTheme(accent as typeof theme)} aria-label={`${accent} accent`}><span /></button>)}</div><div className="appearance-actions"><button className="primary-button" disabled={!experience} onClick={() => { if (!experience) return; chooseAppearance(experience, theme); setShowOnboarding(false); setAppearanceOpen(false) }}>{showOnboarding ? "Continue" : "Save appearance"}<ChevronRight size={16} /></button></div></div></div>}
+      {(showOnboarding || appearanceOpen) && <div className="appearance-overlay" role="dialog" aria-modal="true" aria-label="Choose appearance"><div className="appearance-modal"><button className="appearance-close" onClick={() => { if (!showOnboarding) setAppearanceOpen(false) }} aria-label="Close"><X size={17} /></button><div className="eyebrow"><Sparkles size={13} /> CHOOSE YOUR MODE</div><h2>{showOnboarding ? "Make it yours." : "Appearance"}</h2><p>{showOnboarding ? "Pick the vibe and color you want. We'll remember it when you come back." : "Switch between the two looks whenever you want."}</p><div className="experience-grid"><button className={`experience-card ${experience === 'gamer' ? 'active' : ''}`} onClick={() => { const nextTheme = ['purple','red','green','rose','blue','white'].includes(theme) ? theme : 'purple'; applyAppearance('gamer', nextTheme as typeof theme) }}><div className="experience-preview gamer-preview"><span>0101</span><i /><b>FOWZAN</b></div><strong>🎮 Gamer</strong><small>Matrix rain · cyber · neon</small></button><button className={`experience-card ${experience === 'professional' ? 'active' : ''}`} onClick={() => { const nextTheme = ['rose','blue','purple','mono'].includes(theme) ? theme : 'blue'; applyAppearance('professional', nextTheme as typeof theme) }}><div className="experience-preview professional-preview"><span>F</span><b>FOWZAN&apos;S INBOX</b></div><strong><PenLine size={15} strokeWidth={2} /> Minimal</strong><small>Elegant · focused · refined</small></button></div><div className="accent-heading">Choose a color</div><div className="accent-grid">{(experience === 'gamer' ? ['purple','red','green','rose','blue','white'] : ['rose','blue','purple','mono']).map((accent) => <button key={accent} className={`accent-choice ${theme === accent ? 'active' : ''} accent-${accent}`} onClick={() => experience && applyAppearance(experience, accent as typeof theme)} aria-label={`${accent} accent`}><span /></button>)}</div><div className="appearance-actions"><button className="primary-button" disabled={!experience} onClick={() => { if (!experience) return; chooseAppearance(experience, theme); setShowOnboarding(false); setAppearanceOpen(false) }}>{showOnboarding ? "Continue" : "Save appearance"}<ChevronRight size={16} /></button></div></div></div>}
       {shareTarget && (
         <div className="share-choice-backdrop" role="dialog" aria-modal="true" aria-label="Choose how to share this conversation" onClick={(event) => { if (event.target === event.currentTarget) setShareTarget(null) }}>
           <div className="share-choice">

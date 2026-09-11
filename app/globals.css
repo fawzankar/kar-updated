@@ -5810,3 +5810,208 @@ html[data-fowzan-mode='professional'][data-fowzan-theme='mono'] { --background:#
 .app-page[data-mode='gamer'] .particle-field { visibility:visible !important; }
 .app-page[data-mode='professional'] .cyber-bg,
 .app-page[data-mode='professional'] .particle-field { visibility:hidden !important; }
+
+/* ================================================================
+   FINAL MODE ISOLATION + MINIMAL THREAD BOARD POLISH
+   Theme changes are atomic: no cross-fade, no leaked Gamer variables,
+   and no purple legacy accents inside Minimal.
+   ================================================================ */
+html[data-theme-switching='true'] .app-page,
+html[data-theme-switching='true'] .app-page *,
+html[data-theme-switching='true'] .app-page::before,
+html[data-theme-switching='true'] .app-page::after {
+  transition: none !important;
+}
+
+/* Each mode owns its decorative background system. */
+.app-page[data-mode='professional'] .cyber-bg,
+.app-page[data-mode='professional'] .particle-field,
+.app-page[data-mode='professional'] .space-stars,
+.app-page[data-mode='professional'] .asteroid-field,
+.app-page[data-mode='professional'] .ambient-orb { display:none !important; }
+.app-page[data-mode='gamer'] .professional-bg,
+.app-page[data-mode='gamer'] .minimal-bg { display:none !important; }
+
+/* Minimal gets its own signal tokens so legacy components can never fall
+   back to the old purple Gamer signal while switching modes. */
+.app-page[data-mode='professional'] {
+  --signal:var(--editorial-accent);
+  --signal-rgb:69,110,135;
+  --flare:var(--editorial-accent);
+  --flare-rgb:69,110,135;
+  --signal-text:var(--editorial-ink);
+  --primary:var(--editorial-accent);
+  --primary-foreground:#fff;
+  --punch:var(--editorial-accent);
+  --accent:var(--editorial-accent);
+  --ring:var(--editorial-accent);
+}
+.app-page[data-mode='professional'][data-theme='rose'] { --signal:#9c5367; --signal-rgb:156,83,103; --flare:#9c5367; --flare-rgb:156,83,103; }
+.app-page[data-mode='professional'][data-theme='blue'] { --signal:#456e87; --signal-rgb:69,110,135; --flare:#456e87; --flare-rgb:69,110,135; }
+.app-page[data-mode='professional'][data-theme='purple'] { --signal:#76567f; --signal-rgb:118,86,127; --flare:#76567f; --flare-rgb:118,86,127; }
+.app-page[data-mode='professional'][data-theme='mono'] { --signal:#272727; --signal-rgb:39,39,39; --flare:#272727; --flare-rgb:39,39,39; }
+
+/* No legacy purple comment rails/dividers in Minimal. */
+.app-page[data-mode='professional'] .public-thread,
+.app-page[data-mode='professional'] .public-thread:hover {
+  color:var(--editorial-ink) !important;
+  background:var(--editorial-paper-solid) !important;
+  border:1px solid var(--editorial-line) !important;
+  border-left:3px solid var(--editorial-accent) !important;
+  border-radius:22px !important;
+  box-shadow:0 18px 48px rgba(40,32,22,.08) !important;
+}
+.app-page[data-mode='professional'] .public-thread::before { background:var(--editorial-accent) !important; }
+.app-page[data-mode='professional'] .thread-meta,
+.app-page[data-mode='professional'] .public-thread-foot,
+.app-page[data-mode='professional'] .public-replies .replies-label {
+  color:var(--editorial-muted) !important;
+}
+.app-page[data-mode='professional'] .thread-meta span:first-child {
+  color:var(--editorial-accent) !important;
+  font-weight:800;
+}
+.app-page[data-mode='professional'] .thread-main-message h3 {
+  color:var(--editorial-ink) !important;
+  font-family:var(--font-serif-custom), Georgia, serif !important;
+  font-size:clamp(1.55rem,2.6vw,2.45rem) !important;
+  line-height:1.18 !important;
+  letter-spacing:-.035em !important;
+  font-weight:500 !important;
+  margin:18px 0 0 !important;
+}
+.app-page[data-mode='professional'] .public-replies {
+  margin-top:24px !important;
+  padding:14px !important;
+  border:1px solid var(--editorial-line) !important;
+  border-radius:16px !important;
+  border-left:1px solid var(--editorial-line) !important;
+  background:var(--editorial-accent-soft) !important;
+}
+.app-page[data-mode='professional'] .public-reply,
+.app-page[data-mode='professional'] .public-reply + .public-reply {
+  border:0 !important;
+  border-top:1px solid var(--editorial-line) !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  padding:15px 8px 13px !important;
+}
+.app-page[data-mode='professional'] .public-reply:first-of-type { border-top:0 !important; }
+.app-page[data-mode='professional'] .public-reply::before { display:none !important; }
+.app-page[data-mode='professional'] .public-reply-head b,
+.app-page[data-mode='professional'] .public-reply p,
+.app-page[data-mode='professional'] .public-reply-head span {
+  color:var(--editorial-ink) !important;
+}
+.app-page[data-mode='professional'] .public-reply-head span { color:var(--editorial-muted) !important; }
+.app-page[data-mode='professional'] .public-reply-head b.fowzan {
+  color:var(--editorial-accent) !important;
+  background:var(--editorial-accent-soft) !important;
+  border:1px solid var(--editorial-line) !important;
+  border-radius:999px !important;
+  padding:4px 8px !important;
+}
+.app-page[data-mode='professional'] .public-reply p {
+  font-family:var(--font-serif-custom), Georgia, serif !important;
+  font-size:15px !important;
+  line-height:1.62 !important;
+  margin:8px 0 0 !important;
+}
+.app-page[data-mode='professional'] .reply-upvote,
+.app-page[data-mode='professional'] .bubble-upvote {
+  color:var(--editorial-muted) !important;
+  background:transparent !important;
+  border-color:var(--editorial-line) !important;
+}
+.app-page[data-mode='professional'] .reply-upvote:hover,
+.app-page[data-mode='professional'] .reply-upvote.voted,
+.app-page[data-mode='professional'] .bubble-upvote:hover,
+.app-page[data-mode='professional'] .bubble-upvote.voted {
+  color:var(--editorial-accent) !important;
+  background:var(--editorial-accent-soft) !important;
+  border-color:var(--editorial-accent) !important;
+}
+.app-page[data-mode='professional'] .public-thread-foot {
+  border-top:1px solid var(--editorial-line) !important;
+  padding-top:16px !important;
+}
+.app-page[data-mode='professional'] .public-thread-foot button {
+  color:var(--editorial-muted) !important;
+}
+.app-page[data-mode='professional'] .public-thread-foot button:hover,
+.app-page[data-mode='professional'] .public-thread-foot button.voted {
+  color:var(--editorial-accent) !important;
+}
+.app-page[data-mode='professional'] .public-reply-form {
+  padding:14px !important;
+  margin-top:14px !important;
+  border:1px solid var(--editorial-line) !important;
+  border-radius:16px !important;
+  background:var(--editorial-surface, #fffdfa) !important;
+}
+.app-page[data-mode='professional'] .public-reply-form .reply-composer {
+  background:var(--editorial-paper-solid) !important;
+  border:1px solid var(--editorial-line) !important;
+  border-radius:999px !important;
+}
+.app-page[data-mode='professional'] .public-reply-form .reply-composer input {
+  color:var(--editorial-ink) !important;
+}
+.app-page[data-mode='professional'] .public-reply-form .reply-composer input::placeholder {
+  color:var(--editorial-muted) !important;
+}
+.app-page[data-mode='professional'] .public-reply-form label,
+.app-page[data-mode='professional'] .public-reply-form > input:not([type=checkbox]) {
+  color:var(--editorial-ink) !important;
+}
+.app-page[data-mode='professional'] .public-reply-form > input:not([type=checkbox]) {
+  background:var(--editorial-paper-solid) !important;
+  border-color:var(--editorial-line) !important;
+}
+
+/* Inbox conversation: dark ink on Minimal regardless of inherited legacy tokens. */
+.app-page[data-mode='professional'] .thread-browser,
+.app-page[data-mode='professional'] .thread-item,
+.app-page[data-mode='professional'] .conversation-card,
+.app-page[data-mode='professional'] .conversation-head,
+.app-page[data-mode='professional'] .conversation-empty,
+.app-page[data-mode='professional'] .chat-bubble,
+.app-page[data-mode='professional'] .chat-bubble p,
+.app-page[data-mode='professional'] .bubble-meta,
+.app-page[data-mode='professional'] .thread-item p,
+.app-page[data-mode='professional'] .thread-item > div:last-child {
+  color:var(--editorial-ink) !important;
+}
+.app-page[data-mode='professional'] .thread-browser,
+.app-page[data-mode='professional'] .conversation-card,
+.app-page[data-mode='professional'] .conversation-empty {
+  background:var(--editorial-paper-solid) !important;
+  border-color:var(--editorial-line) !important;
+}
+.app-page[data-mode='professional'] .thread-item p,
+.app-page[data-mode='professional'] .chat-bubble p { color:var(--editorial-ink) !important; }
+.app-page[data-mode='professional'] .thread-item-top,
+.app-page[data-mode='professional'] .bubble-meta span:first-child,
+.app-page[data-mode='professional'] .outgoing .bubble-meta span:first-child {
+  color:var(--editorial-accent) !important;
+}
+.app-page[data-mode='professional'] .chat-bubble {
+  background:var(--editorial-accent-soft) !important;
+  border-color:var(--editorial-line) !important;
+}
+.app-page[data-mode='professional'] .chat-bubble.outgoing {
+  background:rgba(255,255,255,.72) !important;
+  border-color:var(--editorial-accent) !important;
+}
+.app-page[data-mode='professional'] .conversation-head,
+.app-page[data-mode='professional'] .browser-head,
+.app-page[data-mode='professional'] .reply-dock {
+  border-color:var(--editorial-line) !important;
+}
+
+@media (max-width:640px) {
+  .app-page[data-mode='professional'] .public-thread { padding:17px !important; border-radius:17px !important; }
+  .app-page[data-mode='professional'] .thread-main-message h3 { font-size:1.35rem !important; line-height:1.28 !important; }
+  .app-page[data-mode='professional'] .public-replies { padding:10px !important; margin-top:18px !important; }
+  .app-page[data-mode='professional'] .public-reply p { font-size:14px !important; }
+}
