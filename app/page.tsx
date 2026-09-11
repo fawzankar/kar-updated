@@ -583,23 +583,6 @@ export default function Page() {
   }
 
 
-  async function shareThreadLink(item: Thought | PublicResponse) {
-    const url = `${window.location.origin}/thread/${item.id}`
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "A thread from Fowzan's Inbox", url })
-      } else {
-        await navigator.clipboard.writeText(url)
-        setCopied(true)
-        window.setTimeout(() => setCopied(false), 1800)
-      }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return
-      try { await navigator.clipboard.writeText(url) } catch {}
-    }
-  }
-
-
   function buildShareImageDataUrl(item: Thought | PublicResponse, kind: 'thread' | 'home' = 'thread') {
     const canvas = document.createElement('canvas')
     canvas.width = 1080
@@ -718,56 +701,42 @@ export default function Page() {
       ctx.restore()
     }
 
-    // Clean brand header — no slogan. Gamer gets a compact HUD-style identity.
+    // Clean brand header. Gamer mode keeps visual energy in the background,
+    // but the artwork itself does not use gamer/HUD wording.
     ctx.textAlign = 'center'
-    if (isGamer) {
-      ctx.fillStyle = colors.accent
-      ctx.font = '800 13px Arial'
-      ctx.letterSpacing = '3px'
-      ctx.fillText('FOWZAN // INBOX', 540, 128)
-      ctx.font = '800 42px Arial'
-      ctx.letterSpacing = '0px'
-      ctx.fillText('▰', 540, 190)
-      ctx.fillStyle = colors.ink
-      ctx.font = '800 19px Arial'
-      ctx.letterSpacing = '4px'
-      ctx.fillText("FOWZAN'S INBOX", 540, 236)
-      ctx.letterSpacing = '0px'
-    } else {
-      ctx.fillStyle = colors.panel
-      ctx.beginPath(); ctx.arc(540, 148, 29, 0, Math.PI * 2); ctx.fill()
-      ctx.fillStyle = colors.accent
-      ctx.font = '800 20px Arial'
-      ctx.fillText('F', 540, 155)
-      ctx.fillStyle = colors.ink
-      ctx.font = '800 18px Arial'
-      ctx.letterSpacing = '3px'
-      ctx.fillText("FOWZAN'S INBOX", 540, 224)
-      ctx.letterSpacing = '0px'
-    }
+    ctx.fillStyle = colors.panel
+    ctx.beginPath(); ctx.arc(540, 148, 29, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = colors.accent
+    ctx.font = '800 20px Arial'
+    ctx.fillText('F', 540, 155)
+    ctx.fillStyle = colors.ink
+    ctx.font = '800 18px Arial'
+    ctx.letterSpacing = '3px'
+    ctx.fillText("FOWZAN'S INBOX", 540, 224)
+    ctx.letterSpacing = '0px'
     ctx.font = '600 12px Arial'
     ctx.fillStyle = colors.muted
     ctx.letterSpacing = '2px'
-    ctx.fillText(kind === 'home' ? (isGamer ? 'ANONYMOUS // DROP A MESSAGE' : 'ANONYMOUS MESSAGES') : (isGamer ? 'ANONYMOUS // INCOMING MESSAGE' : 'ANONYMOUS MESSAGE'), 540, isGamer ? 268 : 252)
+    ctx.fillText(kind === 'home' ? 'ANONYMOUS MESSAGES' : 'ANONYMOUS MESSAGE', 540, 252)
     ctx.letterSpacing = '0px'
 
     if (kind === 'home') {
       const top = 535
       if (isGamer) {
         rounded(56, top, 968, 810, 'rgba(8,8,18,.88)', colors.accent, 34, true)
-        ctx.textAlign = 'left'; ctx.fillStyle = colors.accent; ctx.font = '800 14px Arial'; ctx.letterSpacing = '2px'; ctx.fillText('PLAYER INVITE // 001', 100, top + 76); ctx.letterSpacing = '0px'
+        ctx.textAlign = 'left'; ctx.fillStyle = colors.accent; ctx.font = '800 14px Arial'; ctx.letterSpacing = '2px'; ctx.fillText('ANONYMOUS INBOX', 100, top + 76); ctx.letterSpacing = '0px'
         ctx.fillStyle = colors.ink; ctx.font = '900 68px Arial'; ctx.fillText('DROP A', 100, top + 190); ctx.fillText('MESSAGE.', 100, top + 266)
         ctx.fillStyle = colors.muted; ctx.font = '500 28px Arial'; drawCenteredLines(wrap('Ask anything. Say anything. Your name stays hidden.', 790, '500 28px Arial', 3), top + 370, 46, '500 28px Arial', colors.muted)
         rounded(100, top + 505, 880, 150, 'rgba(255,255,255,.035)', colors.line, 22, false)
         ctx.textAlign = 'left'; ctx.fillStyle = colors.accent; ctx.font = '800 12px Arial'; ctx.fillText('INBOX LINK', 132, top + 554)
-        ctx.fillStyle = colors.ink; ctx.font = '600 23px Arial'; ctx.fillText(inboxUrl.replace(/^https?:\/\//, ''), 132, top + 605)
+        ctx.fillStyle = isGamer ? '#ffffff' : (activeTheme === 'blue' ? '#2563eb' : colors.accent); ctx.font = '700 23px Arial'; ctx.fillText(inboxUrl.replace(/^https?:\/\//, ''), 132, top + 605)
       } else {
         rounded(70, top, 940, 810, colors.panel, colors.line, 52, true)
         ctx.textAlign = 'center'; ctx.fillStyle = colors.accent; ctx.font = '800 14px Arial'; ctx.letterSpacing = '2px'; ctx.fillText('LEAVE SOMETHING ANONYMOUS', 540, top + 100); ctx.letterSpacing = '0px'
         ctx.fillStyle = colors.ink; ctx.font = '500 70px Georgia'; ctx.fillText('Say what you want.', 540, top + 250)
         drawCenteredLines(wrap('Ask a question, leave a thought, or just say what you want to say.', 760, '400 29px Georgia', 4), top + 360, 46, '400 29px Georgia', colors.muted)
         ctx.fillStyle = colors.accent; ctx.font = '800 13px Arial'; ctx.letterSpacing = '1.5px'; ctx.fillText('YOUR NAME STAYS HIDDEN', 540, top + 575); ctx.letterSpacing = '0px'
-        ctx.fillStyle = colors.muted; ctx.font = '500 20px Arial'; ctx.fillText(inboxUrl.replace(/^https?:\/\//, ''), 540, top + 690)
+        ctx.fillStyle = activeTheme === 'blue' ? '#2563eb' : colors.accent; ctx.font = '700 20px Arial'; ctx.fillText(inboxUrl.replace(/^https?:\/\//, ''), 540, top + 690)
       }
     } else {
       const question = item.text?.trim() || 'Anonymous message'
@@ -802,9 +771,9 @@ export default function Page() {
     ctx.fillStyle = colors.ink
     ctx.font = isGamer ? '800 14px Arial' : '700 14px Arial'
     ctx.fillText('fowzans-inbox', 540, 1785)
-    ctx.fillStyle = colors.muted
-    ctx.font = '500 12px Arial'
-    ctx.fillText(kind === 'home' ? inboxUrl.replace(/^https?:\/\//, '') : 'shared anonymously', 540, 1812)
+    ctx.fillStyle = kind === 'home' ? (isGamer ? '#ffffff' : (activeTheme === 'blue' ? '#2563eb' : colors.accent)) : (isGamer ? '#ffffff' : (activeTheme === 'blue' ? '#2563eb' : colors.accent))
+    ctx.font = '700 12px Arial'
+    ctx.fillText(inboxUrl.replace(/^https?:\/\//, ''), 540, 1812)
     return canvas.toDataURL('image/png')
   }
 
@@ -837,31 +806,8 @@ export default function Page() {
     }
   }
 
-  async function copyInboxLink() {
-    const url = window.location.origin
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1800)
-    } catch {
-      setShareError('Could not copy the inbox link. Please copy the address from your browser.')
-    }
-  }
-
   async function shareHomeStory() {
     await shareStoryImage({ id: 0, text: 'Leave Fowzan an anonymous message.', senderName: null, time: new Date().toISOString(), kept: false, replies: [], upvotes: 0 }, 'home')
-  }
-
-  async function shareThread(item: Thought | PublicResponse) {
-    // Thread sharing is link-only: never attach the question text to the share payload.
-    const url = `${window.location.origin}/thread/${item.id}`
-    try {
-      if (navigator.share) await navigator.share({ title: "A thread from Fowzan's Inbox", url })
-      else { await navigator.clipboard.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return
-      try { await navigator.clipboard.writeText(url) } catch {}
-    }
   }
 
   function dataUrlToFile(dataUrl: string, filename: string) {
@@ -1043,17 +989,20 @@ export default function Page() {
         <aside className="thread-browser">
           <div className="browser-head"><div><div className="eyebrow"><MessageCircle size={13} /> all threads</div><p>{visibleThoughts.length} {visibleThoughts.length === 1 ? 'conversation' : 'conversations'}</p></div><span className="live-dot"><i /> live</span><input className="thread-search" value={threadQuery} onChange={(event) => setThreadQuery(event.target.value)} placeholder="search threads" aria-label="Search threads" /></div>
           <div className="thread-list">
-            {visibleThoughts.map((item) => <button key={item.id} onClick={() => openThought(item)} className={`thread-item ${selected?.id === item.id ? 'active' : ''}`}>
-              <div className="thread-item-top"><span>{item.senderName || 'Anonymous'}</span>{item.unread && <b>new</b>}</div>
-              {item.mediaData && (item.mediaType === 'image' ? <img className="thread-media-thumb" src={item.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="thread-media-audio" controls preload="metadata" src={item.mediaData} />{item.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{item.mediaTranscript}</div>}</>)}<p>{item.text}</p><div><span>{item.replies.length} {item.replies.length === 1 ? 'reply' : 'replies'} · {item.upvotes ?? 0} votes</span><span>{formatTime(item.time)}</span></div>
-            </button>)}
+            {visibleThoughts.map((item) => <div key={item.id} className={`thread-item-row ${selected?.id === item.id ? 'active' : ''}`}>
+              <button onClick={() => openThought(item)} className={`thread-item ${selected?.id === item.id ? 'active' : ''}`}>
+                <div className="thread-item-top"><span>{item.senderName || 'Anonymous'}</span>{item.unread && <b>new</b>}</div>
+                {item.mediaData && (item.mediaType === 'image' ? <img className="thread-media-thumb" src={item.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="thread-media-audio" controls preload="metadata" src={item.mediaData} />{item.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{item.mediaTranscript}</div></>)}<p>{item.text}</p><div><span>{item.replies.length} {item.replies.length === 1 ? 'reply' : 'replies'} · {item.upvotes ?? 0} votes</span><span>{formatTime(item.time)}</span></div>
+              </button>
+              <button className="thread-item-share" onClick={(event) => { event.stopPropagation(); shareStoryImage(item) }} aria-label="Share this question as a design" title="Share this question as a design">{shareBusy ? <Loader2 size={14} className="spin" /> : <Share2 size={14} />}<span>share</span></button>
+            </div>)}
             {!visibleThoughts.length && <div className="empty-browser"><MessageCircle size={20} /><strong>{showKeeps ? 'No keepsakes yet' : 'Your inbox is empty'}</strong><span>New anonymous messages will appear here.</span></div>}
           </div>
         </aside>
 
         <section className="conversation-shell">
           {!selected ? <div className="conversation-empty"><div className="empty-icon"><MessageCircle size={23} /></div><h2>Choose a conversation</h2><p>Select a message from the left to open its thread.</p></div> : <div className="conversation-card">
-            <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {selected.upvotes ?? 0} votes · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action" onClick={() => shareThread(selected)} title="Share chat link" aria-label="Share chat link">{copied ? <Check size={15} /> : <Share2 size={15} />}</button><button className="icon-action share-chat-action" onClick={() => shareStoryImage(selected)} title="Share chat design" aria-label="Share chat design">{shareBusy ? <Loader2 size={15} className="spin" /> : <MessageCircle size={15} />}</button><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`} aria-label="Delete thread" title="Delete thread"><Trash2 size={14} /> <span className="action-label">{deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</span></button></div></div>
+            <div className="conversation-head"><div><div className="eyebrow"><Zap size={13} /> thread</div><h2>{selected.senderName || 'Anonymous'}</h2><p>{selected.replies.length} {selected.replies.length === 1 ? 'reply' : 'replies'} · {selected.upvotes ?? 0} votes · {formatTime(selected.time)}</p></div><div className="conversation-actions"><button className="icon-action share-chat-action" onClick={() => shareStoryImage(selected)} title="Share chat design" aria-label="Share chat design">{shareBusy ? <Loader2 size={15} className="spin" /> : <Share2 size={15} />}</button><button className="icon-action" onClick={() => toggleKeep(selected.id)} title={selected.kept ? 'Remove from keepsakes' : 'Keep thread'}><Star size={15} fill={selected.kept ? 'currentColor' : 'none'} /></button><button className="delete-thread-button" onClick={() => deleteThought(selected.id)} disabled={deleteBusy === `thread-${selected.id}`} aria-label="Delete thread" title="Delete thread"><Trash2 size={14} /> <span className="action-label">{deleteBusy === `thread-${selected.id}` ? 'deleting' : 'delete thread'}</span></button></div></div>
             <div className="conversation-scroll">
               <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div>{selected.mediaData && (selected.mediaType === "image" ? <img className="message-media-image" src={selected.mediaData} alt="Attachment" /> : <><audio className="message-media-audio" controls preload="metadata" src={selected.mediaData} />{selected.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{selected.mediaTranscript}</div>}</>)}{selected.text && <p>{selected.text}</p>}</article>
               {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author === 'Fowzan' ? 'Fowzan' : reply.author}</span><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="bubble-actions"><button className={`bubble-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={11} /> {reply.upvotes ?? 0}</button><button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`} title="Remove only this reply" aria-label="Remove only this reply"><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'remove reply'}</button></div></article>)}
@@ -1077,7 +1026,7 @@ export default function Page() {
       <section className="public-hero page-width">
         <h1>SEND<br />FOWZAN<br /><em className="hero-message-line">A<span className="hero-message-gap">&nbsp;</span>MESSAGE</em></h1>
         <p className="hero-lead">Say whatever you want to say. Ask a question, leave a thought, or just check in. Your name stays hidden unless you choose to add it.</p>
-        <div className="hero-actions"><a href="#leave-message" className="primary-button"><PenLine size={16} /><span>send a message</span><ChevronRight size={17} /></a><a href="#chat-board" className="secondary-button chat-board-hero-button" aria-label="Visit Reply Board" title="Visit Reply Board"><MessageCircle size={16} /><span>Visit Reply Board</span><ChevronRight size={17} /></a><button className="secondary-button" onClick={shareHomeStory} aria-label="Share Fowzan's inbox design" title="Share Fowzan's inbox design"><ImageIcon size={15} /><span>share design</span></button><button className="secondary-button" onClick={copyInboxLink} aria-label="Copy inbox link" title="Copy inbox link">{copied ? <Check size={15} /> : <Share2 size={15} />}<span>{copied ? 'link copied' : 'copy inbox link'}</span></button></div>
+        <div className="hero-actions"><a href="#leave-message" className="primary-button"><PenLine size={16} /><span>send a message</span><ChevronRight size={17} /></a><a href="#chat-board" className="secondary-button chat-board-hero-button" aria-label="Visit Reply Board" title="Visit Reply Board"><MessageCircle size={16} /><span>Visit Reply Board</span><ChevronRight size={17} /></a><button className="secondary-button" onClick={shareHomeStory} aria-label="Share Fowzan's inbox design" title="Share Fowzan's inbox design"><ImageIcon size={15} /><span>share design</span></button></div>
       </section>
 
       <section id="leave-message" className="composer-section page-width"><div className="section-intro"><div className="eyebrow"><PenLine size={13} /> MESSAGE FOWZAN</div><h2>WHAT DO YOU<br /><span>WANT TO SEND?</span></h2></div>
@@ -1136,7 +1085,7 @@ export default function Page() {
             ))}
           </div>
         )}
-        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><div className="thread-main-message">{response.mediaData && (response.mediaType === "image" ? <img className="message-media-image" src={response.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="message-media-audio" controls preload="metadata" src={response.mediaData} />{response.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{response.mediaTranscript}</div>}</>)}{response.text && <h3>{response.text}</h3>}</div>{response.replies.length > 0 && <div className="public-replies"><div className="replies-label"><span>CONVERSATION</span><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span></div>{response.replies.map((reply) => <div className="public-reply" key={reply.id}><div className="public-reply-head"><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="public-reply-actions"><button className={`reply-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={12} /> {reply.upvotes ?? 0}</button></div></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'} · {response.upvotes ?? 0} thread votes</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareThreadLink(response)} aria-label="Share thread" title="Share thread"><Share2 size={14} /> <span className="action-label">share</span></button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)} aria-label="Join thread" title="Join thread"><MessageCircle size={14} /> <span className="action-label">join thread</span></button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()} aria-label="Send reply" title="Send reply"><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><Search size={20} /><strong>{publicSearch ? 'No conversations found.' : 'Fowzan has not replied yet.'}</strong><span>{publicSearch ? 'Try another word or search the replies too.' : 'Come back soon to see messages Fowzan chooses to answer.'}</span></div>}</div>}</section>
+        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><div className="thread-main-message">{response.mediaData && (response.mediaType === "image" ? <img className="message-media-image" src={response.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="message-media-audio" controls preload="metadata" src={response.mediaData} />{response.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{response.mediaTranscript}</div>}</>)}{response.text && <h3>{response.text}</h3>}</div>{response.replies.length > 0 && <div className="public-replies"><div className="replies-label"><span>CONVERSATION</span><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span></div>{response.replies.map((reply) => <div className="public-reply" key={reply.id}><div className="public-reply-head"><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>}{reply.text && <p>{reply.text}</p>}<div className="public-reply-actions"><button className={`reply-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={12} /> {reply.upvotes ?? 0}</button></div></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'} · {response.upvotes ?? 0} thread votes</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => shareStoryImage(response)} aria-label="Share thread design" title="Share thread design">{shareBusy ? <Loader2 size={14} className="spin" /> : <Share2 size={14} />} <span className="action-label">share</span></button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)} aria-label="Join thread" title="Join thread"><MessageCircle size={14} /> <span className="action-label">join thread</span></button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()} aria-label="Send reply" title="Send reply"><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><Search size={20} /><strong>{publicSearch ? 'No conversations found.' : 'Fowzan has not replied yet.'}</strong><span>{publicSearch ? 'Try another word or search the replies too.' : 'Come back soon to see messages Fowzan chooses to answer.'}</span></div>}</div>}</section>
 
       <footer className="site-footer page-width">
         <div className="site-footer-brand">FOWZAN&apos;S INBOX</div>

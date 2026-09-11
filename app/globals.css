@@ -5452,3 +5452,36 @@ html, body { max-width:100%; overflow-x:hidden; }
   .hero-actions > * { width:100%; justify-content:center; }
   .hero-actions > .primary-button { grid-column: span 2; }
 }
+
+/* Per-question story sharing in the private inbox. */
+.thread-item-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; gap: 6px; }
+.thread-item-row .thread-item { min-width: 0; }
+.thread-item-row .thread-item-share { align-self: center; min-width: 54px; min-height: 42px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.025); color: var(--muted-foreground); display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; padding: 0 9px; transition: .2s ease; }
+.thread-item-row .thread-item-share:hover { color: var(--primary); border-color: var(--primary); background: rgba(255,255,255,.04); }
+.thread-item-row.active .thread-item-share { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
+@media (max-width: 680px) {
+  .thread-item-row .thread-item-share { min-width: 42px; width: 42px; padding: 0; }
+  .thread-item-row .thread-item-share span { display: none; }
+}
+
+/* Dedicated share action for every private question. */
+.thread-item-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; gap: 6px; }
+.thread-item-row .thread-item { min-width: 0; }
+.thread-item-row .thread-item-share { align-self: center; min-width: 54px; min-height: 42px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.025); color: var(--muted-foreground); display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; padding: 0 9px; transition: .2s ease; }
+.thread-item-row .thread-item-share:hover { color: var(--primary); border-color: var(--primary); background: rgba(255,255,255,.04); }
+.thread-item-row.active .thread-item-share { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
+@media (max-width: 680px) {
+  .thread-item-row .thread-item-share { min-width: 42px; width: 42px; padding: 0; }
+  .thread-item-row .thread-item-share span { display: none; }
+}
+
+/* A dedicated story-design action beside every private question. */
+.thread-item-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; gap: 6px; }
+.thread-item-row .thread-item { min-width: 0; }
+.thread-item-row .thread-item-share { align-self: center; min-width: 54px; min-height: 42px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.025); color: var(--muted-foreground); display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; padding: 0 9px; transition: .2s ease; }
+.thread-item-row .thread-item-share:hover { color: var(--primary); border-color: var(--primary); background: rgba(255,255,255,.04); }
+.thread-item-row.active .thread-item-share { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
+@media (max-width: 680px) {
+  .thread-item-row .thread-item-share { min-width: 42px; width: 42px; padding: 0; }
+  .thread-item-row .thread-item-share span { display: none; }
+}
