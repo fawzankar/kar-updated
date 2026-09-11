@@ -305,7 +305,7 @@ export async function POST(request: Request) {
     const mediaType = body.mediaType === 'gif' ? 'gif' : body.mediaType === 'image' ? 'image' : body.mediaType === 'audio' ? 'audio' : null
     if (!messageId || (!text && !mediaUrl)) return NextResponse.json({ error: 'Write a reply or add an image, GIF or voice note.' }, { status: 400 })
     if (mediaUrl && !mediaType) return NextResponse.json({ error: 'Unsupported reply media.' }, { status: 400 })
-    if (mediaType === 'audio' && !/^data:audio\/(webm|ogg|mp4|mpeg|wav)(?:;[^,]*)?;base64,[A-Za-z0-9+/=]+$/.test(mediaUrl)) return NextResponse.json({ error: 'Voice notes must be recorded in the browser.' }, { status: 400 })
+    if (mediaType === 'audio' && !/^data:audio\/(webm|ogg|mp4|mpeg|wav)(?:;[^,]*)?;base64,[A-Za-z0-9+/=]+$/.test(mediaUrl || '')) return NextResponse.json({ error: 'Voice notes must be recorded in the browser.' }, { status: 400 })
     if (mediaType !== 'audio' && clean(body.mediaUrl, 2000) && !mediaUrl) return NextResponse.json({ error: 'Use a valid http(s) image or GIF URL.' }, { status: 400 })
     const exists = await pool.query(`SELECT id FROM messages WHERE id = $1 AND deleted_at IS NULL`, [messageId])
     if (!exists.rows[0]) return NextResponse.json({ error: 'Message not found.' }, { status: 404 })

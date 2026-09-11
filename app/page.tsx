@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, Check, ChevronRight, Inbox, LockKeyhole, LogOut,
-  Bell, BellRing, Download, Film, Gamepad2, ImageIcon, Mail, MessageCircle, Palette, PenLine, RefreshCw, Send, Share2, Sparkles,
+  Bell, BellRing, Download, Film, Gamepad2, ImageIcon, Mail, MessageCircle, Palette, PenLine, RefreshCw, Send, Share2, Sparkles, Mic,
   Star, ThumbsUp, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot, BarChart3, Plus, Search, SlidersHorizontal
 } from 'lucide-react'
 
