@@ -134,6 +134,9 @@ export default function Page() {
       if (savedExperience === 'professional' && savedTheme === 'red') localStorage.setItem('fowzan-theme', 'blue')
     }
     setShowOnboarding(!(savedExperience && validSavedTheme))
+    // The layout bootstrap cloaks the app while React hydrates so the old
+    // purple/default skin can never flash before the saved appearance lands.
+    document.documentElement.classList.remove('fowzan-prehydrated')
   }, [])
 
   useEffect(() => {
