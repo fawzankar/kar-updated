@@ -5817,10 +5817,36 @@ html[data-fowzan-mode='professional'][data-fowzan-theme='mono'] { --background:#
    and no purple legacy accents inside Minimal.
    ================================================================ */
 html[data-theme-switching='true'] .app-page,
-html[data-theme-switching='true'] .app-page *,
-html[data-theme-switching='true'] .app-page::before,
-html[data-theme-switching='true'] .app-page::after {
+html[data-theme-switching='true'] .app-page * {
   transition: none !important;
+}
+
+/* During a Gamer <-> Minimal handoff, hide ONLY decorative layers.
+   Never hide .app-page or its content: doing that can leave a blank screen
+   if a render is interrupted. The new mode owns the background immediately
+   after the state commit, and the old decorative compositor layer is removed
+   for these two frames. */
+html[data-theme-switching='true'] .app-page::before,
+html[data-theme-switching='true'] .app-page::after,
+html[data-theme-switching='true'] .app-page .cyber-bg,
+html[data-theme-switching='true'] .app-page .ambient-orb,
+html[data-theme-switching='true'] .app-page .particle-field,
+html[data-theme-switching='true'] .app-page .space-stars,
+html[data-theme-switching='true'] .app-page .asteroid-field,
+html[data-theme-switching='true'] .app-page .grain,
+html[data-theme-switching='true'] .app-page .professional-bg,
+html[data-theme-switching='true'] .app-page .minimal-bg {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  animation: none !important;
+  transition: none !important;
+}
+
+/* The page background itself must switch instantly rather than interpolating
+   between the two visual systems. */
+html[data-theme-switching='true'] .app-page {
+  transition: none !important;
+  background-color: var(--background, #060807) !important;
 }
 
 /* Each mode owns its decorative background system. */

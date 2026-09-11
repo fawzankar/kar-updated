@@ -168,8 +168,13 @@ export default function Page() {
       localStorage.setItem('fowzan-experience', nextExperience)
       localStorage.setItem('fowzan-theme', nextTheme)
     }
+    // Keep only decorative layers isolated for the two-frame handoff.
+    // The content itself stays visible; this prevents Gamer/Minimal textures
+    // from ever compositing together during the React state commit.
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      delete root.dataset.themeSwitching
+      if (root.dataset.fowzanMode === nextExperience && root.dataset.fowzanTheme === nextTheme) {
+        delete root.dataset.themeSwitching
+      }
     }))
   }
 
