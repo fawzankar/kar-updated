@@ -155,27 +155,18 @@ export default function Page() {
   }, [experience, theme])
 
   function applyAppearance(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme, persist = false) {
-    // Change the document-level theme first, then React state. The temporary
-    // switching flag disables visual interpolation so the old and new
-    // appearance can never blend together. It is deliberately not a cloak.
+    // The document root is the authoritative visual mode. It is updated
+    // synchronously before React so the background can never spend a frame
+    // using the previous experience while the React tree catches up.
     const root = document.documentElement
     root.dataset.fowzanMode = nextExperience
     root.dataset.fowzanTheme = nextTheme
-    root.dataset.themeSwitching = 'true'
     setExperience(nextExperience)
     setTheme(nextTheme)
     if (persist) {
       localStorage.setItem('fowzan-experience', nextExperience)
       localStorage.setItem('fowzan-theme', nextTheme)
     }
-    // Keep only decorative layers isolated for the two-frame handoff.
-    // The content itself stays visible; this prevents Gamer/Minimal textures
-    // from ever compositing together during the React state commit.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (root.dataset.fowzanMode === nextExperience && root.dataset.fowzanTheme === nextTheme) {
-        delete root.dataset.themeSwitching
-      }
-    }))
   }
 
   function chooseAppearance(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme) {

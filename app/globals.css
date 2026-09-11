@@ -6041,3 +6041,99 @@ html[data-theme-switching='true'] .app-page {
   .app-page[data-mode='professional'] .public-replies { padding:10px !important; margin-top:18px !important; }
   .app-page[data-mode='professional'] .public-reply p { font-size:14px !important; }
 }
+
+/* =====================================================================
+   HARD THEME ISOLATION — document root is authoritative during switches.
+   React's data-mode catches up a render later; these rules prevent that
+   short handoff from ever compositing the two experiences together.
+===================================================================== */
+html[data-fowzan-mode='gamer'] {
+  --background:#030403;
+  --foreground:#f2f7ee;
+  --bootstrap-bg:#030403;
+}
+html[data-fowzan-mode='gamer'][data-fowzan-theme='purple'] { --signal:#c77dff; --signal-rgb:199,125,255; --flare:#7b2cbf; --flare-rgb:123,44,191; --signal-text:#f4eaff; }
+html[data-fowzan-mode='gamer'][data-fowzan-theme='red'] { --signal:#ff3b5c; --signal-rgb:255,59,92; --flare:#a81535; --flare-rgb:168,21,53; --signal-text:#fff0f2; }
+html[data-fowzan-mode='gamer'][data-fowzan-theme='green'] { --signal:#b7ff36; --signal-rgb:183,255,54; --flare:#3f7f16; --flare-rgb:63,127,22; --signal-text:#efffdc; }
+html[data-fowzan-mode='gamer'][data-fowzan-theme='rose'] { --signal:#ff8fc7; --signal-rgb:255,143,199; --flare:#b83d7f; --flare-rgb:184,61,127; --signal-text:#fff0f8; }
+html[data-fowzan-mode='gamer'][data-fowzan-theme='blue'] { --signal:#53d6ff; --signal-rgb:83,214,255; --flare:#1978b5; --flare-rgb:25,120,181; --signal-text:#e6faff; }
+html[data-fowzan-mode='gamer'][data-fowzan-theme='white'] { --signal:#f2f4f7; --signal-rgb:242,244,247; --flare:#6f7784; --flare-rgb:111,119,132; --signal-text:#ffffff; }
+html[data-fowzan-mode='gamer'] body { background:#030403 !important; color:#f2f7ee !important; }
+html[data-fowzan-mode='gamer'] .app-page {
+  background:
+    radial-gradient(ellipse 55% 42% at 50% -4%, rgba(var(--flare-rgb),.25), transparent 72%),
+    radial-gradient(ellipse 38% 30% at 96% 42%, rgba(var(--signal-rgb),.11), transparent 75%),
+    #030403 !important;
+}
+html[data-fowzan-mode='gamer'] .app-page::before {
+  background-image:
+    linear-gradient(rgba(var(--signal-rgb),.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--signal-rgb),.09) 1px, transparent 1px) !important;
+}
+html[data-fowzan-mode='gamer'] .app-page::after { background: none !important; box-shadow:none !important; }
+html[data-fowzan-mode='gamer'] .cyber-bg,
+html[data-fowzan-mode='gamer'] .particle-field,
+html[data-fowzan-mode='gamer'] .space-stars,
+html[data-fowzan-mode='gamer'] .asteroid-field { display:block !important; visibility:visible !important; }
+html[data-fowzan-mode='gamer'] .ambient-orb { display:block !important; }
+html[data-fowzan-mode='gamer'] .grain { display:block !important; }
+
+html[data-fowzan-mode='professional'] {
+  --minimal-bg:#f3efe7;
+  --minimal-surface:#fffdf8;
+  --minimal-surface-2:#f0ece4;
+  --minimal-text:#171613;
+  --minimal-muted:#6f6a61;
+  --minimal-accent:#7b5a3a;
+  --minimal-line:rgba(23,22,19,.14);
+  --minimal-geo:rgba(23,22,19,.05);
+  --minimal-glow:rgba(123,90,58,.10);
+  --bootstrap-bg:#f3efe7;
+}
+html[data-fowzan-mode='professional'][data-fowzan-theme='rose'] { --minimal-bg:#fbf4f5; --minimal-surface:#fffafa; --minimal-surface-2:#f6e9eb; --minimal-text:#24181b; --minimal-muted:#7b6469; --minimal-accent:#a94b62; --minimal-line:#e2c5cc; --minimal-geo:#f0d9de; --minimal-glow:rgba(169,75,98,.10); --bootstrap-bg:#fbf4f5; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='blue'] { --minimal-bg:#f3f7fa; --minimal-surface:#fbfdff; --minimal-surface-2:#e7eef4; --minimal-text:#15202a; --minimal-muted:#637381; --minimal-accent:#316b8f; --minimal-line:#c3d3de; --minimal-geo:#dbe8ef; --minimal-glow:rgba(49,107,143,.10); --bootstrap-bg:#f3f7fa; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='purple'] { --minimal-bg:#f7f4fa; --minimal-surface:#fdfbff; --minimal-surface-2:#eee8f3; --minimal-text:#211a27; --minimal-muted:#74667c; --minimal-accent:#77518e; --minimal-line:#d7c8df; --minimal-geo:#e7dcec; --minimal-glow:rgba(119,81,142,.10); --bootstrap-bg:#f7f4fa; }
+html[data-fowzan-mode='professional'][data-fowzan-theme='mono'] { --minimal-bg:#f4f4f2; --minimal-surface:#fdfdfb; --minimal-surface-2:#e9e9e5; --minimal-text:#151515; --minimal-muted:#686868; --minimal-accent:#151515; --minimal-line:#cfcfca; --minimal-geo:#deded9; --minimal-glow:rgba(21,21,21,.08); --bootstrap-bg:#f4f4f2; }
+html[data-fowzan-mode='professional'] body { background:var(--minimal-bg) !important; color:var(--minimal-text) !important; }
+html[data-fowzan-mode='professional'] .app-page {
+  background:
+    radial-gradient(900px 500px at 15% 0%, var(--minimal-glow), transparent 62%),
+    radial-gradient(800px 540px at 90% 35%, var(--minimal-geo), transparent 66%),
+    linear-gradient(120deg, color-mix(in srgb, var(--minimal-bg) 94%, #fff 6%), var(--minimal-bg) 48%, color-mix(in srgb, var(--minimal-bg) 96%, #fff 4%)) !important;
+  color:var(--minimal-text) !important;
+}
+/* Gamer's fixed/decorative layers are never allowed to participate in Minimal. */
+html[data-fowzan-mode='professional'] .cyber-bg,
+html[data-fowzan-mode='professional'] .particle-field,
+html[data-fowzan-mode='professional'] .space-stars,
+html[data-fowzan-mode='professional'] .asteroid-field,
+html[data-fowzan-mode='professional'] .ambient-orb,
+html[data-fowzan-mode='professional'] .grain { display:none !important; visibility:hidden !important; opacity:0 !important; }
+html[data-fowzan-mode='professional'] .app-page::before {
+  background:
+    radial-gradient(circle at 12% 18%, transparent 0 120px, var(--minimal-line) 121px 122px, transparent 123px 185px),
+    radial-gradient(circle at 88% 78%, transparent 0 170px, var(--minimal-geo) 171px 172px, transparent 173px 250px),
+    linear-gradient(90deg,transparent 49.94%,rgba(23,22,19,.045) 50%,transparent 50.06%),
+    linear-gradient(0deg,transparent 49.94%,rgba(23,22,19,.035) 50%,transparent 50.06%) !important;
+  opacity:1 !important;
+}
+html[data-fowzan-mode='professional'] .app-page::after {
+  background:
+    linear-gradient(115deg,transparent 0 17%,rgba(255,255,255,.42) 17.05% 17.12%,transparent 17.2%),
+    linear-gradient(295deg,transparent 0 78%,rgba(255,255,255,.34) 78.05% 78.12%,transparent 78.2%) !important;
+  opacity:1 !important;
+  box-shadow:none !important;
+}
+
+/* Never animate the actual skin/background during an appearance change. */
+html[data-fowzan-mode] .app-page,
+html[data-fowzan-mode] .app-page::before,
+html[data-fowzan-mode] .app-page::after,
+html[data-fowzan-mode] .cyber-bg,
+html[data-fowzan-mode] .ambient-orb,
+html[data-fowzan-mode] .particle-field,
+html[data-fowzan-mode] .space-stars,
+html[data-fowzan-mode] .asteroid-field,
+html[data-fowzan-mode] .grain {
+  transition:none !important;
+}
