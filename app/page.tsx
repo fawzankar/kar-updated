@@ -626,7 +626,7 @@ export default function Page() {
   }
 
 
-  function buildShareImageDataUrl(item: Thought | PublicResponse, kind: 'thread' | 'home' = 'thread') {
+  async function buildShareImageDataUrl(item: Thought | PublicResponse, kind: 'thread' | 'home' = 'thread') {
     const canvas = document.createElement('canvas')
     canvas.width = 1080
     canvas.height = 1920
@@ -654,6 +654,36 @@ export default function Page() {
     }
     const colors = palettes[activeTheme] ?? palettes.blue
     const inboxUrl = window.location.origin
+
+    // Story attachments need to be drawn onto the canvas before the PNG is created.
+    // Message photos are normally stored as data URLs, so decode them locally.
+    // Reply media can be a remote URL; draw it only when the browser permits CORS.
+    const loadStoryImage = async (src: string): Promise<HTMLImageElement | null> => {
+      if (!src) return null
+      try {
+        const image = new Image()
+        image.decoding = 'async'
+        image.src = src
+        if (image.decode) await image.decode()
+        else await new Promise<void>((resolve, reject) => { image.onload = () => resolve(); image.onerror = () => reject(new Error('image load failed')) })
+        return image
+      } catch { return null }
+    }
+
+    const drawStoryPhoto = async (src: string, x: number, y: number, w: number, h: number, radius = 28) => {
+      const image = await loadStoryImage(src)
+      if (!image) return false
+      const imageRatio = image.naturalWidth / Math.max(1, image.naturalHeight)
+      const boxRatio = w / h
+      let sx = 0, sy = 0, sw = image.naturalWidth, sh = image.naturalHeight
+      if (imageRatio > boxRatio) { sw = image.naturalHeight * boxRatio; sx = (image.naturalWidth - sw) / 2 }
+      else { sh = image.naturalWidth / boxRatio; sy = (image.naturalHeight - sh) / 2 }
+      ctx.save()
+      ctx.beginPath(); ctx.roundRect(x, y, w, h, radius); ctx.clip()
+      ctx.drawImage(image, sx, sy, sw, sh, x, y, w, h)
+      ctx.restore()
+      return true
+    }
 
     // True edge-to-edge 9:16 story canvas. Minimal is editorial; Gamer is a
     // proper gaming-art treatment with neon geometry, HUD framing and a controller motif.
@@ -784,8 +814,9 @@ export default function Page() {
       const aFont = isGamer ? '500 34px Arial' : '400 35px Georgia'
       const qLines = wrap(question, 770, qFont, 7)
       const aLines = reply ? wrap(reply.text?.trim() || 'A reply to this message.', 690, aFont, 5) : []
+      const messagePhoto = item.mediaType === 'image' && item.mediaData ? await loadStoryImage(item.mediaData) : null
 
-      const qH = Math.max(390, 220 + qLines.length * 68)
+      const qH = messagePhoto ? Math.max(610, 360 + qLines.length * 58) : Math.max(390, 220 + qLines.length * 68)
       const aH = reply ? Math.max(285, 170 + aLines.length * 52) : 245
       const totalH = qH + 44 + aH
       const groupTop = Math.max(430, Math.min(610, 1030 - totalH / 2))
@@ -794,7 +825,22 @@ export default function Page() {
       rounded(58, groupTop, 964, qH, colors.panel, colors.line, 52, true)
       ctx.textAlign = 'center'
       ctx.fillStyle = colors.accent; ctx.font = '800 14px Arial'; ctx.letterSpacing = '2px'; ctx.fillText('ANONYMOUS QUESTION', 540, groupTop + 74); ctx.letterSpacing = '0px'
-      drawCenteredLines(qLines, groupTop + 170, 68, qFont, colors.ink)
+      if (messagePhoto) {
+        ctx.save()
+        ctx.fillStyle = colors.panel2
+        ctx.beginPath(); ctx.roundRect(120, groupTop + 112, 840, 290, 30); ctx.fill()
+        ctx.restore()
+        ctx.save()
+        ctx.beginPath(); ctx.roundRect(130, groupTop + 122, 820, 270, 24); ctx.clip()
+        const iw = messagePhoto.naturalWidth, ih = messagePhoto.naturalHeight, ratio = iw / Math.max(1, ih), boxRatio = 820 / 270
+        let sx = 0, sy = 0, sw = iw, sh = ih
+        if (ratio > boxRatio) { sw = ih * boxRatio; sx = (iw - sw) / 2 } else { sh = iw / boxRatio; sy = (ih - sh) / 2 }
+        ctx.drawImage(messagePhoto, sx, sy, sw, sh, 130, groupTop + 122, 820, 270)
+        ctx.restore()
+        drawCenteredLines(qLines, groupTop + 475, 58, qFont, colors.ink)
+      } else {
+        drawCenteredLines(qLines, groupTop + 170, 68, qFont, colors.ink)
+      }
 
       // Reply: a smaller, visually different card beneath the question.
       const answerTop = groupTop + qH + 44
@@ -851,7 +897,7 @@ export default function Page() {
     setShareError('')
     try {
       // Everything before navigator.share is synchronous, preserving the browser's user gesture.
-      const dataUrl = buildShareImageDataUrl(item, kind)
+      const dataUrl = await buildShareImageDataUrl(item, kind)
       const file = dataUrlToFile(dataUrl, kind === 'home' ? 'fowzans-inbox-story.png' : `fowzan-story-${item.id}.png`)
       const canShareFile = typeof navigator.share === 'function' && (
         typeof navigator.canShare !== 'function' || (() => { try { return navigator.canShare({ files: [file] }) } catch { return false } })()
@@ -865,7 +911,7 @@ export default function Page() {
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
       try {
-        const dataUrl = buildShareImageDataUrl(item, kind)
+        const dataUrl = await buildShareImageDataUrl(item, kind)
         downloadStoryFile(dataUrlToFile(dataUrl, kind === 'home' ? 'fowzans-inbox-story.png' : `fowzan-story-${item.id}.png`))
       } catch {}
       setShareError('Chrome blocked the share sheet, so the finished 9:16 story was saved instead. You can add it directly in Instagram or WhatsApp.')
