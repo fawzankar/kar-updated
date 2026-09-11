@@ -55,8 +55,10 @@ async function deletePoll(pollId: number) {
 }
 
 function cleanMediaUrl(value: unknown) {
-  const candidate = clean(value, 2000)
+  const candidate = clean(value, 1400000)
   if (!candidate) return null
+  const audioData = candidate.match(/^data:audio\/(webm|ogg|mp4|mpeg|wav)(?:;[^,]*)?;base64,[A-Za-z0-9+/=]+$/)
+  if (audioData) return candidate
   try {
     const url = new URL(candidate)
     return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null
@@ -300,9 +302,11 @@ export async function POST(request: Request) {
     const messageId = asId(body.messageId)
     const text = clean(body.text, MAX_REPLY)
     const mediaUrl = cleanMediaUrl(body.mediaUrl)
-    const mediaType = body.mediaType === 'gif' ? 'gif' : body.mediaType === 'image' ? 'image' : null
-    if (!messageId || (!text && !mediaUrl)) return NextResponse.json({ error: 'Write a reply or add an image/GIF URL.' }, { status: 400 })
-    if (clean(body.mediaUrl, 2000) && !mediaUrl) return NextResponse.json({ error: 'Use a valid http(s) image or GIF URL.' }, { status: 400 })
+    const mediaType = body.mediaType === 'gif' ? 'gif' : body.mediaType === 'image' ? 'image' : body.mediaType === 'audio' ? 'audio' : null
+    if (!messageId || (!text && !mediaUrl)) return NextResponse.json({ error: 'Write a reply or add an image, GIF or voice note.' }, { status: 400 })
+    if (mediaUrl && !mediaType) return NextResponse.json({ error: 'Unsupported reply media.' }, { status: 400 })
+    if (mediaType === 'audio' && !/^data:audio\/(webm|ogg|mp4|mpeg|wav)(?:;[^,]*)?;base64,[A-Za-z0-9+/=]+$/.test(mediaUrl)) return NextResponse.json({ error: 'Voice notes must be recorded in the browser.' }, { status: 400 })
+    if (mediaType !== 'audio' && clean(body.mediaUrl, 2000) && !mediaUrl) return NextResponse.json({ error: 'Use a valid http(s) image or GIF URL.' }, { status: 400 })
     const exists = await pool.query(`SELECT id FROM messages WHERE id = $1 AND deleted_at IS NULL`, [messageId])
     if (!exists.rows[0]) return NextResponse.json({ error: 'Message not found.' }, { status: 404 })
     await pool.query(`INSERT INTO responses (message_id, text, author, media_url, media_type) VALUES ($1, $2, 'Fowzan', $3, $4)`, [messageId, text, mediaUrl, mediaUrl ? mediaType || 'image' : null])
