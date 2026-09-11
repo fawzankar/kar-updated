@@ -5485,3 +5485,28 @@ html, body { max-width:100%; overflow-x:hidden; }
   .thread-item-row .thread-item-share { min-width: 42px; width: 42px; padding: 0; }
   .thread-item-row .thread-item-share span { display: none; }
 }
+
+/* FINAL THEME + MATRIX VISIBILITY PASS */
+.app-page[data-mode='gamer'] .cyber-bg {
+  opacity: .72 !important;
+}
+.app-page[data-mode='gamer'] .cyber-bg b {
+  opacity: .78 !important;
+  color: var(--signal) !important;
+  text-shadow: 0 0 6px rgba(var(--signal-rgb),.95), 0 0 18px rgba(var(--signal-rgb),.55), 0 0 34px rgba(var(--signal-rgb),.28) !important;
+  font-weight: 800 !important;
+}
+.app-page[data-mode='gamer'] .cyber-bg b:nth-of-type(3n) { opacity: .92 !important; }
+.app-page[data-mode='gamer'] .cyber-bg b:nth-of-type(4n) { opacity: .58 !important; }
+.app-page[data-mode='gamer'] .cyber-bg b span:first-child { color: #f2fff6 !important; text-shadow: 0 0 10px #f2fff6, 0 0 24px var(--signal) !important; }
+@media (max-width: 640px) {
+  .app-page[data-mode='gamer'] .cyber-bg { opacity: .62 !important; }
+  .app-page[data-mode='gamer'] .cyber-bg b { opacity: .7 !important; font-size: 10px !important; }
+  .app-page[data-mode='gamer'] .cyber-bg b:nth-of-type(3n) { display: block !important; opacity: .82 !important; }
+}
+
+/* The hero always has one sharing action in both appearances. */
+.app-page[data-mode='gamer'] .hero-actions .secondary-button:last-child,
+.app-page[data-mode='professional'] .hero-actions .secondary-button:last-child {
+  display: inline-flex !important;
+}
