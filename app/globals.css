@@ -2382,8 +2382,11 @@ body { text-rendering: optimizeSpeed; }
    Gamer/Minimal appearance is restored during hydration. The inline bootstrap
    in layout.tsx adds this class before the first paint; page.tsx removes it
    immediately after applying the saved mode/theme. */
+html.fowzan-prehydrated body {
+  background: var(--bootstrap-bg, #060807) !important;
+  visibility: hidden !important;
+}
 html.fowzan-prehydrated .app-page { visibility: hidden !important; }
-html.fowzan-prehydrated body { background: var(--bootstrap-bg, #060807) !important; }
 
 /* Neutral initial selector: one font + one text color everywhere. */
 .appearance-modal,

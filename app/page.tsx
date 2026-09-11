@@ -134,15 +134,24 @@ export default function Page() {
       if (savedExperience === 'professional' && savedTheme === 'red') localStorage.setItem('fowzan-theme', 'blue')
     }
     setShowOnboarding(!(savedExperience && validSavedTheme))
-    // The layout bootstrap cloaks the app while React hydrates so the old
-    // purple/default skin can never flash before the saved appearance lands.
-    document.documentElement.classList.remove('fowzan-prehydrated')
   }, [])
 
   useEffect(() => {
     if (experience) document.documentElement.dataset.fowzanMode = experience
     else document.documentElement.removeAttribute('data-fowzan-mode')
     document.documentElement.dataset.fowzanTheme = theme
+
+    // IMPORTANT: do not remove the pre-hydration cloak from the first
+    // localStorage effect. React still renders its initial `experience=null`
+    // / `theme=purple` tree for that frame, which was the source of the
+    // visible purple flash on mobile. This effect runs only after React has
+    // committed the saved mode/theme to the actual .app-page attributes.
+    if (experience && document.documentElement.classList.contains('fowzan-prehydrated')) {
+      const frame = window.requestAnimationFrame(() => {
+        document.documentElement.classList.remove('fowzan-prehydrated')
+      })
+      return () => window.cancelAnimationFrame(frame)
+    }
   }, [experience, theme])
 
   function chooseAppearance(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme) {
