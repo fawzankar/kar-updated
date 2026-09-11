@@ -112,6 +112,7 @@ export default function Page() {
   const [votedReplyIds, setVotedReplyIds] = useState<Set<number>>(new Set())
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [shareCard, setShareCard] = useState<Thought | PublicResponse | null>(null)
+  const [shareMenu, setShareMenu] = useState<Thought | PublicResponse | null>(null)
   const [shareCaption, setShareCaption] = useState('')
   const [shareBusy, setShareBusy] = useState(false)
   const [shareError, setShareError] = useState('')
@@ -583,7 +584,30 @@ export default function Page() {
     } catch { setCopied(false) }
   }
 
+  function openShareOptions(item: Thought | PublicResponse) {
+    setShareMenu(item)
+    setShareError('')
+  }
+
+  async function shareThreadLink(item: Thought | PublicResponse) {
+    setShareMenu(null)
+    const url = `${window.location.origin}/thread/${item.id}`
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "A thread from Fowzan's Inbox", text: item.text || 'Open this conversation.', url })
+      } else {
+        await navigator.clipboard.writeText(url)
+        setCopied(true)
+        window.setTimeout(() => setCopied(false), 1800)
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      try { await navigator.clipboard.writeText(url) } catch {}
+    }
+  }
+
   function openShareCard(item: Thought | PublicResponse) {
+    setShareMenu(null)
     setShareCard(item)
     setShareCaption('')
     setShareError('')
@@ -707,7 +731,7 @@ export default function Page() {
   }
 
   async function shareThread(item: Thought | PublicResponse) {
-    openShareCard(item)
+    openShareOptions(item)
   }
 
   async function shareCardNow() {
@@ -719,7 +743,6 @@ export default function Page() {
       const file = new File([blob], `fowzan-story-${shareCard.id}.png`, { type: 'image/png' })
       const url = `${window.location.origin}/thread/${shareCard.id}`
       const caption = shareCaption.trim()
-      const shareText = caption ? `${caption}\n\nVive la Résistance · Fowzan's Inbox` : "Vive la Résistance · Fowzan's Inbox"
       const canShareFile = typeof navigator.share === 'function' && (
         typeof navigator.canShare !== 'function' || navigator.canShare({ files: [file] })
       )
@@ -730,7 +753,6 @@ export default function Page() {
       if (canShareFile) {
         await navigator.share({
           title: "Vive la Résistance · Fowzan's Inbox",
-          text: shareText,
           files: [file],
         })
         setCopied(true)
@@ -1008,7 +1030,8 @@ export default function Page() {
         <div className="site-footer-meta"><span>ANONYMOUS BY DEFAULT</span><span>© {new Date().getFullYear()} FOWZAN</span></div>
       </footer>
       {(showOnboarding || appearanceOpen) && <div className="appearance-overlay" role="dialog" aria-modal="true" aria-label="Choose appearance"><div className="appearance-modal"><button className="appearance-close" onClick={() => { if (!showOnboarding) setAppearanceOpen(false) }} aria-label="Close"><X size={17} /></button><div className="eyebrow"><Sparkles size={13} /> CHOOSE YOUR MODE</div><h2>{showOnboarding ? "Make it yours." : "Appearance"}</h2><p>{showOnboarding ? "Pick the vibe and color you want. We'll remember it when you come back." : "Switch between the two looks whenever you want."}</p><div className="experience-grid"><button className={`experience-card ${experience === 'gamer' ? 'active' : ''}`} onClick={() => { const nextTheme = ['purple','red','green','rose','blue','white'].includes(theme) ? theme : 'purple'; setExperience('gamer'); setTheme(nextTheme as typeof theme) }}><div className="experience-preview gamer-preview"><span>0101</span><i /><b>FOWZAN</b></div><strong>🎮 Gamer</strong><small>Matrix rain · cyber · neon</small></button><button className={`experience-card ${experience === 'professional' ? 'active' : ''}`} onClick={() => { const nextTheme = ['rose','blue','purple','mono'].includes(theme) ? theme : 'blue'; setExperience('professional'); setTheme(nextTheme as typeof theme) }}><div className="experience-preview professional-preview"><span>F</span><b>FOWZAN&apos;S INBOX</b></div><strong><PenLine size={15} strokeWidth={2} /> Minimal</strong><small>Elegant · focused · refined</small></button></div><div className="accent-heading">Choose a color</div><div className="accent-grid">{(experience === 'gamer' ? ['purple','red','green','rose','blue','white'] : ['rose','blue','purple','mono']).map((accent) => <button key={accent} className={`accent-choice ${theme === accent ? 'active' : ''} accent-${accent}`} onClick={() => setTheme(accent as typeof theme)} aria-label={`${accent} accent`}><span /></button>)}</div><div className="appearance-actions"><button className="primary-button" disabled={!experience} onClick={() => { if (!experience) return; chooseAppearance(experience, theme); setShowOnboarding(false); setAppearanceOpen(false) }}>{showOnboarding ? "Continue" : "Save appearance"}<ChevronRight size={16} /></button></div></div></div>}
-      {shareCard && <div className="modal-backdrop share-composer-backdrop" onClick={() => !shareBusy && setShareCard(null)}><article className="share-card share-composer-modal" onClick={(e) => e.stopPropagation()}><button className="appearance-close" onClick={() => setShareCard(null)} aria-label="Close share dialog" disabled={shareBusy}><X size={17} /></button><div className="eyebrow"><Share2 size={13} /> STORY SHARE</div><h2>Make it story-ready.</h2><p className="share-card-help">Your question and the complete conversation are composed into a 9:16 story image. Add a caption, then tap share — on a phone, the native share sheet can hand the image to Instagram, WhatsApp and other installed apps.</p><div className="share-story-preview-shell"><div className="share-story-preview"><div className="share-story-preview-top"><span>Vive la Résistance</span><small>FOWZAN&apos;S INBOX</small></div><div className="share-story-question"><span>QUESTION</span><strong>{shareCard.text || 'Anonymous message'}</strong></div>{shareCard.replies.length > 0 && <div className="share-story-replies"><span className="share-story-section-label">CONVERSATION · {shareCard.replies.length}</span>{shareCard.replies.slice(0, 3).map((reply) => <div className="share-story-reply" key={reply.id}><b>{reply.author || 'Anonymous'}</b><p>{reply.text || 'Media reply'}</p></div>)}{shareCard.replies.length > 3 && <small>+ {shareCard.replies.length - 3} more replies in the exported story</small>}</div>}<div className="share-story-footer"><span>anonymous by default</span><span>fowzan&apos;s inbox</span></div></div></div><label className="share-caption-label">caption<input value={shareCaption} onChange={(e) => setShareCaption(e.target.value)} placeholder="Add your caption…" maxLength={180} /></label>{shareError && <div className="share-error" role="status">{shareError}</div>}<div className="share-destination-hint"><span><Share2 size={14} /></span><div><strong>Instagram Stories · WhatsApp Status</strong><small>Tap Share and choose the app from your phone&apos;s share sheet.</small></div></div><div className="share-composer-actions"><button className="secondary-button" onClick={() => setShareCard(null)} disabled={shareBusy}>cancel</button><button className="primary-button" onClick={shareCardNow} disabled={shareBusy}>{shareBusy ? <Loader2 size={15} className="spin" /> : <Share2 size={15} />}<span>{shareBusy ? 'creating story…' : 'share story'}</span><ChevronRight size={16} /></button></div></article></div>}
+      {shareMenu && <div className="share-choice-backdrop" onClick={() => setShareMenu(null)}><div className="share-choice" role="dialog" aria-modal="true" aria-label="Share options" onClick={(e) => e.stopPropagation()}><div className="share-choice-head"><div><span className="eyebrow"><Share2 size={12} /> SHARE</span><strong>How do you want to share it?</strong></div><button onClick={() => setShareMenu(null)} aria-label="Close"><X size={15} /></button></div><button className="share-choice-item" onClick={() => shareThreadLink(shareMenu)}><span className="share-choice-icon"><Share2 size={17} /></span><span><b>Share thread</b><small>Share the conversation link.</small></span><ChevronRight size={15} /></button><button className="share-choice-item story-choice" onClick={() => openShareCard(shareMenu)}><span className="share-choice-icon"><ImageIcon size={17} /></span><span><b>Share to Story</b><small>Create a 9:16 story card for Instagram / WhatsApp.</small></span><ChevronRight size={15} /></button></div></div>}
+      {shareCard && <div className="share-choice-backdrop" onClick={() => !shareBusy && setShareCard(null)}><article className="story-composer" role="dialog" aria-modal="true" aria-label="Create story" onClick={(e) => e.stopPropagation()}><div className="share-choice-head"><div><span className="eyebrow"><ImageIcon size={12} /> STORY</span><strong>Ready to share.</strong></div><button onClick={() => setShareCard(null)} aria-label="Close" disabled={shareBusy}><X size={15} /></button></div><div className="story-mini-preview"><div className="story-mini-kicker">Vive la Résistance</div><div className="story-mini-question">{shareCard.text || 'Anonymous message'}</div>{shareCard.replies.length > 0 && <div className="story-mini-reply">{shareCard.replies[0].author}: {shareCard.replies[0].text || 'Media reply'}</div>}<div className="story-mini-brand">FOWZAN&apos;S INBOX</div></div><label className="share-caption-label">caption<input value={shareCaption} onChange={(e) => setShareCaption(e.target.value)} placeholder="Add a caption…" maxLength={180} /></label>{shareError && <div className="share-error" role="status">{shareError}</div>}<div className="story-share-note"><span>9:16</span><span>Instagram Stories</span><span>WhatsApp Status</span></div><div className="share-composer-actions"><button className="secondary-button" onClick={() => setShareCard(null)} disabled={shareBusy}>cancel</button><button className="primary-button" onClick={shareCardNow} disabled={shareBusy}>{shareBusy ? <Loader2 size={15} className="spin" /> : <Share2 size={15} />}<span>{shareBusy ? 'creating…' : 'Share Story'}</span></button></div></article></div>}
     </main>
   )
 }
