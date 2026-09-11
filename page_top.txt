@@ -1,0 +1,380 @@
+'use client'
+
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ArrowLeft, Check, ChevronRight, Inbox, LockKeyhole, LogOut,
+  Bell, BellRing, Download, Film, Gamepad2, ImageIcon, Mail, MessageCircle, Palette, PenLine, RefreshCw, Send, Share2, Sparkles,
+  Star, ThumbsUp, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot, BarChart3, Plus, Search, SlidersHorizontal
+} from 'lucide-react'
+
+type ThreadReply = { id: number; text: string; time: string; author: string; upvotes?: number; mediaUrl?: string | null; mediaType?: 'image' | 'gif' | null }
+type Thought = { id: number; text: string; time: string; unread?: boolean; kept?: boolean; senderName?: string | null; upvotes?: number; mediaData?: string | null; mediaType?: 'image' | 'audio' | null; mediaTranscript?: string | null; replies: ThreadReply[] }
+type PublicResponse = { id: number; text: string; time: string; author: string; upvotes?: number; mediaData?: string | null; mediaType?: 'image' | 'audio' | null; mediaTranscript?: string | null; replies: ThreadReply[] }
+type PollOption = { text: string; imageData?: string | null }
+type Poll = { id: number; question: string; options: PollOption[]; counts: number[]; totalVotes: number; time: string; imageData?: string | null }
+
+const prompts = [
+  'What are you really into these days?',
+  'What is a hobby you could talk about for hours?',
+  'What is something you want to learn?',
+  'What is a random fact about you?',
+  'What is a goal you are working towards?',
+  'What is your most unpopular opinion?',
+  'What is something that always makes you laugh?',
+  'If you could try anything for a day, what would it be?'
+]
+
+// Every Matrix stream is a phonetic rendering of “Fowzan” in a different script.
+// No random words: the rain visually spells the same name across languages.
+const matrixStreams = [
+  'ファウザン', '法乌赞', '파우잔', 'فوزان',
+  'Φαουζάν', 'Фаузан', 'פאוזאן', 'ฟาวซาน',
+  'Ֆաուզան', 'ფაუზან', 'فَوْزَان', 'ファウザーン',
+  'FAWZAN', 'FOWZAN', 'Fawzan', 'fawzan'
+]
+
+function normalizePolls(value: unknown): Poll[] {
+  if (!Array.isArray(value)) return []
+  return value.map((poll: any) => ({
+    ...poll,
+    id: Number(poll.id),
+    options: Array.isArray(poll.options) ? poll.options.map((option: any) => typeof option === 'string' ? { text: option, imageData: null } : { text: String(option?.text ?? ''), imageData: option?.imageData ?? null }) : [],
+    counts: Array.isArray(poll.counts) ? poll.counts.map(Number) : [],
+    totalVotes: Number(poll.totalVotes ?? 0),
+  }))
+}
+
+const relativeTime = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+
+function formatTime(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const diff = date.getTime() - Date.now()
+  const minutes = Math.round(diff / 60000)
+  if (Math.abs(minutes) < 60) return relativeTime.format(minutes, 'minute')
+  const hours = Math.round(minutes / 60)
+  if (Math.abs(hours) < 24) return relativeTime.format(hours, 'hour')
+  return relativeTime.format(Math.round(hours / 24), 'day')
+}
+
+export default function Page() {
+  const [view, setView] = useState<'public' | 'private'>('public')
+  const [theme, setTheme] = useState<'white' | 'green' | 'purple' | 'red' | 'blue' | 'rose' | 'amber' | 'slate' | 'mono'>('purple')
+  const [experience, setExperience] = useState<'gamer' | 'professional' | null>(null)
+  const [appearanceOpen, setAppearanceOpen] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [mediaData, setMediaData] = useState<string | null>(null)
+  const [mediaType, setMediaType] = useState<'image' | 'audio' | null>(null)
+  const [mediaTranscript, setMediaTranscript] = useState('')
+  const [recording, setRecording] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const mediaStreamRef = useRef<MediaStream | null>(null)
+  const mediaChunksRef = useRef<Blob[]>([])
+  const speechRecognitionRef = useRef<any>(null)
+  const speechFinalRef = useRef('')
+  const recordingStartedAtRef = useRef(0)
+  const recordingTokenRef = useRef(0)
+  const [thought, setThought] = useState('')
+  const [sent, setSent] = useState(false)
+  const [senderName, setSenderName] = useState('')
+  const [revealName, setRevealName] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [ownerUnlocked, setOwnerUnlocked] = useState(false)
+  const [password, setPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
+  const [thoughts, setThoughts] = useState<Thought[]>([])
+  const [selected, setSelected] = useState<Thought | null>(null)
+  const [showKeeps, setShowKeeps] = useState(false)
+  const [responses, setResponses] = useState<PublicResponse[]>([])
+  const [polls, setPolls] = useState<Poll[]>([])
+  const [votedPolls, setVotedPolls] = useState<Record<number, number>>({})
+  const [pollQuestion, setPollQuestion] = useState('')
+  const [pollOptions, setPollOptions] = useState<PollOption[]>([{ text: '' }, { text: '' }])
+  const [pollCreating, setPollCreating] = useState(false)
+  const [replyingTo, setReplyingTo] = useState<number | null>(null)
+  const [replyText, setReplyText] = useState('')
+  const [replyName, setReplyName] = useState('')
+  const [replyReveal, setReplyReveal] = useState(false)
+  const [ownerReplies, setOwnerReplies] = useState<Record<number, string>>({})
+  const [ownerMediaUrls, setOwnerMediaUrls] = useState<Record<number, string>>({})
+  const [ownerMediaModes, setOwnerMediaModes] = useState<Record<number, 'image' | 'gif' | null>>({})
+  const [votedThreadIds, setVotedThreadIds] = useState<Set<number>>(new Set())
+  const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const [replySending, setReplySending] = useState<number | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [threadQuery, setThreadQuery] = useState('')
+  const [publicSearchOpen, setPublicSearchOpen] = useState(false)
+  const [publicSearch, setPublicSearch] = useState('')
+  const [votedReplyIds, setVotedReplyIds] = useState<Set<number>>(new Set())
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
+  const [notificationPromptOpen, setNotificationPromptOpen] = useState(false)
+  const [shareBusy, setShareBusy] = useState(false)
+  const [shareError, setShareError] = useState('')
+  const [shareTarget, setShareTarget] = useState<Thought | PublicResponse | null>(null)
+  const replyInputRef = useRef<HTMLInputElement>(null)
+  const knownThreadIds = useRef(new Set<number>())
+  const inboxInitialized = useRef(false)
+  const voterKey = useRef<string | null>(null)
+
+  useEffect(() => {
+    const savedExperience = localStorage.getItem('fowzan-experience') as 'gamer' | 'professional' | null
+    const savedTheme = localStorage.getItem('fowzan-theme') as typeof theme | null
+    if (savedExperience === 'gamer' || savedExperience === 'professional') {
+      setExperience(savedExperience)
+      document.documentElement.dataset.fowzanMode = savedExperience
+    }
+    const validSavedTheme = savedExperience === 'professional' && savedTheme === 'red' ? 'blue' : savedTheme
+    if (validSavedTheme && ['white','green','purple','red','blue','rose','amber','slate','mono'].includes(validSavedTheme)) {
+      setTheme(validSavedTheme)
+      document.documentElement.dataset.fowzanTheme = validSavedTheme
+      if (savedExperience === 'professional' && savedTheme === 'red') localStorage.setItem('fowzan-theme', 'blue')
+    }
+    setShowOnboarding(!(savedExperience && validSavedTheme))
+  }, [])
+
+  useEffect(() => {
+    if (experience) document.documentElement.dataset.fowzanMode = experience
+    else document.documentElement.removeAttribute('data-fowzan-mode')
+    document.documentElement.dataset.fowzanTheme = theme
+
+    // IMPORTANT: do not remove the pre-hydration cloak from the first
+    // localStorage effect. React still renders its initial `experience=null`
+    // / `theme=purple` tree for that frame, which was the source of the
+    // visible purple flash on mobile. This effect runs only after React has
+    // committed the saved mode/theme to the actual .app-page attributes.
+    if (experience && document.documentElement.classList.contains('fowzan-prehydrated')) {
+      const frame = window.requestAnimationFrame(() => {
+        document.documentElement.classList.remove('fowzan-prehydrated')
+      })
+      return () => window.cancelAnimationFrame(frame)
+    }
+  }, [experience, theme])
+
+  function applyAppearance(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme, persist = false) {
+    // The document root is the authoritative visual mode. It is updated
+    // synchronously before React so the background can never spend a frame
+    // using the previous experience while the React tree catches up.
+    const root = document.documentElement
+    root.dataset.fowzanMode = nextExperience
+    root.dataset.fowzanTheme = nextTheme
+    setExperience(nextExperience)
+    setTheme(nextTheme)
+    if (persist) {
+      localStorage.setItem('fowzan-experience', nextExperience)
+      localStorage.setItem('fowzan-theme', nextTheme)
+    }
+  }
+
+  function chooseAppearance(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme) {
+    applyAppearance(nextExperience, nextTheme, true)
+  }
+
+  function handleAppearanceChange(nextExperience: 'gamer' | 'professional', nextTheme: typeof theme) {
+    chooseAppearance(nextExperience, nextTheme)
+    setAppearanceOpen(false)
+    setShowOnboarding(false)
+  }
+
+  function chooseRecorderMime() {
+    if (typeof MediaRecorder === 'undefined') return ''
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+      'audio/ogg',
+    ]
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || ''
+  }
+
+  function startSpeechCapture() {
+    const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!Recognition) return
+    try {
+      const recognition = new Recognition()
+      recognition.continuous = true
+      recognition.interimResults = true
+      recognition.lang = 'en-US'
+      recognition.onresult = (event: any) => {
+        let interimText = ''
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const piece = event.results[i]?.[0]?.transcript ?? ''
+          if (event.results[i].isFinal) speechFinalRef.current = `${speechFinalRef.current} ${piece}`.trim()
+          else interimText += piece
+        }
+        setMediaTranscript(`${speechFinalRef.current}${interimText ? ` ${interimText}` : ''}`.trim())
+      }
+      recognition.onerror = () => {}
+      recognition.start()
+      speechRecognitionRef.current = recognition
+    } catch {}
+  }
+
+  function stopSpeechCapture() {
+    try { speechRecognitionRef.current?.stop() } catch {}
+    speechRecognitionRef.current = null
+  }
+
+  function compressImage(file: File) {
+    return new Promise<string>((resolve, reject) => {
+      const url = URL.createObjectURL(file)
+      const image = new Image()
+      image.onload = () => {
+        URL.revokeObjectURL(url)
+        const maxSide = 1280
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale))
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale))
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('Could not prepare the image.')); return }
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+        const output = canvas.toDataURL('image/jpeg', 0.76)
+        if (output.length > 1150000) {
+          const smaller = document.createElement('canvas')
+          const factor = 0.72
+          smaller.width = Math.max(1, Math.round(canvas.width * factor))
+          smaller.height = Math.max(1, Math.round(canvas.height * factor))
+          const smallCtx = smaller.getContext('2d')
+          if (!smallCtx) { reject(new Error('Could not prepare the image.')); return }
+          smallCtx.drawImage(canvas, 0, 0, smaller.width, smaller.height)
+          resolve(smaller.toDataURL('image/jpeg', 0.68))
+        } else resolve(output)
+      }
+      image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that image.')) }
+      image.src = url
+    })
+  }
+
+  async function handleImage(file: File | undefined) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setError('Please choose an image.'); return }
+    try {
+      const data = file.type === 'image/gif' && file.size <= 700000
+        ? await readFileAsDataUrl(file, 700000)
+        : await compressImage(file)
+      setMediaData(data)
+      setMediaType('image')
+      setMediaTranscript('')
+      setError('')
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not add the image.') }
+  }
+
+  function readFileAsDataUrl(file: File, maxBytes: number) {
+    return new Promise<string>((resolve, reject) => {
+      if (file.size > maxBytes) return reject(new Error(`Please keep ${file.type.startsWith('image/') ? 'images' : 'voice notes'} under ${Math.round(maxBytes / 1024) } KB.`))
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result))
+      reader.onerror = () => reject(new Error('Could not read that file.'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  async function toggleRecording() {
+    if (recording) {
+      try { mediaRecorderRef.current?.stop() } catch {}
+      return
+    }
+    if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+      setError('Voice notes require HTTPS. Open the secure Vercel URL.')
+      return
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setError('Voice notes are not supported by this browser.')
+      return
+    }
+
+    try {
+      setError('')
+      const recordingToken = ++recordingTokenRef.current
+      setMediaData(null)
+      setMediaType(null)
+      setMediaTranscript('')
+      speechFinalRef.current = ''
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
+      })
+      mediaStreamRef.current = stream
+      const mimeType = chooseRecorderMime()
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 48000 })
+        : new MediaRecorder(stream)
+      mediaChunksRef.current = []
+      recordingStartedAtRef.current = Date.now()
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) mediaChunksRef.current.push(event.data)
+      }
+      recorder.onerror = () => {
+        stream.getTracks().forEach((track) => track.stop())
+        mediaStreamRef.current = null
+        setRecording(false)
+        setError('The browser could not record that voice note.')
+      }
+      recorder.onstop = async () => {
+        stopSpeechCapture()
+        stream.getTracks().forEach((track) => track.stop())
+        mediaStreamRef.current = null
+        mediaRecorderRef.current = null
+        setRecording(false)
+        const elapsed = Date.now() - recordingStartedAtRef.current
+        const blob = new Blob(mediaChunksRef.current, { type: recorder.mimeType || mimeType || 'audio/webm' })
+        mediaChunksRef.current = []
+        if (elapsed < 300 || blob.size < 200) {
+          setError('The voice note was too short. Hold record for a moment and try again.')
+          return
+        }
+        if (blob.size > 850000) {
+          setError('That voice note is too large. Please record a shorter note.')
+          return
+        }
+        try {
+          const data = await readFileAsDataUrl(new File([blob], 'voice-note', { type: blob.type || 'audio/webm' }), 850000)
+          if (recordingTokenRef.current !== recordingToken) return
+          setMediaData(data)
+          setMediaType('audio')
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Could not prepare the voice note.')
+        }
+      }
+
+      mediaRecorderRef.current = recorder
+      recorder.start(250)
+      setRecording(true)
+      startSpeechCapture()
+
+      window.setTimeout(() => {
+        if (mediaRecorderRef.current === recorder && recorder.state === 'recording') recorder.stop()
+      }, 60000)
+    } catch (err) {
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
+      mediaStreamRef.current = null
+      setRecording(false)
+      setError(err instanceof DOMException && err.name === 'NotAllowedError' ? 'Microphone access was blocked. Allow the microphone and try again.' : 'Microphone access was not granted.')
+    }
+  }
+
+  function clearMedia() {
+    recordingTokenRef.current += 1
+    try { mediaRecorderRef.current?.stop() } catch {}
+    stopSpeechCapture()
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
+    mediaStreamRef.current = null
+    mediaRecorderRef.current = null
+    mediaChunksRef.current = []
+    setRecording(false)
+    setMediaData(null)
+    setMediaType(null)
+    setMediaTranscript('')
+    speechFinalRef.current = ''
+  }
+
+  const visibleResponses = useMemo(() => {
+    const query = publicSearch.trim().toLowerCase()
+    if (!query) return responses
+    return responses.filter((item) => item.text.toLowerCase().includes(query) || item.author.toLowerCase().includes(query) || item.replies.some((reply) => reply.text.toLowerCase().includes(query) || reply.author.toLowerCase().includes(query)))
+  }, [responses, publicSearch])
