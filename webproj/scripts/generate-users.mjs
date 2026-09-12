@@ -1,11 +1,18 @@
 import { randomBytes } from 'node:crypto'
 
-const count = Math.max(1, Math.min(50, Number(process.argv[2] || 13)))
+const defaults = [
+  ['imaad', 'Imaad'],
+  ['adiva', 'Adiva'],
+  ['ibrahim', 'Ibrahim'],
+  ['shayaan', 'Shayaan'],
+]
+const countArg = process.argv[2]
+const count = countArg == null ? defaults.length : Math.max(1, Math.min(50, Number(countArg)))
 const accounts = Array.from({ length: count }, (_, index) => {
-  const number = String(index + 1).padStart(2, '0')
+  const [username, displayName] = defaults[index] || [`user${String(index + 1).padStart(2, '0')}`, `User ${String(index + 1).padStart(2, '0')}`]
   return {
-    username: `user${number}`,
-    displayName: `User ${number}`,
+    username,
+    displayName,
     password: randomBytes(12).toString('base64url'),
   }
 })

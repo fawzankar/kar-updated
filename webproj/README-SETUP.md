@@ -1,6 +1,6 @@
 # Fowzan's Inbox — multi-user setup
 
-This version supports a private account for the owner plus additional private inbox accounts. Every account has its own inbox, replies, read/keep state, and password-change flow.
+This version supports exactly five private inbox accounts by default: Fawzan (owner), Imaad, Adiva, Ibrahim, and Shayaan. Every account has its own inbox, replies, read/keep state, and password-change flow.
 
 ## Local setup
 
@@ -10,20 +10,29 @@ This version supports a private account for the owner plus additional private in
 4. Install dependencies with `npm install`.
 5. Run `npm run dev`.
 
-## Creating the 13 additional accounts
+## Creating the four additional accounts
 
 Run:
 
 ```bash
-node scripts/generate-users.mjs 13
+node scripts/generate-users.mjs
 ```
 
 The script prints 13 unique usernames and strong random passwords as JSON. Put that JSON in the `INITIAL_USERS_JSON` environment variable for the first deployment.
 
+The default output creates:
+
+```text
+imaad    → Imaad
+adiva    → Adiva
+ibrahim  → Ibrahim
+shayaan  → Shayaan
+```
+
 Example shape:
 
 ```json
-[{"username":"user01","displayName":"User 01","password":"..."},{"username":"user02","displayName":"User 02","password":"..."}]
+[{"username":"imaad","displayName":"Imaad","password":"..."},{"username":"adiva","displayName":"Adiva","password":"..."}]
 ```
 
 On first schema initialization, the passwords are converted to salted scrypt password hashes before being stored in Postgres. The application does not store the plaintext passwords. **After the accounts have been created successfully, remove `INITIAL_USERS_JSON` from Vercel/environment variables.** Users can then change their own passwords from their private admin panel.
@@ -64,7 +73,7 @@ After the initial users have been provisioned, sign in with the owner account an
 - disable or re-enable a user's login (disabling also revokes their sessions);
 - reset a user's password to a strong random password, shown once in the owner panel.
 
-The owner account itself cannot be disabled or reset from this panel. Users can still change their own password from **password** in their private inbox.
+The owner account itself cannot be disabled or reset from this panel. The account selector shows only Fawzan, Imaad, Adiva, Ibrahim, and Shayaan by default. Users can still change their own password from **password** in their private inbox.
 
 Public inbox URLs use `/<username>` and messages submitted there are stored against that username's database account. Conversation shares use `/<username>/thread/<messageId>`. The older `/?to=<username>` form remains supported as a compatibility fallback.
 
@@ -72,3 +81,5 @@ Public inbox URLs use `/<username>` and messages submitted there are stored agai
 ## Clean URL routing
 
 Each account now has a human-friendly public URL: `https://your-domain.example/<username>` (for example, `/user01`). Shared conversations use `https://your-domain.example/<username>/thread/<messageId>`. The previous `/?to=<username>` URLs are accepted for compatibility and automatically cleaned to the new URL in the browser.
+
+The default account routes are `/fowzan`, `/imaad`, `/adiva`, `/ibrahim`, and `/shayaan`.
