@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   const result = await pool.query('SELECT password_hash FROM users WHERE id = $1 AND active = TRUE', [user.id])
   if (!result.rows[0] || !(await verifyPassword(currentPassword, result.rows[0].password_hash))) return NextResponse.json({ error: 'Current password is incorrect.' }, { status: 401 })
   const passwordHash = await hashPassword(newPassword)
-  await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, user.id])
+  await pool.query('UPDATE users SET password_hash = $1, must_change_password = FALSE WHERE id = $2', [passwordHash, user.id])
   await pool.query('DELETE FROM sessions WHERE user_id = $1', [user.id])
   return NextResponse.json({ ok: true, message: 'Password changed. Please sign in again.' })
 }

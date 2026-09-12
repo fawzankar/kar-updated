@@ -6,7 +6,7 @@ import { verifyPassword } from '@/lib/password'
 const SESSION_COOKIE = 'fowzan_session'
 const SESSION_DAYS = 7
 
-export type AuthUser = { id: number; username: string; displayName: string; role: 'owner' | 'user' }
+export type AuthUser = { id: number; username: string; displayName: string; role: 'owner' | 'user'; mustChangePassword: boolean }
 
 function hashSession(token: string) {
   return createHash('sha256').update(token).digest('hex')
@@ -30,7 +30,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value
   if (!token) return null
   const result = await pool.query(`
-    SELECT u.id, u.username, u.display_name AS "displayName", u.role
+    SELECT u.id, u.username, u.display_name AS "displayName", u.role, u.must_change_password AS "mustChangePassword"
     FROM sessions s JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = $1 AND s.expires_at > NOW() AND u.active = TRUE
     LIMIT 1

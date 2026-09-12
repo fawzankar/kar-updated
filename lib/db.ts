@@ -14,16 +14,25 @@ if (process.env.NODE_ENV !== 'production') globalThis.__fowzanPool = pool
 
 async function seedUsers() {
   const ownerUsername = (process.env.OWNER_USERNAME || 'fowzan').trim().toLowerCase()
-  const ownerDisplayName = process.env.OWNER_DISPLAY_NAME || 'Fowzan'
+  const ownerDisplayName = process.env.OWNER_DISPLAY_NAME || 'Fawzan'
   const ownerPassword = process.env.OWNER_PASSWORD
   if (ownerPassword) {
     const existing = await pool.query('SELECT id FROM users WHERE username = $1 LIMIT 1', [ownerUsername])
     if (!existing.rows[0]) {
       const passwordHash = await hashPassword(ownerPassword)
-      await pool.query(`INSERT INTO users (username, display_name, password_hash, role) VALUES ($1,$2,$3,'owner')`, [ownerUsername, ownerDisplayName, passwordHash])
+      await pool.query(`INSERT INTO users (username, display_name, password_hash, role, must_change_password) VALUES ($1,$2,$3,'owner',FALSE)`, [ownerUsername, ownerDisplayName, passwordHash])
     }
   }
-
+  await pool.query(`CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)`)
+  const seeded = await pool.query(`SELECT value FROM app_settings WHERE key = 'default_users_seeded_v1' LIMIT 1`)
+  if (!seeded.rows[0]) {
+    const defaults = [['imaad','Imaad'],['adiva','Adiva'],['ibrahim','Ibrahim'],['shayaan','Shayaan']]
+    const passwordHash = await hashPassword('1234')
+    for (const [username, displayName] of defaults) {
+      await pool.query(`INSERT INTO users (username, display_name, password_hash, role, must_change_password) VALUES ($1,$2,$3,'user',TRUE) ON CONFLICT (username) DO UPDATE SET password_hash=EXCLUDED.password_hash, must_change_password=TRUE, active=TRUE`, [username, displayName, passwordHash])
+    }
+    await pool.query(`INSERT INTO app_settings (key, value) VALUES ('default_users_seeded_v1', 'true') ON CONFLICT (key) DO NOTHING`)
+  }
   const raw = process.env.INITIAL_USERS_JSON
   if (!raw) return
   let accounts: unknown
@@ -34,11 +43,11 @@ async function seedUsers() {
     const username = String((account as any)?.username ?? '').trim().toLowerCase()
     const password = String((account as any)?.password ?? '')
     const displayName = String((account as any)?.displayName ?? username).trim().slice(0, 80)
-    if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username) || password.length < 10) continue
+    if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username) || password.length < 4) continue
     const exists = await pool.query('SELECT id FROM users WHERE username = $1 LIMIT 1', [username])
     if (exists.rows[0]) continue
     const passwordHash = await hashPassword(password)
-    await pool.query(`INSERT INTO users (username, display_name, password_hash, role) VALUES ($1,$2,$3,'user')`, [username, displayName || username, passwordHash])
+    await pool.query(`INSERT INTO users (username, display_name, password_hash, role, must_change_password) VALUES ($1,$2,$3,'user',TRUE)`, [username, displayName || username, passwordHash])
   }
 }
 
@@ -52,6 +61,7 @@ export function ensureSchema() {
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('owner','user')),
       active BOOLEAN NOT NULL DEFAULT TRUE,
+      must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS sessions (
@@ -116,6 +126,7 @@ export function ensureSchema() {
       count INTEGER NOT NULL DEFAULT 0,
       reset_at TIMESTAMPTZ NOT NULL
     );
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id) ON DELETE CASCADE;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS sender_name TEXT;
