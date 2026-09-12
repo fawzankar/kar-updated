@@ -1,85 +1,43 @@
-# Fowzan's Inbox — multi-user setup
+# Fowzan's Inbox
 
-This version supports exactly five private inbox accounts by default: Fawzan (owner), Imaad, Adiva, Ibrahim, and Shayaan. Every account has its own inbox, replies, read/keep state, and password-change flow.
+A teen-cyberpunk anonymous-message website: almost-black panels, green-on-black as the default theme, pixel-display typography, and a visible animated grid/particle background. It retains the anonymous messaging, threaded replies, owner authentication, moderation, and database behavior from the original project.
 
-## Local setup
+## Run locally
 
-1. Copy `.env.example` to `.env.local`.
-2. Set `DATABASE_URL` (or `STORAGE_DATABASE_URL`) to your Postgres/Neon connection string.
-3. Set a strong `OWNER_PASSWORD` and a random `AUTH_SECRET` (32+ characters).
-4. Install dependencies with `npm install`.
-5. Run `npm run dev`.
+1. Copy `.env.example` to `.env.local` and provide the listed environment variables.
+2. Run `npm install`.
+3. Run `npm run dev`.
 
-## Creating the four additional accounts
+## Design highlights
 
-Run:
+- Responsive black-and-green cyberpunk layout with an animated perspective grid, visible Matrix rain, and minimal drifting particles.
+- Pixel-style display font for major headings and a compact technical mono font for interface content.
+- Tactile hover states, sharp arcade-inspired cards, and accessible reduced-motion support.
+- A built-in Green / Red / Blue / Yellow theme selector on the public page.
+- A private inbox for reading, replying to, saving, and managing threads.
+- Cached database initialization and immediate private-inbox rendering after sign-in.
 
-```bash
-node scripts/generate-users.mjs
-```
+## Original functional behavior
 
-The script prints 13 unique usernames and strong random passwords as JSON. Put that JSON in the `INITIAL_USERS_JSON` environment variable for the first deployment.
+This build keeps every incoming message as its own conversation thread.
 
-The default output creates:
+## Included
+- All incoming questions appear in **All Threads**.
+- The selected thread has its own bounded internal scroll area, so long conversations do not break the page.
+- Fowzan can send unlimited replies in the same thread.
+- One click/request creates one reply; the reply button is locked while a reply is being sent.
+- The owner can remove any individual reply without affecting its parent thread.
+- Deleting an entire thread is a separate, confirmed action; it removes the original message and its replies.
+- Deleting a thread removes its replies first, then the thread itself.
+- New messages are refreshed automatically while the private inbox is open.
+- Reply Queue shows threads that have not received a reply yet.
+- Existing authentication and public anonymous-message functionality are preserved.
 
-```text
-imaad    → Imaad
-adiva    → Adiva
-ibrahim  → Ibrahim
-shayaan  → Shayaan
-```
+## Vercel environment variables
+Use your existing variables. The database connection prefers `STORAGE_DATABASE_URL` (from Vercel Storage/Neon) and falls back to `DATABASE_URL`.
 
-Example shape:
+Required owner variables:
+- `OWNER_PASSWORD`
+- `AUTH_SECRET`
 
-```json
-[{"username":"imaad","displayName":"Imaad","password":"..."},{"username":"adiva","displayName":"Adiva","password":"..."}]
-```
-
-On first schema initialization, the passwords are converted to salted scrypt password hashes before being stored in Postgres. The application does not store the plaintext passwords. **After the accounts have been created successfully, remove `INITIAL_USERS_JSON` from Vercel/environment variables.** Users can then change their own passwords from their private admin panel.
-
-Usernames are lowercase and may contain letters, numbers, `.`, `_`, and `-`.
-
-## Sharing each person's inbox
-
-Each person gets a public inbox URL in this format:
-
-`https://your-domain.example/user01`
-
-Each public inbox has a clean URL such as `https://your-domain.example/user01`. The owner/admin's public inbox is `https://your-domain.example/fowzan` by default. The private admin's **share** button automatically creates the correct clean URL for the signed-in account.
-
-## Security model
-
-- Passwords are salted and hashed with Node's scrypt; plaintext passwords are not stored in the database.
-- Login sessions use random opaque tokens stored only as SHA-256 hashes in Postgres.
-- Sessions are HttpOnly, SameSite=Lax cookies and use Secure cookies in production.
-- Password changes invalidate all active sessions for that account.
-- Every private inbox query is scoped by the authenticated user's database ID.
-- Replies, read/keep actions, and deletes verify that the target message belongs to the authenticated account.
-- Poll creation/deletion remains owner-only.
-- Public anonymous submissions are routed to the selected account via the `to` parameter/body recipient.
-- Existing messages are migrated to the configured owner account during the first schema initialization.
-
-## Important deployment note
-
-Do not commit `.env`, `.env.local`, or an `INITIAL_USERS_JSON` containing plaintext passwords to GitHub. Prefer Vercel environment variables for first-run provisioning, then remove the provisioning variable after the database has been initialized.
-
-## Owner user management
-
-After the initial users have been provisioned, sign in with the owner account and use **users** in the private inbox toolbar. The owner-only panel can:
-
-- list every account with message/unread counts;
-- inspect any user's inbox without logging in as that user;
-- copy/open that user's public inbox URL;
-- disable or re-enable a user's login (disabling also revokes their sessions);
-- reset a user's password to a strong random password, shown once in the owner panel.
-
-The owner account itself cannot be disabled or reset from this panel. The account selector shows only Fawzan, Imaad, Adiva, Ibrahim, and Shayaan by default. Users can still change their own password from **password** in their private inbox.
-
-Public inbox URLs use `/<username>` and messages submitted there are stored against that username's database account. Conversation shares use `/<username>/thread/<messageId>`. The older `/?to=<username>` form remains supported as a compatibility fallback.
-
-
-## Clean URL routing
-
-Each account now has a human-friendly public URL: `https://your-domain.example/<username>` (for example, `/user01`). Shared conversations use `https://your-domain.example/<username>/thread/<messageId>`. The previous `/?to=<username>` URLs are accepted for compatibility and automatically cleaned to the new URL in the browser.
-
-The default account routes are `/fowzan`, `/imaad`, `/adiva`, `/ibrahim`, and `/shayaan`.
+Do not commit `.env` or `.env.local`.

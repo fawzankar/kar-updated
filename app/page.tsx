@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
 import {
   ArrowLeft, Check, ChevronRight, Inbox, LockKeyhole, LogOut,
   Bell, BellRing, Download, Film, Gamepad2, ImageIcon, Mail, MessageCircle, Palette, PenLine, RefreshCw, Send, Share2, Sparkles,
-  Star, ThumbsUp, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot, BarChart3, Plus, Search, SlidersHorizontal, Mic, Users, Eye, KeyRound, UserX, UserCheck
+  Star, ThumbsUp, Trash2, X, Loader2, ShieldCheck, Zap, CircleDot, BarChart3, Plus, Search, SlidersHorizontal, Mic
 } from 'lucide-react'
 
 type ThreadReply = { id: number; text: string; time: string; author: string; upvotes?: number; mediaUrl?: string | null; mediaType?: 'image' | 'gif' | 'audio' | null }
@@ -59,13 +58,6 @@ function formatTime(value: string) {
 }
 
 export default function Page() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const routeUsername = useMemo(() => {
-    const first = pathname.split('/').filter(Boolean)[0]?.trim().toLowerCase()
-    return first && first !== 'thread' && first !== 'poll' && first !== 'api' ? first : 'fowzan'
-  }, [pathname])
-  const [publicProfile, setPublicProfile] = useState<{ username: string; displayName: string } | null>(null)
   const [view, setView] = useState<'public' | 'private'>('public')
   const [theme, setTheme] = useState<'white' | 'green' | 'purple' | 'red' | 'blue' | 'rose' | 'amber' | 'slate' | 'mono'>('purple')
   const [experience, setExperience] = useState<'gamer' | 'professional' | null>(null)
@@ -88,16 +80,8 @@ export default function Page() {
   const [revealName, setRevealName] = useState(false)
   const [copied, setCopied] = useState(false)
   const [ownerUnlocked, setOwnerUnlocked] = useState(false)
-  const [currentUser, setCurrentUser] = useState<{ username: string; displayName: string; role: 'owner' | 'user'; mustChangePassword?: boolean } | null>(null)
-  const [loginUsername, setLoginUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [passwordPanelOpen, setPasswordPanelOpen] = useState(false)
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [passwordConfirm, setPasswordConfirm] = useState('')
-  const [passwordChangeError, setPasswordChangeError] = useState('')
-  const [passwordChangeBusy, setPasswordChangeBusy] = useState(false)
   const [thoughts, setThoughts] = useState<Thought[]>([])
   const [selected, setSelected] = useState<Thought | null>(null)
   const [showKeeps, setShowKeeps] = useState(false)
@@ -137,14 +121,6 @@ export default function Page() {
   const [shareBusy, setShareBusy] = useState(false)
   const [shareError, setShareError] = useState('')
   const [shareTarget, setShareTarget] = useState<Thought | PublicResponse | null>(null)
-  const [userManagerOpen, setUserManagerOpen] = useState(false)
-  const [managedUsers, setManagedUsers] = useState<any[]>([])
-  const [managedUser, setManagedUser] = useState<any | null>(null)
-  const [managedInbox, setManagedInbox] = useState<any[]>([])
-  const [managedLoading, setManagedLoading] = useState(false)
-  const [managedBusy, setManagedBusy] = useState<string | null>(null)
-  const [resetCredential, setResetCredential] = useState<{username:string; password:string} | null>(null)
-  const [adminUserError, setAdminUserError] = useState('')
   const replyInputRef = useRef<HTMLInputElement>(null)
   const knownThreadIds = useRef(new Set<number>())
   const inboxInitialized = useRef(false)
@@ -421,11 +397,10 @@ export default function Page() {
 
   async function loadPublic() {
     try {
-      const response = await fetch(`/api/messages?view=public&to=${encodeURIComponent(routeUsername)}`, { cache: 'no-store' })
+      const response = await fetch('/api/messages?view=public', { cache: 'no-store' })
       if (!response.ok) throw new Error('Could not load public conversations.')
       const data = await response.json()
       setResponses(data.responses ?? [])
-      setPublicProfile(data.user ?? null)
       setPolls(normalizePolls(data.polls))
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not load the page.') }
     finally { setLoading(false) }
@@ -527,23 +502,10 @@ export default function Page() {
   }
 
   useEffect(() => {
-    const legacyTarget = new URLSearchParams(window.location.search).get('to')?.trim().toLowerCase()
-    if (legacyTarget && legacyTarget === routeUsername && pathname === '/') {
-      router.replace(`/${encodeURIComponent(routeUsername)}`)
-      return
-    }
-    if (routeUsername) setLoginUsername(routeUsername)
-    fetch('/api/auth/login', { cache: 'no-store' }).then(async (response) => {
-      const data = await response.json().catch(() => ({}))
-      if (data.authenticated && data.user) { setOwnerUnlocked(true); setCurrentUser(data.user) }
-    }).catch(() => {})
-  }, [routeUsername, pathname, router])
-
-  useEffect(() => {
     loadPublic()
     const timer = window.setInterval(() => { if (view === 'public') loadPublic() }, 30000)
     return () => window.clearInterval(timer)
-  }, [view, routeUsername])
+  }, [view])
 
   useEffect(() => {
     try {
@@ -608,7 +570,7 @@ export default function Page() {
     const text = thought.trim(); if ((!text && !mediaData) || sending) return
     setSending(true); setError(''); setSent(false)
     try {
-      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'message', recipient: routeUsername, text, senderName: revealName ? senderName.trim() : null, mediaData, mediaType, mediaTranscript: mediaType === 'audio' ? mediaTranscript : null }) })
+      const response = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'message', text, senderName: revealName ? senderName.trim() : null, mediaData, mediaType, mediaTranscript: mediaType === 'audio' ? mediaTranscript : null }) })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error ?? 'Could not send your message.')
       setThought(''); setSenderName(''); setRevealName(false); clearMedia(); setSent(true)
@@ -729,10 +691,9 @@ export default function Page() {
   }
 
   async function sharePage() {
-    const recipient = currentUser?.username || routeUsername
-    const url = `${window.location.origin}/${encodeURIComponent(recipient)}`
+    const url = window.location.href
     try {
-      if (navigator.share) await navigator.share({ title: `${currentUser?.displayName || 'Fowzan'}'s anonymous inbox`, text: `Leave ${currentUser?.displayName || 'Fowzan'} an anonymous message.`, url })
+      if (navigator.share) await navigator.share({ title: "Fowzan's anonymous inbox", text: 'Leave Fowzan an anonymous message.', url })
       else { await navigator.clipboard.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
     } catch { setCopied(false) }
   }
@@ -765,7 +726,7 @@ export default function Page() {
       mono: { bg1: '#dedbd4', bg2: '#f8f7f3', panel: '#ffffff', panel2: '#f0eee9', ink: '#171615', muted: '#716e69', accent: '#292725', accent2: '#55514c', line: 'rgba(30,28,25,.16)', shadow: 'rgba(40,35,28,.17)' },
     }
     const colors = palettes[activeTheme] ?? palettes.blue
-    const inboxUrl = `${window.location.origin}/${encodeURIComponent(currentUser?.username || routeUsername)}`
+    const inboxUrl = window.location.origin
 
     // Story attachments need to be drawn onto the canvas before the PNG is created.
     // Message photos are normally stored as data URLs, so decode them locally.
@@ -893,7 +854,7 @@ export default function Page() {
     ctx.fillStyle = colors.ink
     ctx.font = '800 18px Arial'
     ctx.letterSpacing = '3px'
-    ctx.fillText(`${(publicProfile?.displayName || publicProfile?.username || routeUsername).toUpperCase()}'S INBOX`, 540, 224)
+    ctx.fillText("FOWZAN'S INBOX", 540, 224)
     ctx.letterSpacing = '0px'
     ctx.font = '600 12px Arial'
     ctx.fillStyle = colors.muted
@@ -975,12 +936,11 @@ export default function Page() {
   }
 
   async function shareThreadLink(item: Thought | PublicResponse) {
-    const recipient = currentUser?.username || routeUsername
-    const url = `${window.location.origin}/${encodeURIComponent(recipient)}/thread/${item.id}`
+    const url = `${window.location.origin}/thread/${item.id}`
     setShareError('')
     try {
       if (navigator.share) {
-        await navigator.share({ title: `${publicProfile?.displayName || publicProfile?.username || 'Inbox'}'s Inbox · Conversation`, url })
+        await navigator.share({ title: "Fowzan's Inbox · Conversation", url })
       } else {
         await navigator.clipboard.writeText(url)
         setCopied(true)
@@ -1016,7 +976,7 @@ export default function Page() {
         typeof navigator.canShare !== 'function' || (() => { try { return navigator.canShare({ files: [file] }) } catch { return false } })()
       )
       if (canShareFile) {
-        await navigator.share({ title: `${publicProfile?.displayName || publicProfile?.username || 'Inbox'}'s Inbox`, files: [file] })
+        await navigator.share({ title: "Fowzan's Inbox", files: [file] })
         return
       }
       downloadStoryFile(file)
@@ -1034,7 +994,7 @@ export default function Page() {
   }
 
   async function shareHomeStory() {
-    await shareStoryImage({ id: 0, text: `Leave ${publicProfile?.displayName || publicProfile?.username || 'them'} an anonymous message.`, senderName: null, time: new Date().toISOString(), kept: false, replies: [], upvotes: 0 }, 'home')
+    await shareStoryImage({ id: 0, text: 'Leave Fowzan an anonymous message.', senderName: null, time: new Date().toISOString(), kept: false, replies: [], upvotes: 0 }, 'home')
   }
 
   function dataUrlToFile(dataUrl: string, filename: string) {
@@ -1125,64 +1085,17 @@ export default function Page() {
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not update the reply upvote.') }
   }
 
-  async function openUserManager() {
-    setUserManagerOpen(true); setAdminUserError(''); setResetCredential(null); setManagedUser(null); setManagedInbox([]); setManagedLoading(true)
-    try {
-      const response = await fetch('/api/admin/users', { cache: 'no-store' }); const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error || 'Could not load users.')
-      setManagedUsers(data.users || [])
-    } catch (err) { setAdminUserError(err instanceof Error ? err.message : 'Could not load users.') }
-    finally { setManagedLoading(false) }
-  }
-
-  async function inspectUser(user: any) {
-    setManagedUser(user); setManagedInbox([]); setAdminUserError(''); setManagedLoading(true)
-    try {
-      const response = await fetch(`/api/admin/users/inbox?userId=${encodeURIComponent(user.id)}`, { cache: 'no-store' }); const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error || 'Could not load this inbox.')
-      setManagedUser(data.user); setManagedInbox(data.messages || [])
-    } catch (err) { setAdminUserError(err instanceof Error ? err.message : 'Could not load this inbox.') }
-    finally { setManagedLoading(false) }
-  }
-
-  async function manageUserAction(user: any, action: 'reset-password' | 'toggle-active') {
-    setManagedBusy(`${action}-${user.id}`); setAdminUserError(''); setResetCredential(null)
-    try {
-      const response = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user.id, action }) })
-      const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || 'Action failed.')
-      if (action === 'reset-password') setResetCredential({ username: data.username, password: data.password })
-      setManagedUsers((current) => current.map((entry) => entry.id === user.id ? { ...entry, active: data.active ?? true } : entry))
-      if (managedUser?.id === user.id) setManagedUser((current: any) => current ? { ...current, active: data.active ?? true } : current)
-    } catch (err) { setAdminUserError(err instanceof Error ? err.message : 'Action failed.') }
-    finally { setManagedBusy(null) }
-  }
-
   async function unlock(event: React.FormEvent) {
     event.preventDefault(); setLoginError('')
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: loginUsername, password }) })
+      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) })
       const type = response.headers.get('content-type') ?? ''; const data = type.includes('application/json') ? await response.json() : { error: await response.text() }
-      if (!response.ok) throw new Error(data.error ?? 'Invalid credentials.')
-      setOwnerUnlocked(true); setCurrentUser(data.user); setPassword(''); if (data.user?.mustChangePassword) { setCurrentPassword(password); setPasswordPanelOpen(true); setPasswordChangeError('Please choose a new password before continuing.'); } else { void loadOwner(); } if ('Notification' in window && Notification.permission === 'default') setNotificationPromptOpen(true)
+      if (!response.ok) throw new Error(data.error ?? 'Invalid password.')
+      setOwnerUnlocked(true); setPassword(''); void loadOwner(); if ('Notification' in window && Notification.permission === 'default') setNotificationPromptOpen(true)
     } catch (err) { setLoginError(err instanceof Error ? err.message : 'Unable to sign in.') }
   }
 
-  async function logout() { await fetch('/api/auth/logout', { method: 'POST' }); setOwnerUnlocked(false); setCurrentUser(null); setView('public'); setThoughts([]); setSelected(null) }
-
-  async function changePassword(event: React.FormEvent) {
-    event.preventDefault(); setPasswordChangeError('')
-    if (newPassword !== passwordConfirm) { setPasswordChangeError('The new passwords do not match.'); return }
-    setPasswordChangeBusy(true)
-    try {
-      const response = await fetch('/api/auth/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword, newPassword }) })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error || 'Could not change your password.')
-      await fetch('/api/auth/logout', { method: 'POST' })
-      setPasswordPanelOpen(false); setCurrentPassword(''); setNewPassword(''); setPasswordConfirm('')
-      setOwnerUnlocked(false); setCurrentUser(null); setThoughts([]); setSelected(null); setView('private'); setLoginUsername(currentUser?.username || ''); setLoginError('Password changed. Sign in with your new password.')
-    } catch (err) { setPasswordChangeError(err instanceof Error ? err.message : 'Could not change your password.') }
-    finally { setPasswordChangeBusy(false) }
-  }
+  async function logout() { await fetch('/api/auth/logout', { method: 'POST' }); setOwnerUnlocked(false); setView('public'); setThoughts([]); setSelected(null) }
 
   function openThought(item: Thought) {
     setSelected(item)
@@ -1199,35 +1112,13 @@ export default function Page() {
       <div className="login-shell">
         <button className="ghost-button mobile-icon-button" onClick={() => setView('public')} aria-label="Back to inbox" title="Back to inbox"><ArrowLeft size={17} /><span className="action-label">back</span></button>
         <div className="login-card">
-          <div className="private-badge"><ShieldCheck size={14} /> private access</div>
+          <div className="private-badge"><ShieldCheck size={14} /> owner access</div>
           <h1 className="login-title">Your<br /><span>private room.</span></h1>
-          <p>Sign in to your private inbox. Every account can only see and manage its own conversations.</p>
+          <p>Everything people leave here, in one quiet place. Sign in to read, reply and manage your threads.</p>
           <form onSubmit={unlock} className="login-form">
-            <div className="account-picker-label"><span>CHOOSE ACCOUNT</span><small>{loginUsername ? `@${loginUsername}` : 'Select your private inbox'}</small></div>
-            <div className="account-picker" role="listbox" aria-label="Choose private inbox">
-              {[
-                { username: 'fowzan', label: 'Fawzan' },
-                { username: 'imaad', label: 'Imaad' },
-                { username: 'adiva', label: 'Adiva' },
-                { username: 'ibrahim', label: 'Ibrahim' },
-                { username: 'shayaan', label: 'Shayaan' },
-              ].map(({ username, label }) => {
-                const selectedAccount = loginUsername === username
-                return (
-                  <button key={username} type="button" role="option" aria-selected={selectedAccount} className={`account-option ${selectedAccount ? 'selected' : ''}`} onClick={() => { setLoginUsername(username); setLoginError(''); window.setTimeout(() => document.getElementById('private-password')?.focus(), 0) }}>
-                    <span className="account-avatar">{label.slice(0, 1).toUpperCase()}</span>
-                    <span className="account-option-copy"><strong>{label}</strong><small>@{username}</small></span>
-                    {selectedAccount && <Check size={15} />}
-                  </button>
-                )
-              })}
-            </div>
-            <div className="password-field-wrap">
-              <LockKeyhole size={15} aria-hidden="true" />
-              <input id="private-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" autoComplete="current-password" aria-label={`Password for ${loginUsername || 'selected account'}`} />
-            </div>
+            <input autoFocus id="owner-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="owner password" autoComplete="current-password" />
             {loginError && <div className="inline-error">{loginError}</div>}
-            <button className="primary-button" type="submit" disabled={!loginUsername.trim() || !password.trim()}>Open {loginUsername ? `@${loginUsername}` : 'inbox'} <ChevronRight size={17} /></button>
+            <button className="primary-button" type="submit" disabled={!password.trim()}>Open inbox <ChevronRight size={17} /></button>
           </form>
         </div>
       </div>
@@ -1238,12 +1129,12 @@ export default function Page() {
     <main className="app-page admin-page" data-theme={theme} data-mode={experience}>
       <div className="ambient-orb orb-a" /><div className="ambient-orb orb-c" />
       <header className="topbar admin-topbar">
-        <button className="brand wordmark" onClick={() => setView('public')}><Mail size={16} /> {(publicProfile?.displayName || publicProfile?.username || 'FOWZAN').toUpperCase()}&apos;S INBOX</button>
+        <button className="brand wordmark" onClick={() => setView('public')}><Mail size={16} /> FOWZAN&apos;S INBOX</button>
         <div className="top-actions">
           <button className="ghost-button admin-appearance-button" onClick={() => setAppearanceOpen(true)} aria-label="Change appearance" title="Change appearance">{experience === 'gamer' ? <Gamepad2 size={14} /> : <PenLine size={14} />}<span className="action-label">{experience === 'professional' ? 'minimal' : 'gamer'}</span></button>
           <button className="ghost-button admin-theme-button" onClick={() => { const colors = experience === 'gamer' ? ['purple','red','green','rose','blue','white'] : ['rose','blue','purple','mono']; const index = colors.indexOf(theme); const next = colors[(index + 1) % colors.length] as typeof theme; handleAppearanceChange(experience || 'professional', next) }} aria-label={`Change color theme. Current color: ${theme}`} title={`Change color theme: ${theme}`}><Palette size={14} /><span className="action-label">{theme}</span></button>
           <button className="ghost-button" onClick={() => setShowKeeps(!showKeeps)} aria-label={showKeeps ? 'Show all threads' : 'Show keepsakes'} title={showKeeps ? 'Show all threads' : 'Show keepsakes'}><Star size={14} fill={showKeeps ? 'currentColor' : 'none'} /><span className="action-label">{showKeeps ? 'all threads' : 'keepsakes'}</span></button>
-          <button className="ghost-button" onClick={() => { setPasswordPanelOpen(true); setPasswordChangeError('') }} aria-label="Change password" title="Change password"><ShieldCheck size={14} /><span className="action-label">password</span></button>{currentUser?.role === 'owner' && <button className="ghost-button" onClick={openUserManager} aria-label="Manage users" title="Manage users"><Users size={14} /><span className="action-label">users</span></button>}<button className="ghost-button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={14} /><span className="action-label">sign out</span></button>
+          <button className="ghost-button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={14} /><span className="action-label">sign out</span></button>
         </div>
       </header>
 
@@ -1261,7 +1152,6 @@ export default function Page() {
         <div className="stat-card"><span>status</span><strong className="status-live"><CircleDot size={13} /> live</strong><small>{lastUpdated ? `updated ${formatTime(lastUpdated.toISOString())}` : 'syncing now'}</small></div>
       </section>
 
-      {currentUser?.role === 'owner' && <>
       <section className="poll-admin-card page-width">
         <div className="poll-admin-head"><div><div className="eyebrow"><BarChart3 size={13} /> wall poll</div><h2>Ask everyone.</h2><p>Create an anonymous poll that appears on the public wall.</p></div></div>
         <input className="poll-question-input" value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} placeholder="What do you want to ask?" maxLength={240} />
@@ -1287,7 +1177,6 @@ export default function Page() {
       </section>
 
       <section className="admin-polls page-width"><div className="queue-head"><div><div className="eyebrow"><BarChart3 size={13} /> live polls</div><h2>On the wall.</h2></div><span>{polls.length} live</span></div>{polls.length > 0 && <div className="poll-admin-list">{polls.map((poll) => <div className="poll-admin-mini" key={poll.id}><strong>{poll.question}</strong><span>{poll.totalVotes} anonymous {poll.totalVotes === 1 ? 'vote' : 'votes'}</span><div className="poll-admin-mini-actions"><button className="ghost-button" onClick={() => sharePoll(poll)} aria-label="Share poll" title="Share poll"><Share2 size={13} /> <span className="action-label">share</span></button><button className="ghost-button poll-delete-button" onClick={() => deletePoll(poll)} disabled={deleteBusy === `poll-${poll.id}`} aria-label="Delete poll" title="Delete poll"><Trash2 size={13} /> <span className="action-label">{deleteBusy === `poll-${poll.id}` ? 'deleting' : 'delete'}</span></button></div></div>)}</div>}</section>
-      </>}
 
       <section className="admin-workspace page-width">
         <aside className="thread-browser">
@@ -1324,14 +1213,12 @@ export default function Page() {
               <article className="chat-bubble incoming"><div className="bubble-meta"><span>{selected.senderName || 'Anonymous'}</span><span>{formatTime(selected.time)}</span></div>{selected.mediaData && (selected.mediaType === "image" ? <img className="message-media-image" src={selected.mediaData} alt="Attachment" /> : <><audio className="message-media-audio" controls preload="auto" playsInline src={selected.mediaData} />{selected.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{selected.mediaTranscript}</div>}</>)}{selected.text && <p>{selected.text}</p>}</article>
               {selected.replies.map((reply) => <article key={reply.id} className={`chat-bubble ${reply.author === 'Fowzan' ? 'outgoing' : 'incoming'}`}><div className="bubble-meta"><span>{reply.author === 'Fowzan' ? 'Fowzan' : reply.author}</span><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && (reply.mediaType === 'audio' ? <audio className="reply-media-audio" controls preload="auto" playsInline src={reply.mediaUrl} /> : <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>)}{reply.text && <p>{reply.text}</p>}<div className="bubble-actions"><button className={`bubble-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={11} /> {reply.upvotes ?? 0}</button><button className="bubble-delete" onClick={() => deleteReply(selected.id, reply.id)} disabled={deleteBusy === `reply-${reply.id}`} title="Remove only this reply" aria-label="Remove only this reply"><Trash2 size={11} /> {deleteBusy === `reply-${reply.id}` ? 'deleting' : 'remove reply'}</button></div></article>)}
             </div>
-            <div className="reply-dock"><div className="reply-composer"><input ref={replyInputRef} value={ownerReplies[selected.id] ?? ''} onChange={(e) => { const value = e.target.value; setOwnerReplies((c) => ({ ...c, [selected.id]: value })); localStorage.setItem(`fowzan-draft-${selected.id}`, value) }} placeholder={`Write a reply as ${currentUser?.displayName || 'you'}…`} maxLength={1000} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitOwnerReply(selected.id) } }} /><button onClick={() => submitOwnerReply(selected.id)} disabled={(!ownerReplies[selected.id]?.trim() && !ownerMediaUrls[selected.id]?.trim() && !ownerVoiceData[selected.id]) || replySending === selected.id}>{replySending === selected.id ? <Loader2 size={17} className="spin" /> : <Send size={16} />}</button></div><div className="owner-voice-preview">{ownerVoiceData[selected.id] && <div className="owner-voice-card"><Mic size={14} /><audio controls preload="metadata" src={ownerVoiceData[selected.id]} /><button type="button" onClick={() => clearOwnerVoice(selected.id)} aria-label="Remove voice note"><X size={13} /></button></div>}</div><div className="media-reply-tools"><button className={ownerRecording === selected.id ? 'active recording' : ''} onClick={() => { void toggleOwnerRecording(selected.id) }}><Mic size={13} /> {ownerRecording === selected.id ? 'stop recording' : 'voice note'}</button><button className={ownerMediaModes[selected.id] === 'image' ? 'active' : ''} onClick={() => setOwnerMediaModes((current) => ({ ...current, [selected.id]: current[selected.id] === 'image' ? null : 'image' }))}><ImageIcon size={13} /> image</button><button className={ownerMediaModes[selected.id] === 'gif' ? 'active' : ''} onClick={() => setOwnerMediaModes((current) => ({ ...current, [selected.id]: current[selected.id] === 'gif' ? null : 'gif' }))}><Film size={13} /> GIF</button>{ownerMediaModes[selected.id] && <input value={ownerMediaUrls[selected.id] ?? ''} onChange={(event) => setOwnerMediaUrls((current) => ({ ...current, [selected.id]: event.target.value }))} placeholder={`Paste a ${ownerMediaModes[selected.id]} URL…`} inputMode="url" />}</div><div className="composer-foot"><span>{ownerReplies[selected.id] || ownerMediaUrls[selected.id] || ownerVoiceData[selected.id] ? 'Draft ready · Enter to send' : 'R reply · S save · J/K browse · Esc close'}</span><span>{(ownerReplies[selected.id] ?? '').length}/1000</span></div></div>
+            <div className="reply-dock"><div className="reply-composer"><input ref={replyInputRef} value={ownerReplies[selected.id] ?? ''} onChange={(e) => { const value = e.target.value; setOwnerReplies((c) => ({ ...c, [selected.id]: value })); localStorage.setItem(`fowzan-draft-${selected.id}`, value) }} placeholder="Write a reply as Fowzan…" maxLength={1000} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitOwnerReply(selected.id) } }} /><button onClick={() => submitOwnerReply(selected.id)} disabled={(!ownerReplies[selected.id]?.trim() && !ownerMediaUrls[selected.id]?.trim() && !ownerVoiceData[selected.id]) || replySending === selected.id}>{replySending === selected.id ? <Loader2 size={17} className="spin" /> : <Send size={16} />}</button></div><div className="owner-voice-preview">{ownerVoiceData[selected.id] && <div className="owner-voice-card"><Mic size={14} /><audio controls preload="metadata" src={ownerVoiceData[selected.id]} /><button type="button" onClick={() => clearOwnerVoice(selected.id)} aria-label="Remove voice note"><X size={13} /></button></div>}</div><div className="media-reply-tools"><button className={ownerRecording === selected.id ? 'active recording' : ''} onClick={() => { void toggleOwnerRecording(selected.id) }}><Mic size={13} /> {ownerRecording === selected.id ? 'stop recording' : 'voice note'}</button><button className={ownerMediaModes[selected.id] === 'image' ? 'active' : ''} onClick={() => setOwnerMediaModes((current) => ({ ...current, [selected.id]: current[selected.id] === 'image' ? null : 'image' }))}><ImageIcon size={13} /> image</button><button className={ownerMediaModes[selected.id] === 'gif' ? 'active' : ''} onClick={() => setOwnerMediaModes((current) => ({ ...current, [selected.id]: current[selected.id] === 'gif' ? null : 'gif' }))}><Film size={13} /> GIF</button>{ownerMediaModes[selected.id] && <input value={ownerMediaUrls[selected.id] ?? ''} onChange={(event) => setOwnerMediaUrls((current) => ({ ...current, [selected.id]: event.target.value }))} placeholder={`Paste a ${ownerMediaModes[selected.id]} URL…`} inputMode="url" />}</div><div className="composer-foot"><span>{ownerReplies[selected.id] || ownerMediaUrls[selected.id] || ownerVoiceData[selected.id] ? 'Draft ready · Enter to send' : 'R reply · S save · J/K browse · Esc close'}</span><span>{(ownerReplies[selected.id] ?? '').length}/1000</span></div></div>
           </div>}
         </section>
       </section>
 
       <section className="queue-section page-width"><div className="queue-head"><div><div className="eyebrow"><PenLine size={13} /> quick reply queue</div><h2>Threads waiting on you.</h2></div><span>{waitingCount} waiting</span></div><div className="queue-grid">{thoughts.filter((item) => item.replies.length === 0).map((item) => <button key={item.id} className="queue-item" onClick={() => openThought(item)}><span>{item.senderName || 'Anonymous'}</span><p>{item.text}</p><b><MessageCircle size={13} /> <span className="action-label">reply</span><ChevronRight size={13} /></b></button>)}{waitingCount === 0 && <div className="queue-clear"><Check size={17} /> You're all caught up.</div>}</div></section>
-      {passwordPanelOpen && <div className="notification-prompt-backdrop" role="dialog" aria-modal="true" aria-label="Change password"><div className="notification-prompt"><div className="notification-prompt-icon"><ShieldCheck size={20} /></div><div><span className="eyebrow">ACCOUNT SECURITY</span><h2>{currentUser?.mustChangePassword ? 'Set your new password.' : 'Change password.'}</h2>{currentUser?.mustChangePassword && <p style={{margin:'0 0 12px',fontSize:13,opacity:.72}}>Your temporary password is <strong>1234</strong>. Choose a new password of at least 10 characters to finish setup.</p>}<form onSubmit={changePassword} className="login-form"><input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="current password" autoComplete="current-password" /><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="new password (10+ characters)" autoComplete="new-password" /><input type="password" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} placeholder="repeat new password" autoComplete="new-password" />{passwordChangeError && <div className="inline-error">{passwordChangeError}</div>}<div className="notification-prompt-actions">{!currentUser?.mustChangePassword && <button type="button" className="secondary-button" onClick={() => setPasswordPanelOpen(false)}>cancel</button>}<button className="primary-button" type="submit" disabled={passwordChangeBusy || !currentPassword || !newPassword || !passwordConfirm}>{passwordChangeBusy ? 'changing…' : 'Change password'} <ChevronRight size={15} /></button></div></form></div></div></div>}
-      {userManagerOpen && currentUser?.role === 'owner' && <div className="notification-prompt-backdrop" role="dialog" aria-modal="true" aria-label="Manage users"><div className="notification-prompt" style={{maxWidth: '980px', width: 'min(94vw, 980px)', maxHeight: '88vh', overflow: 'auto'}}><div className="notification-prompt-icon"><Users size={20} /></div><div style={{width:'100%'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}><div><span className="eyebrow">OWNER CONTROL</span><h2>Manage users.</h2><p>Create a clean boundary between every inbox. You can inspect a user's messages, disable their login, or generate a new password.</p></div><button className="icon-action" onClick={() => setUserManagerOpen(false)} aria-label="Close user manager"><X size={17}/></button></div>{adminUserError && <div className="inline-error">{adminUserError}</div>}{resetCredential && <div style={{margin:'14px 0',padding:'14px',border:'1px solid var(--line)',borderRadius:16}}><strong>New password for {resetCredential.username}</strong><p style={{margin:'6px 0 10px',fontFamily:'monospace',wordBreak:'break-all'}}>{resetCredential.password}</p><small>This password is shown only here. Save it securely and give it to the user.</small></div>}<div style={{display:'grid',gridTemplateColumns:managedUser?'minmax(260px, .75fr) minmax(320px, 1.25fr)':'1fr',gap:16,marginTop:18}}><div style={{display:'grid',gap:9}}>{managedLoading && !managedUser ? <div className="empty-browser">Loading users…</div> : managedUsers.map((u) => <div key={u.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,padding:'13px 14px',border:'1px solid var(--line)',borderRadius:15,opacity:u.active?1:.58}}><div><strong>{u.displayName}</strong><div style={{fontSize:12,opacity:.7}}>@{u.username} · {u.messageCount} messages · {u.unreadCount} unread</div></div><div style={{display:'flex',gap:7}}><button className="ghost-button" onClick={() => inspectUser(u)} title="Inspect inbox"><Eye size={13}/><span className="action-label">view</span></button><button className="ghost-button" onClick={() => manageUserAction(u,'reset-password')} disabled={managedBusy===`reset-password-${u.id}`} title="Reset password"><KeyRound size={13}/><span className="action-label">reset</span></button><button className="ghost-button" onClick={() => manageUserAction(u,'toggle-active')} disabled={managedBusy===`toggle-active-${u.id}`} title={u.active?'Disable login':'Enable login'}>{u.active?<UserX size={13}/>:<UserCheck size={13}/>}<span className="action-label">{u.active?'disable':'enable'}</span></button></div></div>)}</div>{managedUser && <div style={{border:'1px solid var(--line)',borderRadius:18,padding:16,minHeight:260}}><div style={{display:'flex',justifyContent:'space-between',gap:10,alignItems:'start'}}><div><span className="eyebrow">INBOX INSPECTOR</span><h3 style={{margin:'5px 0 2px'}}>{managedUser.displayName}</h3><p style={{margin:0,fontSize:13,opacity:.7}}>@{managedUser.username} · {managedUser.active?'active':'disabled'} · <a href={`/${encodeURIComponent(managedUser.username)}`} target="_blank" rel="noreferrer">public inbox ↗</a></p></div><button className="icon-action" onClick={() => {setManagedUser(null);setManagedInbox([])}} aria-label="Close inspector"><X size={15}/></button></div><div style={{marginTop:14,display:'grid',gap:9,maxHeight:440,overflow:'auto'}}>{managedLoading ? <div className="empty-browser">Loading inbox…</div> : managedInbox.length ? managedInbox.map((m:any) => <article key={m.id} style={{padding:'12px 13px',border:'1px solid var(--line)',borderRadius:14}}><div style={{display:'flex',justifyContent:'space-between',gap:8,fontSize:12,opacity:.7}}><span>{m.senderName || 'Anonymous'}</span><span>{formatTime(m.time)}</span></div><p style={{margin:'7px 0 4px',whiteSpace:'pre-wrap'}}>{m.text || '— attachment / voice note —'}</p><small>{m.replies.length} {m.replies.length===1?'reply':'replies'} · {m.isRead?'read':'unread'}</small></article>) : <div className="empty-browser">No messages in this inbox.</div>}</div></div>}</div></div></div></div>}
       {notificationPromptOpen && <div className="notification-prompt-backdrop" role="dialog" aria-modal="true" aria-label="Enable inbox notifications"><div className="notification-prompt"><div className="notification-prompt-icon"><BellRing size={20} /></div><div><span className="eyebrow">OWNER ALERTS</span><h2>Never miss a message.</h2><p>Allow browser notifications and Fowzan&apos;s Inbox can alert you when new messages arrive while the inbox is open.</p></div><div className="notification-prompt-actions"><button className="secondary-button" onClick={() => setNotificationPromptOpen(false)}>not now</button><button className="primary-button" onClick={async () => { await requestNotificationPermission(); setNotificationPromptOpen(false) }}>Allow notifications <BellRing size={15} /></button></div></div></div>}
     </main>
   )
@@ -1340,18 +1227,18 @@ export default function Page() {
     <main className="app-page public-page" data-theme={theme} data-mode={experience}>
       <div className="cyber-bg" aria-hidden="true"><i /><i /><i /><div className="space-stars">{Array.from({ length: 24 }, (_, index) => <span key={index} style={{ top: `${(index * 47) % 100}%`, left: `${(index * 73 + 11) % 100}%`, animationDelay: `${-(index % 17) * 0.42}s`, animationDuration: `${4.5 + (index % 7) * 0.8}s` }} />)}</div><div className="asteroid-field">{Array.from({ length: 5 }, (_, index) => <i key={index} style={{ top: `${(index * 31 + 8) % 94}%`, left: `${(index * 61 - 12) % 112 - 4}%`, animationDelay: `${-(index % 9) * 1.15}s`, animationDuration: `${18 + (index % 6) * 2.1}s`, transform: `scale(${0.7 + (index % 5) * 0.22}) rotate(${(index * 23) % 360}deg)` }} />)}</div>{Array.from({ length: 22 }, (_, index) => matrixStreams[index % matrixStreams.length]).map((stream, index) => <b key={index} style={{ left: `${(index * 4.31 + 2) % 96}%`, animationDelay: `${-((index * 0.71) % 12)}s`, opacity: `${0.22 + (index % 5) * 0.045}` }}>{Array.from(stream).map((char, charIndex) => <span key={charIndex}>{char}</span>)}</b>)}</div><div className="ambient-orb orb-a" /><div className="ambient-orb orb-b" /><div className="ambient-orb orb-d" />
       <div className="particle-field" aria-hidden="true">{Array.from({ length: 28 }, (_, index) => <i key={index} style={{ top: `${(index * 37 + 7) % 96}%`, left: `${(index * 61 + 13) % 98}%`, animationDelay: `${-((index * 0.47) % 13)}s`, animationDuration: `${7 + (index % 7) * 1.1}s`, transform: `scale(${0.65 + (index % 5) * 0.22})` }} />)}</div>
-      <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> {(publicProfile?.displayName || publicProfile?.username || 'FOWZAN').toUpperCase()}&apos;S INBOX</button><div className="topbar-controls"><button className="appearance-button" onClick={() => setAppearanceOpen(true)} aria-label={experience === "gamer" ? "Gamer mode" : experience === "professional" ? "Minimal mode" : "Choose appearance"} title={experience === "gamer" ? "Gamer mode" : experience === "professional" ? "Minimal mode" : "Choose appearance"}>{experience === "gamer" ? <Gamepad2 size={17} /> : experience === "professional" ? <PenLine size={17} /> : <SlidersHorizontal size={17} />}<span>{experience === "professional" ? "Minimal" : experience ? "Gamer" : "Appearance"}</span></button>{experience && <button className="theme-picker" type="button" title={`Color: ${theme}. Tap to change`} aria-label={`Change color theme. Current color: ${theme}`} onClick={() => { const colors = experience === "gamer" ? ["purple","red","green","rose","blue","white"] : ["rose","blue","purple","mono"]; const index = colors.indexOf(theme); const next = colors[(index + 1) % colors.length] as typeof theme; handleAppearanceChange(experience, next) }}><Palette size={22} /><span className="sr-only">Change color</span></button>}<button className="private-button" onClick={() => setView('private')} aria-label="Open private inbox" title="Private inbox"><LockKeyhole size={15} /><span>private inbox</span></button></div></header>
+      <header className="topbar public-topbar"><button className="brand wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><Mail size={16} /> FOWZAN&apos;S INBOX</button><div className="topbar-controls"><button className="appearance-button" onClick={() => setAppearanceOpen(true)} aria-label={experience === "gamer" ? "Gamer mode" : experience === "professional" ? "Minimal mode" : "Choose appearance"} title={experience === "gamer" ? "Gamer mode" : experience === "professional" ? "Minimal mode" : "Choose appearance"}>{experience === "gamer" ? <Gamepad2 size={17} /> : experience === "professional" ? <PenLine size={17} /> : <SlidersHorizontal size={17} />}<span>{experience === "professional" ? "Minimal" : experience ? "Gamer" : "Appearance"}</span></button>{experience && <button className="theme-picker" type="button" title={`Color: ${theme}. Tap to change`} aria-label={`Change color theme. Current color: ${theme}`} onClick={() => { const colors = experience === "gamer" ? ["purple","red","green","rose","blue","white"] : ["rose","blue","purple","mono"]; const index = colors.indexOf(theme); const next = colors[(index + 1) % colors.length] as typeof theme; handleAppearanceChange(experience, next) }}><Palette size={22} /><span className="sr-only">Change color</span></button>}<button className="private-button" onClick={() => setView('private')} aria-label="Open private inbox" title="Private inbox"><LockKeyhole size={15} /><span>private inbox</span></button></div></header>
 
       <section className="public-hero page-width">
-        <h1>SEND<br />{(publicProfile?.displayName || publicProfile?.username || routeUsername).toUpperCase()}<br /><em className="hero-message-line">A<span className="hero-message-gap">&nbsp;</span>MESSAGE</em></h1>
+        <h1>SEND<br />FOWZAN<br /><em className="hero-message-line">A<span className="hero-message-gap">&nbsp;</span>MESSAGE</em></h1>
         <p className="hero-lead">Say whatever you want to say. Ask a question, leave a thought, or just check in. Your name stays hidden unless you choose to add it.</p>
-        <div className="hero-actions"><a href="#leave-message" className="primary-button"><PenLine size={16} /><span>send a message</span><ChevronRight size={17} /></a><a href="#chat-board" className="secondary-button chat-board-hero-button" aria-label="Visit Reply Board" title="Visit Reply Board"><MessageCircle size={16} /><span>Visit Reply Board</span><ChevronRight size={17} /></a><button className="secondary-button" onClick={shareHomeStory} aria-label={`Share ${publicProfile?.displayName || publicProfile?.username || 'this'}'s inbox`} title={`Share ${publicProfile?.displayName || publicProfile?.username || 'this'}'s inbox`}><Share2 size={15} /><span>share inbox</span></button></div>
+        <div className="hero-actions"><a href="#leave-message" className="primary-button"><PenLine size={16} /><span>send a message</span><ChevronRight size={17} /></a><a href="#chat-board" className="secondary-button chat-board-hero-button" aria-label="Visit Reply Board" title="Visit Reply Board"><MessageCircle size={16} /><span>Visit Reply Board</span><ChevronRight size={17} /></a><button className="secondary-button" onClick={shareHomeStory} aria-label="Share Fowzan's inbox" title="Share Fowzan's inbox"><Share2 size={15} /><span>share inbox</span></button></div>
       </section>
 
-      <section id="leave-message" className="composer-section page-width"><div className="section-intro"><div className="eyebrow"><PenLine size={13} /> MESSAGE {(publicProfile?.displayName || publicProfile?.username || routeUsername).toUpperCase()}</div><h2>WHAT DO YOU<br /><span>WANT TO SEND?</span></h2></div>
-        <div className="message-composer"><div className="composer-label"><span className="pulse-dot" /> YOUR ANONYMOUS MESSAGE</div><textarea value={thought} onChange={(e) => setThought(e.target.value)} placeholder={`Send ${publicProfile?.displayName || publicProfile?.username || 'a thought, question, or message'}...`} rows={5} maxLength={500} /><div className="composer-meta"><span>{thought.length}/500</span><span>your name is hidden</span></div>{mediaData && <div className={`attachment-preview ${mediaType === 'audio' ? 'attachment-voice' : 'attachment-photo'}`}><div className="attachment-preview-main">{mediaType === "image" ? <img src={mediaData} alt="Selected attachment" /> : <><div className="voice-wave" aria-hidden="true">{Array.from({ length: 28 }, (_, i) => <i key={i} style={{ height: `${10 + ((i * 17) % 25)}px` }} />)}</div><audio controls preload="metadata" src={mediaData} /></>}</div>{mediaType === 'audio' && <div className="voice-words"><span>WORDS</span><p>{mediaTranscript || 'Your browser may show live words while you speak. The audio itself will still be sent.'}</p></div>}<div className="attachment-actions"><button type="button" className="attachment-delete" onClick={clearMedia}><Trash2 size={14} /> Delete</button><button type="button" className="attachment-send" onClick={submitThought} disabled={sending}>{sending ? <Loader2 size={14} className="spin" /> : <Send size={14} />} {sending ? 'Sending…' : 'Send attachment'}</button></div></div>}<div className="composer-media-tools"><label className="media-tool"><ImageIcon size={14} /> photo<input type="file" accept="image/*" onChange={(e) => { void handleImage(e.target.files?.[0]); e.currentTarget.value = "" }} /></label><button type="button" className={`media-tool ${recording ? "recording" : ""}`} onClick={() => { void toggleRecording() }}><span className="record-dot" />{recording ? "stop recording" : "voice note"}</button></div></div>
+      <section id="leave-message" className="composer-section page-width"><div className="section-intro"><div className="eyebrow"><PenLine size={13} /> MESSAGE FOWZAN</div><h2>WHAT DO YOU<br /><span>WANT TO SEND?</span></h2></div>
+        <div className="message-composer"><div className="composer-label"><span className="pulse-dot" /> YOUR ANONYMOUS MESSAGE</div><textarea value={thought} onChange={(e) => setThought(e.target.value)} placeholder="Send Fowzan a thought, question, or message..." rows={5} maxLength={500} /><div className="composer-meta"><span>{thought.length}/500</span><span>your name is hidden</span></div>{mediaData && <div className={`attachment-preview ${mediaType === 'audio' ? 'attachment-voice' : 'attachment-photo'}`}><div className="attachment-preview-main">{mediaType === "image" ? <img src={mediaData} alt="Selected attachment" /> : <><div className="voice-wave" aria-hidden="true">{Array.from({ length: 28 }, (_, i) => <i key={i} style={{ height: `${10 + ((i * 17) % 25)}px` }} />)}</div><audio controls preload="metadata" src={mediaData} /></>}</div>{mediaType === 'audio' && <div className="voice-words"><span>WORDS</span><p>{mediaTranscript || 'Your browser may show live words while you speak. The audio itself will still be sent.'}</p></div>}<div className="attachment-actions"><button type="button" className="attachment-delete" onClick={clearMedia}><Trash2 size={14} /> Delete</button><button type="button" className="attachment-send" onClick={submitThought} disabled={sending}>{sending ? <Loader2 size={14} className="spin" /> : <Send size={14} />} {sending ? 'Sending…' : 'Send attachment'}</button></div></div>}<div className="composer-media-tools"><label className="media-tool"><ImageIcon size={14} /> photo<input type="file" accept="image/*" onChange={(e) => { void handleImage(e.target.files?.[0]); e.currentTarget.value = "" }} /></label><button type="button" className={`media-tool ${recording ? "recording" : ""}`} onClick={() => { void toggleRecording() }}><span className="record-dot" />{recording ? "stop recording" : "voice note"}</button></div></div>
         <div className="identity-controls"><label><input type="checkbox" checked={revealName} onChange={(e) => setRevealName(e.target.checked)} /><span className="switch" /> include my name</label>{revealName && <input value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="display name" maxLength={80} />}</div>
-        <button className="primary-button send-button" onClick={submitThought} disabled={(!thought.trim() && !mediaData) || sending}>{sending ? <><Loader2 size={16} className="spin" /> sending…</> : <>Send message <Send size={16} /></>}</button>
+        <button className="primary-button send-button" onClick={submitThought} disabled={(!thought.trim() && !mediaData) || sending}>{sending ? <><Loader2 size={16} className="spin" /> sending…</> : <>Send to Fowzan <Send size={16} /></>}</button>
       </section>
 
       <section className="prompt-section page-width"><div className="section-intro compact"><div className="eyebrow"><Sparkles size={13} /> NOT SURE WHAT TO ASK?</div><h2>START HERE.</h2></div><div className="prompt-grid">{prompts.map((prompt, index) => <button key={prompt} onClick={() => { setThought(prompt); document.getElementById('leave-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}><span>0{index + 1}</span>{prompt}<ChevronRight size={14} /></button>)}</div></section>
@@ -1411,12 +1298,12 @@ export default function Page() {
             ))}
           </div>
         )}
-        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading {publicProfile?.displayName || publicProfile?.username || 'the user'}&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><div className="thread-main-message">{response.mediaData && (response.mediaType === "image" ? <img className="message-media-image" src={response.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="message-media-audio" controls preload="auto" playsInline src={response.mediaData} />{response.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{response.mediaTranscript}</div>}</>)}{response.text && <h3>{response.text}</h3>}</div>{response.replies.length > 0 && <div className="public-replies"><div className="replies-label"><span>CONVERSATION</span><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span></div>{response.replies.map((reply) => <div className="public-reply" key={reply.id}><div className="public-reply-head"><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && (reply.mediaType === 'audio' ? <audio className="reply-media-audio" controls preload="auto" playsInline src={reply.mediaUrl} /> : <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>)}{reply.text && <p>{reply.text}</p>}<div className="public-reply-actions"><button className={`reply-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={12} /> {reply.upvotes ?? 0}</button></div></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'} · {response.upvotes ?? 0} thread votes</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => openShareOptions(response)} aria-label="Share thread" title="Share thread">{shareBusy ? <Loader2 size={14} className="spin" /> : <Share2 size={14} />} <span className="action-label">share</span></button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)} aria-label="Join thread" title="Join thread"><MessageCircle size={14} /> <span className="action-label">join thread</span></button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()} aria-label="Send reply" title="Send reply"><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><Search size={20} /><strong>{publicSearch ? 'No conversations found.' : `${publicProfile?.displayName || publicProfile?.username || 'This user'} has not replied yet.`}</strong><span>{publicSearch ? 'Try another word or search the replies too.' : `Come back soon to see messages ${publicProfile?.displayName || publicProfile?.username || 'the user'} chooses to answer.`}</span></div>}</div>}</section>
+        {loading ? <div className="loading-card"><Loader2 size={19} className="spin" /> loading Fowzan&apos;s replies…</div> : <div className="public-thread-list">{visibleResponses.map((response) => <article key={response.id} className="public-thread"><div className="thread-meta"><span><i /> {response.author}</span><span>{formatTime(response.time)}</span></div><div className="thread-main-message">{response.mediaData && (response.mediaType === "image" ? <img className="message-media-image" src={response.mediaData} alt="Attachment" loading="lazy" decoding="async" /> : <><audio className="message-media-audio" controls preload="auto" playsInline src={response.mediaData} />{response.mediaTranscript && <div className="thread-transcript"><span>WORDS</span>{response.mediaTranscript}</div>}</>)}{response.text && <h3>{response.text}</h3>}</div>{response.replies.length > 0 && <div className="public-replies"><div className="replies-label"><span>CONVERSATION</span><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'}</span></div>{response.replies.map((reply) => <div className="public-reply" key={reply.id}><div className="public-reply-head"><b className={reply.author === 'Fowzan' ? 'fowzan' : ''}>{reply.author}</b><span>{formatTime(reply.time)}</span></div>{reply.mediaUrl && (reply.mediaType === 'audio' ? <audio className="reply-media-audio" controls preload="auto" playsInline src={reply.mediaUrl} /> : <a className="reply-media" href={reply.mediaUrl} target="_blank" rel="noreferrer"><img src={reply.mediaUrl} alt={reply.mediaType === 'gif' ? 'GIF attached by Fowzan' : 'Image attached by Fowzan'} loading="lazy" decoding="async" /></a>)}{reply.text && <p>{reply.text}</p>}<div className="public-reply-actions"><button className={`reply-upvote ${votedReplyIds.has(reply.id) ? 'voted' : ''}`} onClick={() => toggleReplyUpvote(reply.id)} aria-pressed={votedReplyIds.has(reply.id)}><ThumbsUp size={12} /> {reply.upvotes ?? 0}</button></div></div>)}</div>}<div className="public-thread-foot"><span>{response.replies.length} {response.replies.length === 1 ? 'reply' : 'replies'} · {response.upvotes ?? 0} thread votes</span><div><button className={`upvote-button ${votedThreadIds.has(response.id) ? 'voted' : ''}`} onClick={() => toggleUpvote(response.id)} aria-pressed={votedThreadIds.has(response.id)}><ThumbsUp size={14} /> {response.upvotes ?? 0}</button><button onClick={() => openShareOptions(response)} aria-label="Share thread" title="Share thread">{shareBusy ? <Loader2 size={14} className="spin" /> : <Share2 size={14} />} <span className="action-label">share</span></button><button onClick={() => setReplyingTo(replyingTo === response.id ? null : response.id)} aria-label="Join thread" title="Join thread"><MessageCircle size={14} /> <span className="action-label">join thread</span></button></div></div>{replyingTo === response.id && <div className="public-reply-form"><div className="reply-composer"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Add to the conversation…" maxLength={1000} /><button onClick={() => submitReply(response.id)} disabled={!replyText.trim()} aria-label="Send reply" title="Send reply"><Send size={15} /></button></div><label><input type="checkbox" checked={replyReveal} onChange={(e) => setReplyReveal(e.target.checked)} /> show my name</label>{replyReveal && <input value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="display name" maxLength={80} />}</div>}</article>)}{!visibleResponses.length && <div className="empty-browser public-empty"><Search size={20} /><strong>{publicSearch ? 'No conversations found.' : 'Fowzan has not replied yet.'}</strong><span>{publicSearch ? 'Try another word or search the replies too.' : 'Come back soon to see messages Fowzan chooses to answer.'}</span></div>}</div>}</section>
 
       <footer className="site-footer page-width">
-        <div className="site-footer-brand">{(publicProfile?.displayName || publicProfile?.username || routeUsername).toUpperCase()}&apos;S INBOX</div>
+        <div className="site-footer-brand">FOWZAN&apos;S INBOX</div>
         <div className="site-footer-note">A quiet place for honest messages.</div>
-        <div className="site-footer-meta"><span>ANONYMOUS BY DEFAULT</span><span>© {new Date().getFullYear()} {(publicProfile?.displayName || publicProfile?.username || routeUsername).toUpperCase()}</span></div>
+        <div className="site-footer-meta"><span>ANONYMOUS BY DEFAULT</span><span>© {new Date().getFullYear()} FOWZAN</span></div>
       </footer>
       {(showOnboarding || appearanceOpen) && <div className="appearance-overlay" role="dialog" aria-modal="true" aria-label="Choose appearance"><div className="appearance-modal"><button className="appearance-close" onClick={() => { if (!showOnboarding) setAppearanceOpen(false) }} aria-label="Close"><X size={17} /></button><div className="eyebrow"><Sparkles size={13} /> CHOOSE YOUR MODE</div><h2>{showOnboarding ? "Make it yours." : "Appearance"}</h2><p>{showOnboarding ? "Pick the vibe and color you want. We'll remember it when you come back." : "Switch between the two looks whenever you want."}</p><div className="experience-grid"><button className={`experience-card ${experience === 'gamer' ? 'active' : ''}`} onClick={() => { const nextTheme = ['purple','red','green','rose','blue','white'].includes(theme) ? theme : 'purple'; applyAppearance('gamer', nextTheme as typeof theme) }}><div className="experience-preview gamer-preview"><span>0101</span><i /><b>FOWZAN</b></div><strong>🎮 Gamer</strong><small>Matrix rain · cyber · neon</small></button><button className={`experience-card ${experience === 'professional' ? 'active' : ''}`} onClick={() => { const nextTheme = ['rose','blue','purple','mono'].includes(theme) ? theme : 'blue'; applyAppearance('professional', nextTheme as typeof theme) }}><div className="experience-preview professional-preview"><span>F</span><b>FOWZAN&apos;S INBOX</b></div><strong><PenLine size={15} strokeWidth={2} /> Minimal</strong><small>Elegant · focused · refined</small></button></div><div className="accent-heading">Choose a color</div><div className="accent-grid">{(experience === 'gamer' ? ['purple','red','green','rose','blue','white'] : ['rose','blue','purple','mono']).map((accent) => <button key={accent} className={`accent-choice ${theme === accent ? 'active' : ''} accent-${accent}`} onClick={() => experience && applyAppearance(experience, accent as typeof theme)} aria-label={`${accent} accent`}><span /></button>)}</div><div className="appearance-actions"><button className="primary-button" disabled={!experience} onClick={() => { if (!experience) return; chooseAppearance(experience, theme); setShowOnboarding(false); setAppearanceOpen(false) }}>{showOnboarding ? "Continue" : "Save appearance"}<ChevronRight size={16} /></button></div></div></div>}
       {shareTarget && (

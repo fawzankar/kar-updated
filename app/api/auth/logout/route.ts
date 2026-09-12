@@ -1,7 +1,8 @@
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { logout } from '@/lib/auth'
 
 export async function POST() {
-  await logout()
+  const store = await cookies()
+  store.delete('fowzan_owner_session')
   return NextResponse.json({ ok: true })
 }

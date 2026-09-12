@@ -6200,20 +6200,3 @@ html[data-fowzan-mode] .grain {
     overflow: visible !important;
   }
 }
-
-
-/* Multi-user private login */
-.account-picker-label { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; font-size:9px; font-weight:800; letter-spacing:.14em; color:var(--muted-foreground); text-transform:uppercase; }
-.account-picker-label small { font-size:10px; font-weight:600; letter-spacing:0; text-transform:none; opacity:.7; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.account-picker { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; max-height:280px; overflow:auto; padding:2px; scrollbar-width:thin; }
-.account-option { display:flex; align-items:center; gap:10px; min-width:0; min-height:52px; padding:8px 10px; border:1px solid var(--border); border-radius:14px; background:rgba(17,14,31,.48); color:var(--foreground); text-align:left; cursor:pointer; transition:transform .16s ease,border-color .16s ease,background .16s ease; }
-.account-option:hover { transform:translateY(-1px); border-color:color-mix(in srgb,var(--primary) 45%,var(--border)); }
-.account-option.selected { border-color:var(--primary); background:color-mix(in srgb,var(--primary) 9%,rgba(17,14,31,.7)); box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 18%,transparent); }
-.account-avatar { flex:0 0 32px; width:32px; height:32px; display:grid; place-items:center; border-radius:10px; background:color-mix(in srgb,var(--primary) 13%,transparent); color:var(--primary); font-size:11px; font-weight:900; }
-.account-option-copy { min-width:0; display:grid; gap:2px; flex:1; }
-.account-option-copy strong { font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.account-option-copy small { font-size:9px; color:var(--muted-foreground); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.password-field-wrap { position:relative; display:flex; align-items:center; }
-.password-field-wrap > svg { position:absolute; left:15px; color:var(--muted-foreground); pointer-events:none; }
-.password-field-wrap input { width:100%; padding-left:42px; }
-@media (max-width:640px) { .account-picker { grid-template-columns:1fr 1fr; max-height:260px; } .account-option { min-height:49px; padding:7px 8px; } .account-avatar { width:29px; height:29px; flex-basis:29px; border-radius:9px; } .account-option-copy strong { font-size:10px; } .account-option-copy small { font-size:8px; } }

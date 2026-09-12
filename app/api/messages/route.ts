@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { ensureSchema, pool } from '@/lib/db'
-import { getCurrentUser, isOwner } from '@/lib/auth'
+import { isOwner } from '@/lib/auth'
 
 const MAX_MESSAGE = 500
 const MAX_REPLY = 1000
@@ -78,19 +78,16 @@ export async function GET(request: Request) {
   if (params.get('view') === 'thread') {
     const id = asId(params.get('id'))
     if (!id) return NextResponse.json({ error: 'Invalid thread.' }, { status: 400 })
-    const threadUsername = (params.get('to') || process.env.OWNER_USERNAME || 'fowzan').trim().toLowerCase()
-    const threadUser = await pool.query('SELECT id FROM users WHERE username = $1 AND active = TRUE LIMIT 1', [threadUsername])
-    if (!threadUser.rows[0]) return NextResponse.json({ error: 'This thread is not available to share.' }, { status: 404 })
     const result = await pool.query(`
       SELECT m.id, m.text, m.sender_name AS "senderName", m.media_data AS "mediaData", m.media_type AS "mediaType", m.media_transcript AS "mediaTranscript", m.created_at AS time,
         COALESCE(json_agg(json_build_object('id', r.id, 'text', r.text, 'time', r.created_at, 'author', r.author, 'mediaUrl', r.media_url, 'mediaType', r.media_type, 'upvotes', (SELECT COUNT(*) FROM reply_votes rv WHERE rv.response_id = r.id)) ORDER BY r.created_at ASC, r.id ASC)
         FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
       FROM messages m
       LEFT JOIN responses r ON r.message_id = m.id
-      WHERE m.id = $1 AND m.user_id = $2 AND m.deleted_at IS NULL
-        AND EXISTS (SELECT 1 FROM responses published WHERE published.message_id = m.id)
+      WHERE m.id = $1 AND m.deleted_at IS NULL
+        AND EXISTS (SELECT 1 FROM responses published WHERE published.message_id = m.id AND published.author = 'Fowzan')
       GROUP BY m.id
-    `, [id, threadUser.rows[0].id])
+    `, [id])
     if (!result.rows[0]) return NextResponse.json({ error: 'This thread is not available to share.' }, { status: 404 })
     const thread = result.rows[0]
     return NextResponse.json({ thread: { ...thread, id: Number(thread.id), mediaData: thread.mediaData ?? null, mediaType: thread.mediaType ?? null, replies: thread.replies.map((reply: any) => ({ ...reply, id: Number(reply.id) })) } }, { headers: { 'Cache-Control': 'no-store' } })
@@ -115,16 +112,15 @@ export async function GET(request: Request) {
   }
 
   if (ownerView) {
-    const user = await getCurrentUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const messages = await pool.query(`
       SELECT id, text, sender_name AS "senderName", media_data AS "mediaData", media_type AS "mediaType", media_transcript AS "mediaTranscript", is_read, kept, created_at AS time,
         (SELECT COUNT(*) FROM thread_votes WHERE message_id = messages.id) AS upvotes
       FROM messages
-      WHERE user_id = $1 AND deleted_at IS NULL
+      WHERE deleted_at IS NULL
       ORDER BY created_at DESC
-    `, [user.id])
+    `)
     const polls = await pool.query(`
       SELECT p.id, p.question, p.options, p.image_data AS "imageData", p.created_at AS time, COUNT(v.poll_id) AS total_votes
       FROM polls p LEFT JOIN poll_votes v ON v.poll_id = p.id
@@ -188,11 +184,6 @@ export async function GET(request: Request) {
     }, { headers: { 'Cache-Control': 'no-store' } })
   }
 
-  const publicUsername = (params.get('to') || process.env.OWNER_USERNAME || 'fowzan').trim().toLowerCase()
-  const publicUserResult = await pool.query('SELECT id, username, display_name AS "displayName" FROM users WHERE username = $1 AND active = TRUE LIMIT 1', [publicUsername])
-  const publicUserId = publicUserResult.rows[0]?.id
-  if (!publicUserId) return NextResponse.json({ error: 'Inbox not found.' }, { status: 404 })
-
   const polls = await pool.query(`
     SELECT p.id, p.question, p.options, p.image_data AS "imageData", p.created_at AS time,
       COALESCE(json_agg(json_build_object('optionIndex', v.option_index, 'count', 1) ORDER BY v.option_index)
@@ -211,14 +202,13 @@ export async function GET(request: Request) {
       FILTER (WHERE r.id IS NOT NULL), '[]') AS replies
     FROM messages m
     LEFT JOIN responses r ON r.message_id = m.id
-    WHERE m.user_id = $1 AND m.deleted_at IS NULL
+    WHERE m.deleted_at IS NULL
     GROUP BY m.id
     HAVING COUNT(r.id) > 0
     ORDER BY m.created_at DESC
-  `, [publicUserId])
+  `)
 
   return NextResponse.json({
-    user: { username: publicUserResult.rows[0].username, displayName: publicUserResult.rows[0].displayName },
     responses: result.rows.map((r) => ({
       id: Number(r.id),
       text: r.text,
@@ -291,12 +281,9 @@ export async function POST(request: Request) {
       if (!valid) return NextResponse.json({ error: 'Invalid attachment.' }, { status: 400 })
       if (mediaCandidate.length > 1450000) return NextResponse.json({ error: 'Attachment is too large. Please use a smaller photo or shorter voice note.' }, { status: 400 })
     }
-    const recipient = clean(body.recipient, 32).toLowerCase() || (process.env.OWNER_USERNAME || 'fowzan').toLowerCase()
-    const recipientResult = await pool.query('SELECT id FROM users WHERE username = $1 AND active = TRUE LIMIT 1', [recipient])
-    if (!recipientResult.rows[0]) return NextResponse.json({ error: 'That inbox does not exist.' }, { status: 404 })
     const result = await pool.query(
-      `INSERT INTO messages (user_id, text, sender_name, media_data, media_type, media_transcript) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [recipientResult.rows[0].id, text, senderName, mediaCandidate || null, mediaCandidate ? mediaType : null, mediaTranscript]
+      `INSERT INTO messages (text, sender_name, media_data, media_type, media_transcript) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [text, senderName, mediaCandidate || null, mediaCandidate ? mediaType : null, mediaTranscript]
     )
     return NextResponse.json({ ok: true, id: Number(result.rows[0].id) })
   }
@@ -316,8 +303,7 @@ export async function POST(request: Request) {
   }
 
   if (action === 'owner-reply') {
-    const user = await getCurrentUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const messageId = asId(body.messageId)
     const text = clean(body.text, MAX_REPLY)
     const rawMedia = clean(body.mediaUrl, 1200000)
@@ -327,9 +313,9 @@ export async function POST(request: Request) {
     if (!messageId || (!text && !mediaUrl)) return NextResponse.json({ error: 'Write a reply or add a voice note, image or GIF.' }, { status: 400 })
     if (body.mediaType === 'audio' && !audioData) return NextResponse.json({ error: 'Invalid voice note.' }, { status: 400 })
     if (body.mediaType !== 'audio' && rawMedia && !mediaUrl) return NextResponse.json({ error: 'Use a valid http(s) image or GIF URL.' }, { status: 400 })
-    const exists = await pool.query(`SELECT id FROM messages WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`, [messageId, user.id])
+    const exists = await pool.query(`SELECT id FROM messages WHERE id = $1 AND deleted_at IS NULL`, [messageId])
     if (!exists.rows[0]) return NextResponse.json({ error: 'Message not found.' }, { status: 404 })
-    await pool.query(`INSERT INTO responses (message_id, text, author, author_user_id, media_url, media_type) VALUES ($1, $2, $3, $4, $5, $6)`, [messageId, text, user.displayName, user.id, mediaUrl, mediaUrl ? mediaType || 'image' : null])
+    await pool.query(`INSERT INTO responses (message_id, text, author, media_url, media_type) VALUES ($1, $2, 'Fowzan', $3, $4)`, [messageId, text, mediaUrl, mediaUrl ? mediaType || 'image' : null])
     return NextResponse.json({ ok: true })
   }
 
@@ -366,18 +352,17 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   await ensureSchema()
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const body = await request.json().catch(() => ({}))
   const id = asId(body.id)
   if (!id) return NextResponse.json({ error: 'Invalid message.' }, { status: 400 })
 
   if (body.action === 'read') {
-    await pool.query(`UPDATE messages SET is_read = TRUE WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`, [id, user.id])
+    await pool.query(`UPDATE messages SET is_read = TRUE WHERE id = $1 AND deleted_at IS NULL`, [id])
     return NextResponse.json({ ok: true })
   }
   if (body.action === 'toggle-keep') {
-    const result = await pool.query(`UPDATE messages SET kept = NOT kept WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL RETURNING kept`, [id, user.id])
+    const result = await pool.query(`UPDATE messages SET kept = NOT kept WHERE id = $1 AND deleted_at IS NULL RETURNING kept`, [id])
     if (!result.rows[0]) return NextResponse.json({ error: 'Message not found.' }, { status: 404 })
     return NextResponse.json({ ok: true, kept: result.rows[0].kept })
   }
@@ -386,8 +371,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   await ensureSchema()
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isOwner())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const params = new URL(request.url).searchParams
   const type = params.get('type') || 'thread'
@@ -396,7 +380,6 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
 
   if (type === "poll") {
-      if (user.role !== 'owner') return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
       const pollId = Number(id)
       if (!Number.isSafeInteger(pollId)) return NextResponse.json({ error: "Invalid poll id." }, { status: 400 })
       const deleted = await deletePoll(pollId)
@@ -407,7 +390,7 @@ export async function DELETE(request: Request) {
     if (type === 'reply') {
     const messageId = asId(params.get('messageId'))
     if (!messageId) return NextResponse.json({ error: 'Invalid thread id.' }, { status: 400 })
-    const result = await pool.query(`DELETE FROM responses WHERE id = $1 AND message_id = $2 AND EXISTS (SELECT 1 FROM messages WHERE id = $2 AND user_id = $3) RETURNING id`, [id, messageId, user.id])
+    const result = await pool.query(`DELETE FROM responses WHERE id = $1 AND message_id = $2 RETURNING id`, [id, messageId])
     if (!result.rows[0]) return NextResponse.json({ error: 'Reply not found.' }, { status: 404 })
     return NextResponse.json({ ok: true, deleted: 'reply' })
   }
@@ -417,7 +400,7 @@ export async function DELETE(request: Request) {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
-    const message = await client.query(`SELECT id FROM messages WHERE id = $1 AND user_id = $2`, [id, user.id])
+    const message = await client.query(`SELECT id FROM messages WHERE id = $1`, [id])
     if (!message.rows[0]) {
       await client.query('ROLLBACK')
       return NextResponse.json({ error: 'Thread not found.' }, { status: 404 })
