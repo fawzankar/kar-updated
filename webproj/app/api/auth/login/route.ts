@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   if (!user || !(await verifyPassword(password, user.password_hash))) {
     return NextResponse.json({ error: 'Incorrect username or password.' }, { status: 401 })
   }
-  await createSession({ id: Number(user.id), username: user.username, displayName: user.displayName, role: user.role })
+  await createSession({ id: Number(user.id), username: user.username, displayName: user.displayName, role: user.role, mustChangePassword: Boolean(user.mustChangePassword) })
   return NextResponse.json({ ok: true, user: { username: user.username, displayName: user.displayName, role: user.role, mustChangePassword: Boolean(user.mustChangePassword) } })
 }
 
