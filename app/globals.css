@@ -6141,12 +6141,16 @@ html[data-fowzan-mode] .grain {
 
 /* Voice notes in threads and the owner composer. */
 .reply-media-audio {
-  display: block;
-  width: min(100%, 420px);
-  min-width: 260px;
+  display: block !important;
+  width: min(100%, 420px) !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 40px;
   margin-top: 10px;
   border-radius: 12px;
   accent-color: var(--primary);
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 .owner-voice-preview { margin-top: 8px; }
 .owner-voice-card {
@@ -6170,4 +6174,29 @@ html[data-fowzan-mode] .grain {
 @media (max-width: 640px) {
   .reply-media-audio { width: 100%; min-width: 0; }
   .owner-voice-card { padding: 8px; }
+}
+
+
+/* Mobile-safe audio controls: never let the native player be clipped by an old card rule. */
+@media (max-width: 760px) {
+  .public-page .reply-media-audio,
+  .public-page .message-media-audio,
+  .admin-page .reply-media-audio,
+  .shared-thread-page .reply-media-audio {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .public-page .public-reply,
+  .public-page .public-replies,
+  .public-page .public-thread,
+  .admin-page .chat-bubble,
+  .shared-thread-page .shared-message {
+    overflow: visible !important;
+  }
 }
