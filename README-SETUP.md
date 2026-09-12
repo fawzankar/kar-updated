@@ -1,43 +1,55 @@
-# Fowzan's Inbox
+# Fowzan's Inbox — multi-user setup
 
-A teen-cyberpunk anonymous-message website: almost-black panels, green-on-black as the default theme, pixel-display typography, and a visible animated grid/particle background. It retains the anonymous messaging, threaded replies, owner authentication, moderation, and database behavior from the original project.
+This version supports a private account for the owner plus additional private inbox accounts. Every account has its own inbox, replies, read/keep state, and password-change flow.
 
-## Run locally
+## Local setup
 
-1. Copy `.env.example` to `.env.local` and provide the listed environment variables.
-2. Run `npm install`.
-3. Run `npm run dev`.
+1. Copy `.env.example` to `.env.local`.
+2. Set `DATABASE_URL` (or `STORAGE_DATABASE_URL`) to your Postgres/Neon connection string.
+3. Set a strong `OWNER_PASSWORD` and a random `AUTH_SECRET` (32+ characters).
+4. Install dependencies with `npm install`.
+5. Run `npm run dev`.
 
-## Design highlights
+## Creating the 13 additional accounts
 
-- Responsive black-and-green cyberpunk layout with an animated perspective grid, visible Matrix rain, and minimal drifting particles.
-- Pixel-style display font for major headings and a compact technical mono font for interface content.
-- Tactile hover states, sharp arcade-inspired cards, and accessible reduced-motion support.
-- A built-in Green / Red / Blue / Yellow theme selector on the public page.
-- A private inbox for reading, replying to, saving, and managing threads.
-- Cached database initialization and immediate private-inbox rendering after sign-in.
+Run:
 
-## Original functional behavior
+```bash
+node scripts/generate-users.mjs 13
+```
 
-This build keeps every incoming message as its own conversation thread.
+The script prints 13 unique usernames and strong random passwords as JSON. Put that JSON in the `INITIAL_USERS_JSON` environment variable for the first deployment.
 
-## Included
-- All incoming questions appear in **All Threads**.
-- The selected thread has its own bounded internal scroll area, so long conversations do not break the page.
-- Fowzan can send unlimited replies in the same thread.
-- One click/request creates one reply; the reply button is locked while a reply is being sent.
-- The owner can remove any individual reply without affecting its parent thread.
-- Deleting an entire thread is a separate, confirmed action; it removes the original message and its replies.
-- Deleting a thread removes its replies first, then the thread itself.
-- New messages are refreshed automatically while the private inbox is open.
-- Reply Queue shows threads that have not received a reply yet.
-- Existing authentication and public anonymous-message functionality are preserved.
+Example shape:
 
-## Vercel environment variables
-Use your existing variables. The database connection prefers `STORAGE_DATABASE_URL` (from Vercel Storage/Neon) and falls back to `DATABASE_URL`.
+```json
+[{"username":"user01","displayName":"User 01","password":"..."},{"username":"user02","displayName":"User 02","password":"..."}]
+```
 
-Required owner variables:
-- `OWNER_PASSWORD`
-- `AUTH_SECRET`
+On first schema initialization, the passwords are converted to salted scrypt password hashes before being stored in Postgres. The application does not store the plaintext passwords. **After the accounts have been created successfully, remove `INITIAL_USERS_JSON` from Vercel/environment variables.** Users can then change their own passwords from their private admin panel.
 
-Do not commit `.env` or `.env.local`.
+Usernames are lowercase and may contain letters, numbers, `.`, `_`, and `-`.
+
+## Sharing each person's inbox
+
+Each person gets a public inbox URL in this format:
+
+`https://your-domain.example/?to=user01`
+
+The owner/admin's URL is `?to=fowzan` by default. The private admin's **share** button automatically creates the correct URL for the signed-in account.
+
+## Security model
+
+- Passwords are salted and hashed with Node's scrypt; plaintext passwords are not stored in the database.
+- Login sessions use random opaque tokens stored only as SHA-256 hashes in Postgres.
+- Sessions are HttpOnly, SameSite=Lax cookies and use Secure cookies in production.
+- Password changes invalidate all active sessions for that account.
+- Every private inbox query is scoped by the authenticated user's database ID.
+- Replies, read/keep actions, and deletes verify that the target message belongs to the authenticated account.
+- Poll creation/deletion remains owner-only.
+- Public anonymous submissions are routed to the selected account via the `to` parameter/body recipient.
+- Existing messages are migrated to the configured owner account during the first schema initialization.
+
+## Important deployment note
+
+Do not commit `.env`, `.env.local`, or an `INITIAL_USERS_JSON` containing plaintext passwords to GitHub. Prefer Vercel environment variables for first-run provisioning, then remove the provisioning variable after the database has been initialized.

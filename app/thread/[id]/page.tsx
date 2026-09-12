@@ -25,7 +25,7 @@ export default function SharedThreadPage() {
     const savedMode = localStorage.getItem('fowzan-experience')
     if (savedTheme) setTheme(savedTheme)
     if (savedMode === 'gamer' || savedMode === 'professional') setMode(savedMode)
-    fetch(`/api/messages?view=thread&id=${encodeURIComponent(id)}`, { cache: 'no-store' })
+    fetch(`/api/messages?view=thread&id=${encodeURIComponent(id)}&to=${encodeURIComponent(new URLSearchParams(window.location.search).get('to') || 'fowzan')}`, { cache: 'no-store' })
       .then(async (response) => {
         const data = await response.json()
         if (!response.ok) throw new Error(data.error || 'This thread could not be found.')
